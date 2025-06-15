@@ -52,8 +52,6 @@ out/
 *.nuget.props
 *.nuget.targets
 
-# User content files
-content/users/
 appsettings.Development.json
 appsettings.Production.json
 *.Development.json
