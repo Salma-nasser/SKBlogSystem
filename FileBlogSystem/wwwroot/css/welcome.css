@@ -1,0 +1,137 @@
+body {
+  height: 100vh;
+  margin: 0;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-family: Arial, sans-serif;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+#logoutBtn {
+  align-self: flex-start;
+  margin: 20px;
+  padding: 8px 16px;
+  background-color: #d9534f; /* keep custom red for contrast */
+  color: var(--button-text);
+  border: none;
+  border-radius: 5px;
+  font-size: 14px;
+  cursor: pointer;
+  position: absolute;
+  top: 0px;
+  left: 10px;
+  box-shadow: 0 2px 6px var(--header-shadow);
+  transition: background-color 0.3s ease;
+}
+
+#logoutBtn:hover {
+  background-color: #c9302c;
+}
+
+h1 {
+  margin: auto;
+  color: var(--text-color);
+}
+#welcomeHeader {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: all 1s ease-out;
+}
+
+#welcomeHeader.animate-to-top {
+  top: 40px; /* You can adjust how high */
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 1;
+}
+
+.sparkle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(#cbb222);
+  animation: sparkle-move 0.8s linear forwards;
+  pointer-events: none;
+  z-index: 9999;
+}
+
+@keyframes sparkle-move {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0);
+  }
+}
+:root {
+  --bg-color: #f0f2f5;
+  --text-color: #222;
+  --accent-color: #0077ff;
+  --accent-hover: #005ad6;
+  --button-bg: #ffffff;
+  --button-text: #222;
+  --header-shadow: rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode {
+  --bg-color: #0e0e0e;
+  --text-color: #ffffff;
+  --accent-color: #4da8ff;
+  --accent-hover: #1e90ff;
+  --button-bg: #1c1c1c;
+  --button-text: #f8f8f8;
+  --header-shadow: rgba(255, 255, 255, 0.08);
+}
+
+#modeToggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  background-color: var(--button-bg);
+  color: var(--button-text);
+  border: 1px solid var(--accent-color);
+  border-radius: 50%;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px var(--header-shadow);
+  transition: transform 0.6s ease, background-color 0.3s ease, color 0.3s ease;
+  transform-style: preserve-3d;
+}
+
+/* Default hover */
+#modeToggle:hover {
+  transform: scale(1.1);
+  color: #fff;
+}
+
+/* Moon (light mode active): hover changes to navy */
+#modeToggle[data-theme="light"]:hover {
+  background-color: #cceeff;
+  color: #333;
+
+}
+
+/* Sun (dark mode active): hover changes to baby blue */
+#modeToggle[data-theme="dark"]:hover {
+  background-color: #0a1d3a;
+  color: #fff;
+}
+
+/* Rotate for dark mode */
+body.dark-mode #modeToggle {
+  transform: rotate(180deg);
+}

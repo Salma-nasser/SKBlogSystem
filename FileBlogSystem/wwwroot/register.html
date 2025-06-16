@@ -1,0 +1,33 @@
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/auth.js" defer></script>
+  </head>
+<body> 
+  <div class="register-box">
+      <h2>Register</h2>
+      <form  id = "RegisterForm">
+          <input type="email" id="email" placeholder="Email" required />
+          <input type="text" id="username" placeholder="Username" required />
+            <div id="passwordWrapper" style="position: relative;">
+              <input type="password" id="registerPassword" placeholder="Password" required />
+              <span id="togglePassword">👁️</span>
+            </div>
+            <ul id="passwordRules">
+              <li id="ruleLength">❌ At least 8 characters</li>
+              <li id="ruleUpper">❌ At least one uppercase letter</li>
+              <li id="ruleSpecial">❌ At least one special character (!@#$...)</li>
+            </ul>
+          <button type="submit">Register</button>
+      </form>
+      <p id="successMessage" style="display: none; color: green; text-align: center;">
+    Registration successful!
+  </p>
+      <p id="errorMessage" style="display: none; color: red; text-align: center;">
+    </p>
+</div>
+</body>
+    </html>

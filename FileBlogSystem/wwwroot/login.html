@@ -1,0 +1,25 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <script src="js/auth.js" defer></script>
+  </head>
+  <body>
+
+    <div class="login-box">
+      <h2>Login</h2>
+      <form id="LoginForm">
+        <input type="text" id="username" placeholder="Username" required />
+        <div class="password-wrapper">
+          <input type="password" id="loginPassword" placeholder="Password" required />
+          <span id="toggleLoginPassword">👁️</span>
+        </div>
+
+        <button type="submit">Login</button>
+        <p id="loginSuccess" class="success-message">Login successful!</p>
+      </form>
+    </div>
+  </body>
+</html>
