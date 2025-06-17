@@ -1,8 +1,6 @@
 using System.IO;
 using System.Text.Json;
 using FileBlogSystem.Models;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 
 namespace FileBlogSystem.Services;
 
@@ -18,7 +16,7 @@ public class UserService
     _jwtService = jwtService;
 
     // Get content directory from configuration
-    string contentRoot = configuration["ContentDirectory"];
+    string? contentRoot = configuration["ContentDirectory"];
 
     // If not configured, fall back to project root
     if (string.IsNullOrEmpty(contentRoot))

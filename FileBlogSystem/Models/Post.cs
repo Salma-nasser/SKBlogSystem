@@ -9,13 +9,13 @@ public class Post
   public DateTime PublishedDate { get; set; }
   public DateTime LastModified { get; set; }
 
-  public Post (string title, string description, string body, User author)
-{
-  Title = title;
-  Description = description;
-  Body = body;
-  Author = author;
-  PublishedDate = DateTime.UtcNow;
-  LastModified = DateTime.UtcNow;
-}
+  public Post(string title, string description, string body, User author, DateTime publishedDate)
+  {
+    Title = title;
+    Description = description;
+    Body = body;
+    Author = author;
+    PublishedDate = DateTime.UtcNow;
+    LastModified = DateTime.UtcNow;
+  }
 }

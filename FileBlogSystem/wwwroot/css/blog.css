@@ -1,0 +1,111 @@
+/* Reset & Base Styles */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #fafafa;
+  color: #333;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background-color: #27272a;
+  color: #f5f5f5;
+}
+
+h1 {
+  margin: 0;
+}
+
+button {
+  padding: 0.5rem 1rem;
+  font-weight: bold;
+  background-color: #4f46e5;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #4338ca;
+}
+
+main {
+  padding: 2rem;
+  display: grid;
+  gap: 1.5rem;
+}
+
+.post-card {
+  background: white;
+  padding: 1rem 1.5rem;
+  border-left: 5px solid #4f46e5;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* Modal Styles */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background-color: rgba(0,0,0,0.5);
+  z-index: 10;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  position: relative;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.close {
+  position: absolute;
+  top: 1rem;
+  right: 1.25rem;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Form Styling */
+form input, form textarea {
+  display: block;
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+}
+
+form textarea {
+  resize: vertical;
+  min-height: 150px;
+}

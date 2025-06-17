@@ -108,16 +108,23 @@ if (loginForm) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ Username: username, Password: password }),
-      });
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          localStorage.setItem("jwtToken", data.token); // Store securely
+          window.location.href = `blog.html?username=${encodeURIComponent(
+            username
+          )}`; // Redirect to blog page
+        });
 
-      if (response.ok) {
-        window.location.href = `welcome.html?username=${encodeURIComponent(
-          username
-        )}`;
-      } else {
-        const error = await response.json();
-        alert("Login failed: " + error.message);
-      }
+      // if (response.ok) {
+      //   window.location.href = `welcome.html?username=${encodeURIComponent(
+      //     username
+      //   )}`;
+      // } else {
+      //   const error = await response.json();
+      //   alert("Login failed: " + error.message);
+      // }
     } catch (err) {
       alert("Something went wrong: " + err.message);
     }

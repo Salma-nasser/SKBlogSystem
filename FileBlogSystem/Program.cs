@@ -8,19 +8,20 @@ using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 📦 Configure JSON options
+// Configure JSON options
 builder.Services.Configure<JsonOptions>(options =>
 {
   options.SerializerOptions.PropertyNamingPolicy = null;
   options.SerializerOptions.WriteIndented = true;
 });
 
-// 🛡️ Service registration
+//  Service registration
 builder.Services.AddScoped<PasswordService>();
 builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<BlogPostService>();
 
-// 🔐 Authentication setup
+//  Authentication setup
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -29,7 +30,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
       options.TokenValidationParameters = jwtService.GetTokenValidationParameters();
     });
 
-// 🌍 CORS policy
+//  CORS policy
 builder.Services.AddCors(options =>
 {
   options.AddPolicy("AllowFrontend", policy =>
@@ -44,7 +45,7 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// 🧭 Middleware pipeline
+//  Middleware pipeline
 app.UseRouting();
 app.UseCors("AllowFrontend");
 app.UseMiddleware<JwtMiddleware>(); // Custom middleware (optional)
@@ -52,36 +53,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.UseStaticFiles();
 
-// 🚀 Map endpoints
-app.MapPostsEndpoints();
+//  Map endpoints
+app.MapBlogPostEndpoints();
 
-app.MapPost("/api/auth/login", async (LoginRequest request, UserService userService) =>
-{
-  Console.WriteLine($"Logging in user: {request.Username}");
-  return await userService.LoginUser(request.Username, request.Password);
-})
-.AllowAnonymous()
-.WithName("Login")
-.WithTags("Authentication");
-
-app.MapPost("/api/auth/register", async (RegisterRequest request, UserService userService) =>
-{
-  Console.WriteLine($"Registering user: {request.Username}");
-  return await userService.RegisterUser(
-      request.Username,
-      request.Password,
-      request.Email);
-})
-.AllowAnonymous()
-.WithName("Register")
-.WithTags("Authentication");
-
-app.MapGet("/api/users/{username}", async (string username, UserService userService) =>
-{
-  return await userService.GetUserProfile(username);
-})
-.RequireAuthorization()
-.WithName("GetUserProfile")
-.WithTags("Users");
+app.MapAuthEndpoints();
 
 app.Run();

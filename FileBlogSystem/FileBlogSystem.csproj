@@ -10,5 +10,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.6" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.12.0" />
   </ItemGroup>
-
+  <PropertyGroup>
+  <EnableCompressionInStaticWebAssets>false</EnableCompressionInStaticWebAssets>
+</PropertyGroup>
 </Project>

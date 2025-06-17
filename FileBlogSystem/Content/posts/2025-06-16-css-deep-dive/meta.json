@@ -1,0 +1,15 @@
+{
+  "Title": "Exploring Cascading Style Sheets",
+  "Description": "A deep dive into CSS and how it powers beautiful UIs",
+  "Body": "# CSS is Awesome\nLet\u2019s explore how to create responsive and aesthetic designs using CSS.\n\n\u0060\u0060\u0060css\nbody {\n  background-color: #f0f0f0;\n}\n\u0060\u0060\u0060",
+  "Tags": [
+    "CSS",
+    "frontend",
+    "design"
+  ],
+  "Categories": [
+    "Web Development",
+    "Styling"
+  ],
+  "CustomUrl": "css-deep-dive"
+}
