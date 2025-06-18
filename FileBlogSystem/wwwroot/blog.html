@@ -14,7 +14,7 @@
       <button id="logoutBtn">Logout</button>
     </div>
   </header>
-
+  <div id="messageBanner" class="hidden"></div>
   <main id="postsContainer">
     <!-- Posts will be rendered here -->
   </main>
@@ -34,7 +34,20 @@
       </form>
     </div>
   </div>
-
+  <div id="modifyPostModal" class="modal hidden">
+  <div class="modal-content">
+    <span class="close" id="closeModifyModal">&times;</span>
+    <h2>Modify Post</h2>
+    <form id="modifyPostForm">
+      <input type="text" name="modifyTitle" id="modifyTitle" placeholder="Title" required />
+      <input type="text" name="modifyDescription" id="modifyDescription" placeholder="Description" required />
+      <textarea name="modifyBody" id="modifyBody" placeholder="Edit your Markdown content..." required></textarea>
+      <input type="text" name="modifyCustomUrl" id="modifyCustomUrl" placeholder="Custom URL (optional)" />
+      <input type="hidden" name="postSlug" id="postSlug" />
+      <button type="submit">Save Changes</button>
+    </form>
+  </div>
+  </div>  
   <script src="js/blog.js"></script>
 </body>
 </html>

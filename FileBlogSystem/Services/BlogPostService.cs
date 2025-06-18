@@ -14,7 +14,7 @@ public class BlogPostService
     foreach (var dir in Directory.GetDirectories(_rootPath, "*", SearchOption.AllDirectories))
     {
       var metaPath = Path.Combine(dir, "meta.json");
-      var bodyPath = Path.Combine(dir, "Content.md");
+      var bodyPath = Path.Combine(dir, "content.md");
 
       if (File.Exists(metaPath) && File.Exists(bodyPath))
       {
@@ -66,6 +66,7 @@ public class BlogPostService
       Author = new
       {
         Username = author.Username,
+        Email = author.Email,
         Role = author.Role,
         CreatedAt = author.CreatedAt
       },
@@ -75,5 +76,64 @@ public class BlogPostService
     var meta = JsonSerializer.Serialize(postWithAuthor, new JsonSerializerOptions { WriteIndented = true });
     File.WriteAllText(Path.Combine(folder, "meta.json"), meta);
     File.WriteAllText(Path.Combine(folder, "content.md"), request.Body);
+  }
+  public bool ModifyPost(string slug, CreatePostRequest updatedData, User currentUser, out string message)
+  {
+    // Find the post folder
+    var folder = Directory.GetDirectories(_rootPath)
+        .FirstOrDefault(dir => dir.EndsWith(slug, StringComparison.OrdinalIgnoreCase));
+
+    if (folder == null)
+    {
+      message = "Post not found.";
+      return false;
+    }
+
+    var metaPath = Path.Combine(folder, "meta.json");
+    var bodyPath = Path.Combine(folder, "content.md");
+
+    if (!File.Exists(metaPath) || !File.Exists(bodyPath))
+    {
+      message = "Post files are missing or corrupted.";
+      return false;
+    }
+
+    var metaJson = File.ReadAllText(metaPath);
+    using var doc = JsonDocument.Parse(metaJson);
+    var authorUsername = doc.RootElement.GetProperty("Author").GetProperty("Username").GetString();
+
+    if (!string.Equals(authorUsername, currentUser.Username, StringComparison.OrdinalIgnoreCase))
+    {
+      message = "Unauthorized: only the author can modify this post.";
+      return false;
+    }
+
+    // Reuse the existing author info and publication date
+    var publishedDate = doc.RootElement.GetProperty("PublishedDate").GetDateTime();
+    var author = doc.RootElement.GetProperty("Author");
+
+    var updatedMeta = new
+    {
+      updatedData.Title,
+      updatedData.Description,
+      updatedData.Body,
+      updatedData.CustomUrl,
+      Author = new
+      {
+        Username = author.GetProperty("Username").GetString(),
+        Email = author.GetProperty("Email").GetString(),
+        Role = author.GetProperty("Role").GetString(),
+        CreatedAt = author.GetProperty("CreatedAt").GetDateTime()
+      },
+      PublishedDate = publishedDate,
+      ModifiedDate = DateTime.UtcNow
+    };
+
+    var newMeta = JsonSerializer.Serialize(updatedMeta, new JsonSerializerOptions { WriteIndented = true });
+    File.WriteAllText(metaPath, newMeta);
+    File.WriteAllText(bodyPath, updatedData.Body);
+
+    message = "Post updated successfully.";
+    return true;
   }
 }
