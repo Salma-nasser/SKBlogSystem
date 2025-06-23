@@ -7,43 +7,73 @@ namespace FileBlogSystem.Endpoints;
 
 public static class BlogPostEndpoints
 {
-  public static void MapBlogPostEndpoints(this IEndpointRouteBuilder app)
-  {
-    app.MapGet("/api/posts", [Authorize] (BlogPostService service) =>
+    public static void MapBlogPostEndpoints(this IEndpointRouteBuilder app)
     {
-      return Results.Ok(service.GetAllPosts());
-    });
+        app.MapGet("/api/posts", [Authorize] (BlogPostService service) =>
+        {
+            return Results.Ok(service.GetAllPosts());
+        });
 
-    app.MapPost("/api/posts/create", [Authorize] (CreatePostRequest request, HttpContext ctx, BlogPostService service) =>
-    {
-      // Example JWT-based user retrieval (adapt this to your auth setup)
-      var userName = ctx.User.Identity?.Name;
-      var email = ctx.User.FindFirst(ClaimTypes.Email)?.Value;
-      var role = ctx.User.FindFirst(ClaimTypes.Role)?.Value;
+        app.MapGet("/api/posts/category/{category}", [Authorize] (string category, BlogPostService service) =>
+        {
+            return Results.Ok(service.GetPostsByCategory(category));
+        });
 
-      if (string.IsNullOrEmpty(userName))
-        return Results.Unauthorized();
+        app.MapGet("/api/posts/tag/{tag}", [Authorize] (string tag, BlogPostService service) =>
+        {
+            return Results.Ok(service.GetPostsByTag(tag));
+        });
 
-      var user = new User { Username = userName, Email = email ?? "", Role = role ?? "" };
+        app.MapGet("/api/posts/{slug}", [Authorize] (string slug, BlogPostService service) =>
+        {
+            var post = service.GetPostBySlug(slug);
+            return post != null ? Results.Ok(post) : Results.NotFound(new { message = "Post not found." });
+        });
 
-      service.CreatePost(request, user);
-      return Results.Created($"/api/posts/{request.CustomUrl}", null);
-    });
+        app.MapGet("/api/posts/drafts", [Authorize] (HttpContext ctx, BlogPostService service) =>
+        {
+            var userName = ctx.User.Identity?.Name;
 
-    app.MapPut("/api/posts/modify/{slug}", [Authorize] (string slug, CreatePostRequest request, HttpContext ctx, BlogPostService service) =>
-    {
-      var userName = ctx.User.Identity?.Name;
-      var email = ctx.User.FindFirst(ClaimTypes.Email)?.Value;
-      var role = ctx.User.FindFirst(ClaimTypes.Role)?.Value;
-      if (string.IsNullOrEmpty(userName))
-        return Results.Unauthorized();
+            if (string.IsNullOrEmpty(userName))
+                return Results.Unauthorized();
 
-      var user = new User { Username = userName, Email = email ?? "", Role = role ?? "" };
+            var drafts = service.GetUserDrafts(userName);
+            return Results.Ok(drafts);
+        });
 
-      if (service.ModifyPost(slug, request, user, out var message))
-        return Results.Ok(new { message });
+        app.MapPost("/api/posts/create", [Authorize] (CreatePostRequest request, HttpContext ctx, BlogPostService service) =>
+        {
+            var userName = ctx.User.Identity?.Name;
 
-      return Results.BadRequest(new { message });
-    });
-  }
+            if (string.IsNullOrEmpty(userName))
+                return Results.Unauthorized();
+
+            service.CreatePost(request, userName);
+            return Results.Created($"/api/posts/{request.CustomUrl}", null);
+        });
+
+        app.MapPut("/api/posts/modify/{slug}", [Authorize] (string slug, CreatePostRequest request, HttpContext ctx, BlogPostService service) =>
+        {
+            var userName = ctx.User.Identity?.Name;
+
+            if (string.IsNullOrEmpty(userName))
+                return Results.Unauthorized();
+
+            if (service.ModifyPost(slug, request, userName, out var message))
+                return Results.Ok(new { message });
+
+            return Results.BadRequest(new { message });
+        });
+
+        app.MapPut("/api/posts/publish/{slug}", [Authorize] (string slug, HttpContext ctx, BlogPostService service) =>
+        {
+            var username = ctx.User.Identity?.Name;
+            if (username == null)
+                return Results.Unauthorized();
+
+            var success = service.PublishPost(slug, username, out var message);
+            return success ? Results.Ok(new { message }) : Results.NotFound(new { message });
+        });
+
+    }
 }

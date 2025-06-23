@@ -10,44 +10,87 @@
   <header>
     <h1>Welcome back, <span id="username">User</span>!</h1>
     <div>
+      <button id="profileBtn">Profile</button>
       <button id="newPostBtn">Write a New Post</button>
       <button id="logoutBtn">Logout</button>
     </div>
   </header>
+
   <div id="messageBanner" class="hidden"></div>
+
+  <div class="search-container">
+  <input type="text" id="searchInput" placeholder="Search posts..." />
+  <i class="fas fa-search search-icon"></i>
+</div>
+
+
   <main id="postsContainer">
     <!-- Posts will be rendered here -->
   </main>
 
   <!-- Modal for New Post -->
   <div id="postModal" class="modal hidden">
-    <div class="modal-content">
-      <span class="close" id="closeModal">&times;</span>
-      <h2>Create a New Post</h2>
-      <form id="createPostForm">
-        <input type="text" name="title" placeholder="Title" required />
-        <input type="text" name="description" placeholder="Description" required />
-        <textarea name="body" placeholder="Write your Markdown content here..." required></textarea>
-        <input type="text" name="customUrl" placeholder="Custom URL (optional)" />
-        <input type="file" name="imageInput" />
+  <div class="modal-content">
+    <span class="close" id="closeModal">&times;</span>
+    <h2>Create a New Post</h2>
+    <form id="createPostForm">
+      <label>Title</label>
+      <input type="text" name="title" placeholder="Post Title" required />
+
+      <label>Description</label>
+      <input type="text" name="description" placeholder="Post Description" required />
+
+      <label>Body</label>
+      <textarea name="body" placeholder="Write your Markdown content here..." required></textarea>
+
+      <label>Custom URL (optional)</label>
+      <input type="text" name="customUrl" placeholder="Custom URL" />
+
+      <label>Tags (comma separated)</label>
+      <input type="text" name="tags" placeholder="e.g. technology, coding" />
+
+      <label>Categories (comma separated)</label>
+      <input type="text" name="categories" placeholder="e.g. Blog, Tutorial" />
+
+      <label>Scheduled Date (optional)</label>
+      <input type="datetime-local" name="scheduledDate" />
+
+      <label>Upload Image</label>
+      <input type="file" name="imageInput" />
+
+      <div style="display: flex; justify-content: space-between; margin-top: 1rem;">
         <button type="submit">Publish</button>
+        <button type="button" id="saveDraftBtn">Save as Draft</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+  <!-- Modal for Modify Post -->
+  <div id="modifyPostModal" class="modal hidden">
+    <div class="modal-content">
+      <span class="close" id="closeModifyModal">&times;</span>
+      <h2>Modify Post</h2>
+      <form id="modifyPostForm">
+        <input type="text" name="modifyTitle" id="modifyTitle" placeholder="Title" required />
+        <input type="text" name="modifyDescription" id="modifyDescription" placeholder="Description" required />
+        <textarea name="modifyBody" id="modifyBody" placeholder="Edit your Markdown content..." required></textarea>
+        <input type="text" name="modifyCustomUrl" id="modifyCustomUrl" placeholder="Custom URL (optional)" />
+        <input type="text" name="modifyTags" id="modifyTags" placeholder="Tags (comma separated)" />
+        <input type="text" name="modifyCategories" id="modifyCategories" placeholder="Categories (comma separated)" />
+        <input type="datetime-local" name="modifyScheduledDate" id="modifyScheduledDate" placeholder="Scheduled Date (optional)" />
+        <input type="hidden" name="postSlug" id="postSlug" />
+        <button type="submit">Save Changes</button>
       </form>
     </div>
   </div>
-  <div id="modifyPostModal" class="modal hidden">
-  <div class="modal-content">
-    <span class="close" id="closeModifyModal">&times;</span>
-    <h2>Modify Post</h2>
-    <form id="modifyPostForm">
-      <input type="text" name="modifyTitle" id="modifyTitle" placeholder="Title" required />
-      <input type="text" name="modifyDescription" id="modifyDescription" placeholder="Description" required />
-      <textarea name="modifyBody" id="modifyBody" placeholder="Edit your Markdown content..." required></textarea>
-      <input type="text" name="modifyCustomUrl" id="modifyCustomUrl" placeholder="Custom URL (optional)" />
-      <input type="hidden" name="postSlug" id="postSlug" />
-      <button type="submit">Save Changes</button>
-    </form>
+  <div id="paginationControls" style="margin-top: 20px; text-align: center;">
+    <button id="prevPage">Previous</button>
+    <span id="pageInfo">Page 1</span>
+    <button id="nextPage">Next</button>
   </div>
-  </div>  
+
   <script src="js/blog.js"></script>
 </body>
 </html>

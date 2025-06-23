@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Profile</title>
+  <link rel="stylesheet" href="css/blog.css" />
+</head>
+<body>
+  <header>
+    <h1>Your Profile</h1>
+    <div>
+      <button id="backToBlogBtn">Back to Blog</button>
+      <button id="logoutBtn">Logout</button>
+    </div>
+  </header>
+
+  <main>
+    <section id="userInfo">
+      <!-- User data will be loaded here -->
+    </section>
+
+    <section id="draftsSection">
+      <h2>Your Drafts & Scheduled Posts</h2>
+      <div id="draftsContainer"></div>
+    </section>
+  </main>
+  <div id="modifyPostModal" class="modal hidden">
+  <div class="modal-content">
+    <span class="close" id="closeModifyModal">&times;</span>
+    <h2>Modify Draft</h2>
+    <form id="modifyPostForm">
+      <input type="text" name="modifyTitle" id="modifyTitle" placeholder="Title" required />
+      <input type="text" name="modifyDescription" id="modifyDescription" placeholder="Description" required />
+      <textarea name="modifyBody" id="modifyBody" placeholder="Edit your Markdown content..." required></textarea>
+      <input type="text" name="modifyCustomUrl" id="modifyCustomUrl" placeholder="Custom URL (optional)" />
+      <input type="text" name="modifyTags" id="modifyTags" placeholder="Tags (comma separated)" />
+      <input type="text" name="modifyCategories" id="modifyCategories" placeholder="Categories (comma separated)" />
+      <label for="modifyScheduledDate">Scheduled Date:</label>
+      <input type="datetime-local" name="modifyScheduledDate" id="modifyScheduledDate" />
+      <input type="hidden" name="postSlug" id="postSlug" />
+      <button type="submit">Save Changes</button>
+    </form>
+  </div>
+</div>
+
+
+  <script src="js/profile.js"></script>
+</body>
+</html>

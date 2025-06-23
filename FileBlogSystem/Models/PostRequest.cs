@@ -1,4 +1,5 @@
 namespace FileBlogSystem.Models;
+
 public class CreatePostRequest
 {
   public string Title { get; set; } = string.Empty;
@@ -7,4 +8,7 @@ public class CreatePostRequest
   public List<string> Tags { get; set; } = new List<string>();
   public List<string> Categories { get; set; } = new List<string>();
   public string CustomUrl { get; set; } = string.Empty;
+  public bool? IsPublished { get; set; } = false;
+  public DateTime? ScheduledDate { get; set; }
+
 }

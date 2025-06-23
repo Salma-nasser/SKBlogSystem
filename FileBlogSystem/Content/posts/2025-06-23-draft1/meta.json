@@ -1,0 +1,19 @@
+{
+  "Title": "Working Frontend",
+  "Description": "Testing Drafts",
+  "Body": "This is my first draft of this post I want to make sure I can view them in my profile and they don\u0027t show up on the blog!",
+  "CustomUrl": "draft1",
+  "AuthorUsername": "Salma",
+  "Tags": [
+    "testing",
+    "draft"
+  ],
+  "Categories": [
+    "blog",
+    "tutorial"
+  ],
+  "PublishedDate": "2025-06-23T22:33:38.788064Z",
+  "ModifiedDate": "2025-06-23T23:13:52.5452945Z",
+  "Slug": "draft1",
+  "IsPublished": true
+}

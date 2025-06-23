@@ -1,0 +1,22 @@
+{
+  "Title": "Software Engineering: Building the Future",
+  "Description": "Exploring modern practices and methodologies in software engineering.",
+  "Body": "Software engineering is more than just writing code. It is about solving real-world problems, collaborating across teams, and continuously improving systems. Agile methodologies, continuous integration, and test-driven development have become essential in modern software development. As technology evolves, so do the skills and responsibilities of software engineers. Staying adaptable, continuously learning, and focusing on user-centered design are key elements of success in this field.",
+  "CustomUrl": "software-engineering-building-future",
+  "AuthorUsername": "Salma",
+  "Tags": [
+    "Software Engineering",
+    "Agile",
+    "Continuous Integration",
+    "Best Practices"
+  ],
+  "Categories": [
+    "Software",
+    "Development"
+  ],
+  "PublishedDate": "2025-06-23T22:04:36.7225843Z",
+  "ModifiedDate": "2025-06-23T22:12:35.3175434Z",
+  "Slug": "understanding-aspnet-minimal-apis",
+  "IsPublished": true,
+  "ScheduledDate": null
+}
