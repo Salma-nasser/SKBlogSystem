@@ -3,7 +3,7 @@ const pageSize = 5;
 
 window.addEventListener("DOMContentLoaded", () => {
   const token = localStorage.getItem("jwtToken");
-  const username = new URLSearchParams(window.location.search).get("username");
+  const username = localStorage.getItem("username");
 
   if (!token)
     return (window.location.href = "http://localhost:5000/api/auth/login");
@@ -17,6 +17,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("logoutBtn")?.addEventListener("click", () => {
     localStorage.removeItem("jwtToken");
+    localStorage.removeItem("username");
     window.location.href = "login.html";
   });
 
@@ -100,23 +101,40 @@ function renderPosts(posts) {
     const description = post.Description || "No description provided.";
     const body = post.Body || "No content available.";
     const author = post.Author || "Anonymous";
-    const createdAt = new Date(post.PublishedDate).toLocaleDateString();
-    const updatedAt = post.LastModified
-      ? new Date(post.LastModified).toLocaleDateString()
-      : "";
+
+    // Show date and time
+    const createdAt = new Date(post.PublishedDate).toLocaleString();
+
+    // Only show "Modified" if LastModified is DIFFERENT from PublishedDate
+    let updatedAt = "";
+    if (post.LastModified && post.LastModified !== post.PublishedDate) {
+      updatedAt = new Date(post.LastModified).toLocaleString();
+    }
+
     const tags = post.Tags.join(", ") || "No tags";
     const categories = post.Categories.join(", ") || "No categories";
     const scheduledDate = post.ScheduledDate
       ? new Date(post.ScheduledDate).toLocaleString()
       : "";
 
+    // Render images if available
+    let imageHtml = "";
+    const dateOnly = new Date(post.PublishedDate).toISOString().split("T")[0];
+
+    if (post.Images && post.Images.length > 0) {
+      imageHtml = post.Images.map(
+        (imgUrl) =>
+          `<img src="http://localhost:5000/Content/posts/${dateOnly}-${post.Slug}${imgUrl}" alt="Post Image" class="post-image"/>`
+      ).join("");
+    }
+
     postCard.innerHTML = `
       <h3>${title}</h3>
       <p>${description}</p>
       <div class="post-body">${body}</div>
-      <small>By ${author} • Created: ${createdAt} ${
-      updatedAt ? `• Modified: ${updatedAt}` : ""
-    }</small><br>
+      ${imageHtml}
+      <small>By ${author} • Created: ${createdAt}</small><br>
+      ${updatedAt ? `<small>Modified: ${updatedAt}</small><br>` : ""}
       <small>Tags: ${tags} • Categories: ${categories}</small><br>
       ${
         scheduledDate
@@ -146,37 +164,54 @@ document
     if (!token) return alert("You must be logged in to publish a post.");
 
     const form = e.target;
+    const formData = new FormData();
+
+    // Add text fields to FormData
+    formData.append("Title", form.title.value);
+    formData.append("Description", form.description.value);
+    formData.append("Body", form.body.value);
+    formData.append("CustomUrl", form.customUrl.value);
+    formData.append("IsPublished", "true");
+
+    // Add tags and categories
     const tags = form.tags.value
       .split(",")
       .map((tag) => tag.trim())
       .filter((tag) => tag);
+
     const categories = form.categories.value
       .split(",")
       .map((cat) => cat.trim())
       .filter((cat) => cat);
-    const scheduledDate = form.scheduledDate.value
-      ? new Date(form.scheduledDate.value).toISOString()
-      : null;
 
-    const postData = {
-      Title: form.title.value,
-      Description: form.description.value,
-      Body: form.body.value,
-      CustomUrl: form.customUrl.value,
-      Tags: tags,
-      Categories: categories,
-      IsPublished: true,
-      ScheduledDate: scheduledDate,
-    };
+    // Add each tag and category as separate form values
+    tags.forEach((tag) => formData.append("Tags", tag));
+    categories.forEach((category) => formData.append("Categories", category));
+
+    // Add scheduled date if available
+    if (form.scheduledDate.value) {
+      formData.append(
+        "ScheduledDate",
+        new Date(form.scheduledDate.value).toISOString()
+      );
+    }
+
+    // Add image files if available
+    const imageInput = form.querySelector('input[type="file"]');
+    if (imageInput && imageInput.files.length > 0) {
+      for (let i = 0; i < imageInput.files.length; i++) {
+        formData.append("Images", imageInput.files[i]);
+      }
+    }
 
     try {
       const res = await fetch("http://localhost:5000/api/posts/create", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          // Don't set Content-Type here - FormData will set it automatically with boundary
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(postData),
+        body: formData, // Use FormData instead of JSON.stringify
       });
 
       if (!res.ok)
@@ -199,37 +234,52 @@ document.getElementById("saveDraftBtn")?.addEventListener("click", async () => {
   if (!token) return alert("You must be logged in to save a draft.");
 
   const form = document.getElementById("createPostForm");
+  const formData = new FormData();
+
+  // Add text fields to FormData
+  formData.append("Title", form.title.value);
+  formData.append("Description", form.description.value);
+  formData.append("Body", form.body.value);
+  formData.append("CustomUrl", form.customUrl.value);
+  formData.append("IsPublished", "false"); // Draft
+
+  // Add tags and categories
   const tags = form.tags.value
     .split(",")
     .map((tag) => tag.trim())
     .filter((tag) => tag);
+
   const categories = form.categories.value
     .split(",")
     .map((cat) => cat.trim())
     .filter((cat) => cat);
-  const scheduledDate = form.scheduledDate.value
-    ? new Date(form.scheduledDate.value).toISOString()
-    : null;
 
-  const postData = {
-    Title: form.title.value,
-    Description: form.description.value,
-    Body: form.body.value,
-    CustomUrl: form.customUrl.value,
-    Tags: tags,
-    Categories: categories,
-    IsPublished: false, // Draft
-    ScheduledDate: scheduledDate,
-  };
+  tags.forEach((tag) => formData.append("Tags", tag));
+  categories.forEach((category) => formData.append("Categories", category));
+
+  // Add scheduled date if available
+  if (form.scheduledDate.value) {
+    formData.append(
+      "ScheduledDate",
+      new Date(form.scheduledDate.value).toISOString()
+    );
+  }
+
+  // Add image files
+  const imageInput = form.querySelector('input[type="file"]');
+  if (imageInput && imageInput.files.length > 0) {
+    for (let i = 0; i < imageInput.files.length; i++) {
+      formData.append("Images", imageInput.files[i]);
+    }
+  }
 
   try {
     const res = await fetch("http://localhost:5000/api/posts/create", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(postData),
+      body: formData,
     });
 
     if (!res.ok) throw new Error(`Server responded with status ${res.status}`);
@@ -275,45 +325,39 @@ document
     const form = e.target;
     const slug = form.postSlug.value;
 
-    const postData = {
-      Title: form.modifyTitle.value,
-      Description: form.modifyDescription.value,
-      Body: form.modifyBody.value,
-      CustomUrl: form.modifyCustomUrl.value,
-      Tags: form.modifyTags.value.split(",").map((tag) => tag.trim()),
-      Categories: form.modifyCategories.value
-        .split(",")
-        .map((cat) => cat.trim()),
-      ScheduledDate: form.modifyScheduledDate.value
-        ? new Date(form.modifyScheduledDate.value).toISOString()
-        : null,
-    };
+    const formData = new FormData();
+    formData.append("Title", form.modifyTitle.value);
+    formData.append("Description", form.modifyDescription.value);
+    formData.append("Body", form.modifyBody.value);
+    formData.append("CustomUrl", form.modifyCustomUrl.value);
+    formData.append("Tags", form.modifyTags.value);
+    formData.append("Categories", form.modifyCategories.value);
+
+    const imageInput = document.getElementById("modifyImages");
+    for (let i = 0; i < imageInput.files.length; i++) {
+      formData.append("Images", imageInput.files[i]);
+    }
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/posts/modify/${slug}`,
+        `http://localhost:5000/api/posts/blog-modify/${slug}`,
         {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(postData),
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
         }
       );
 
       if (!res.ok)
         throw new Error(`Server responded with status ${res.status}`);
 
-      if (res.status === 200) {
-        showMessageBanner("Post modified successfully!", "success");
-        loadPosts();
-      }
-
+      alert("Post modified successfully!");
+      form.reset();
+      loadPosts(); // Reload the blog posts (you should have this method in your blog.js)
       document.getElementById("modifyPostModal")?.classList.add("hidden");
     } catch (err) {
       console.error("Error modifying post:", err);
-      showMessageBanner("Failed to modify post. Please try again.", "error");
+      alert("Failed to modify post. Please try again.");
     }
   });
 
@@ -334,4 +378,20 @@ function showMessageBanner(text, type = "success") {
 }
 document.getElementById("profileBtn")?.addEventListener("click", () => {
   window.location.href = "profile.html";
+});
+
+const modeToggle = document.getElementById("modeToggle");
+let isDarkMode = false;
+
+modeToggle.addEventListener("click", () => {
+  document.body.classList.toggle("dark-mode");
+  isDarkMode = !isDarkMode;
+
+  if (isDarkMode) {
+    modeToggle.setAttribute("data-theme", "dark");
+    modeToggle.textContent = "🌙";
+  } else {
+    modeToggle.setAttribute("data-theme", "light");
+    modeToggle.textContent = "☀️";
+  }
 });

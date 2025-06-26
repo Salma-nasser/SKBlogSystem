@@ -1,5 +1,6 @@
 using FileBlogSystem.Models;
 using FileBlogSystem.Services;
+using Microsoft.AspNetCore.Authorization;
 
 
 namespace FileBlogSystem.Endpoints;
@@ -36,5 +37,16 @@ public static class AuthEndpoints
     .RequireAuthorization()
     .WithName("GetUserProfile")
     .WithTags("Users");
+
+    app.MapPut("/api/users/promote/{username}", [Authorize(Roles = "Admin")] async (string username, UserService userService, HttpContext ctx) =>
+    {
+      var currentUser = ctx.User.Identity?.Name;
+
+      if (string.IsNullOrEmpty(currentUser))
+        return Results.Unauthorized();
+
+      var result = await userService.PromoteUserToAdmin(username, currentUser);
+      return result;
+    });
   }
 }

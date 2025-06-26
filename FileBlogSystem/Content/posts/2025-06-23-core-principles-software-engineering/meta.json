@@ -1,7 +1,6 @@
 {
   "Title": "Software Engineering: Building the Future",
   "Description": "Exploring modern practices and methodologies in software engineering.",
-  "Body": "Software engineering is more than just writing code. It is about solving real-world problems, collaborating across teams, and continuously improving systems.",
   "CustomUrl": "software-engineering-building-future",
   "AuthorUsername": "Salma",
   "Tags": [
@@ -13,8 +12,11 @@
     "Development"
   ],
   "PublishedDate": "2025-06-23T22:06:02.0870055Z",
-  "ModifiedDate": "2025-06-23T22:16:09.1206236Z",
+  "ModifiedDate": "2025-06-26T00:31:04.674528Z",
   "Slug": "core-principles-software-engineering",
   "IsPublished": true,
-  "ScheduledDate": null
+  "ScheduledDate": null,
+  "Images": [
+    "/assets/OIP.jpeg"
+  ]
 }

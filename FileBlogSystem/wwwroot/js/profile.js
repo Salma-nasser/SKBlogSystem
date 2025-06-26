@@ -66,7 +66,11 @@ function renderDrafts(drafts) {
       <h3>${post.Title || "Untitled Draft"}</h3>
       <p>${post.Description || "No description"}</p>
       <p>${post.Body.slice(0, 100)}...</p>
-      ${scheduledDate=="Not scheduled" ? `<button class="publishBtn">Publish</button>` : ""}
+      ${
+        scheduledDate === "Not scheduled"
+          ? `<button class="publishBtn">Publish</button>`
+          : ""
+      }
       <small>Scheduled: ${scheduledDate}</small><br>
       <button class="modifyDraftBtn">Modify</button>
     `;
@@ -75,13 +79,44 @@ function renderDrafts(drafts) {
   });
 }
 
-document.addEventListener("click", (e) => {
+document.addEventListener("click", async (e) => {
+  // Handle Modify Draft button
   if (e.target.classList.contains("modifyDraftBtn")) {
     const postCard = e.target.closest(".post-card");
     const slug = postCard.dataset.slug;
-
-    // Load post details
     loadDraftDetails(slug);
+  }
+
+  // Handle Publish button
+  if (e.target.classList.contains("publishBtn")) {
+    const postCard = e.target.closest(".post-card");
+    const slug = postCard.dataset.slug;
+
+    const token = localStorage.getItem("jwtToken");
+    if (!token) return alert("You must be logged in to publish a post.");
+
+    try {
+      const res = await fetch(
+        `http://localhost:5000/api/posts/publish/${slug}`,
+        {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!res.ok)
+        throw new Error(`Server responded with status ${res.status}`);
+
+      if (res.status === 200) {
+        showMessageBanner("Post published successfully!", "success");
+        setTimeout(() => {
+          window.location.reload(); // Full page reload to update the view
+        }, 1000); // Optional delay to allow the banner to show briefly
+      }
+    } catch (err) {
+      console.error("Error publishing post:", err);
+      showMessageBanner("Failed to publish post. Please try again.", "error");
+    }
   }
 });
 
@@ -112,6 +147,7 @@ function loadDraftDetails(slug) {
       alert("Failed to load post details. Please try again.");
     });
 }
+
 document
   .getElementById("modifyPostForm")
   ?.addEventListener("submit", async (e) => {
@@ -145,7 +181,7 @@ document
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(postData),
+          body: formData,
         }
       );
 
@@ -154,10 +190,10 @@ document
 
       if (res.status === 200) {
         alert("Post modified successfully!");
-        loadUserDrafts();
+        form.reset(); // Clear form fields
+        loadUserDrafts(); // Refresh drafts
+        document.getElementById("modifyPostModal")?.classList.add("hidden");
       }
-
-      document.getElementById("modifyPostModal")?.classList.add("hidden");
     } catch (err) {
       console.error("Error modifying post:", err);
       alert("Failed to modify post. Please try again.");
@@ -168,27 +204,14 @@ document.getElementById("closeModifyModal")?.addEventListener("click", () => {
   document.getElementById("modifyPostModal")?.classList.add("hidden");
 });
 
-document.addEventListener("click", async (e) => {
-  if (e.target.classList.contains("publishBtn")) {
-    const postCard = e.target.closest(".post-card");
-    const slug = postCard.dataset.slug;
+function showMessageBanner(message, type) {
+  const banner = document.getElementById("messageBanner");
+  banner.textContent = message;
+  banner.className = "";
+  banner.classList.add(type === "success" ? "success" : "error");
+  banner.classList.remove("hidden");
 
-    const token = localStorage.getItem("jwtToken");
-    if (!token) return alert("You must be logged in to publish a post.");
-
-    try {
-      const res = await fetch(`http://localhost:5000/api/posts/publish/${slug}`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (!res.ok) throw new Error(`Server responded with status ${res.status}`);
-
-      showMessageBanner("Post published successfully!", "success");
-      loadUserDrafts(); // Re-fetch drafts after publishing
-    } catch (err) {
-      console.error("Error publishing post:", err);
-      showMessageBanner("Failed to publish post. Please try again.", "error");
-    }
-  }
-});
+  setTimeout(() => {
+    banner.classList.add("hidden");
+  }, 3000);
+}

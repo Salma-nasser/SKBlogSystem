@@ -1,16 +1,25 @@
 using System.Text.Json;
 using FileBlogSystem.Models;
+using Microsoft.AspNetCore.Http;
 
 namespace FileBlogSystem.Services;
 
 public class BlogPostService
 {
-  private readonly string _rootPath = Path.Combine("Content", "posts");
+  private readonly string _rootPath;
 
-  public BlogPostService()
+  public BlogPostService(IConfiguration configuration, IWebHostEnvironment env)
   {
+    string? contentRoot = configuration["ContentDirectory"] ?? "Content";
+    _rootPath = Path.Combine(env.ContentRootPath, contentRoot, "posts");
+
     if (!Directory.Exists(_rootPath))
+    {
       Directory.CreateDirectory(_rootPath);
+      Console.WriteLine($"Created blog posts directory: {_rootPath}");
+    }
+
+    Console.WriteLine($"Blog posts directory path: {_rootPath}");
   }
 
   public IEnumerable<Post> GetAllPosts()
@@ -53,13 +62,14 @@ public class BlogPostService
   {
     if (!Directory.Exists(_rootPath)) return null;
 
-    var folder = Directory.GetDirectories(_rootPath)
-        .FirstOrDefault(dir => dir.EndsWith($"-{slug}"));
+    foreach (var dir in Directory.GetDirectories(_rootPath))
+    {
+      var post = LoadPost(dir);
+      if (post != null && post.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase))
+        return post;
+    }
 
-    if (folder == null) return null;
-
-    var post = LoadPost(folder);
-    return post;
+    return null;
   }
 
   public IEnumerable<Post> GetUserDrafts(string username)
@@ -85,111 +95,207 @@ public class BlogPostService
     var metaJson = File.ReadAllText(metaPath);
     using var doc = JsonDocument.Parse(metaJson);
 
-    var title = doc.RootElement.GetProperty("Title").GetString() ?? "";
-    var description = doc.RootElement.GetProperty("Description").GetString() ?? "";
-    var publishedDate = doc.RootElement.GetProperty("PublishedDate").GetDateTime();
-    DateTime? lastModified = doc.RootElement.TryGetProperty("ModifiedDate", out var modProp) && modProp.ValueKind != JsonValueKind.Null
-        ? modProp.GetDateTime()
-        : null;
+    var root = doc.RootElement;
 
-    var author = doc.RootElement.GetProperty("AuthorUsername").GetString() ?? "";
+    string GetSafeString(string propertyName)
+        => root.TryGetProperty(propertyName, out var prop) ? prop.GetString() ?? "" : "";
 
-    var tags = doc.RootElement.TryGetProperty("Tags", out var tagsProp)
+    var title = GetSafeString("Title");
+    var description = GetSafeString("Description");
+    var author = GetSafeString("AuthorUsername");
+    var slug = GetSafeString("Slug");
+
+    var publishedDate = root.TryGetProperty("PublishedDate", out var pdProp) ? pdProp.GetDateTime() : DateTime.UtcNow;
+
+    DateTime? lastModified = null;
+    if (root.TryGetProperty("ModifiedDate", out var lmProp) && lmProp.ValueKind != JsonValueKind.Null)
+      lastModified = lmProp.GetDateTime();
+
+    var isPublished = root.TryGetProperty("IsPublished", out var ipProp) && ipProp.GetBoolean();
+
+    DateTime? scheduledDate = null;
+    if (root.TryGetProperty("ScheduledDate", out var schedProp) && schedProp.ValueKind != JsonValueKind.Null)
+      scheduledDate = schedProp.GetDateTime();
+
+    var tags = root.TryGetProperty("Tags", out var tagsProp)
         ? tagsProp.EnumerateArray().Select(t => t.GetString() ?? "").ToList()
         : new List<string>();
 
-    var categories = doc.RootElement.TryGetProperty("Categories", out var catsProp)
+    var categories = root.TryGetProperty("Categories", out var catsProp)
         ? catsProp.EnumerateArray().Select(c => c.GetString() ?? "").ToList()
         : new List<string>();
 
-    var slug = doc.RootElement.TryGetProperty("Slug", out var slugProp)
-        ? slugProp.GetString() ?? folder.Substring(_rootPath.Length + 1)
-        : folder.Substring(_rootPath.Length + 1);
-
-    var isPublished = doc.RootElement.TryGetProperty("IsPublished", out var publishedProp)
-        ? publishedProp.GetBoolean()
-        : true;
-
-    DateTime? scheduledDate = null;
-    if (doc.RootElement.TryGetProperty("ScheduledDate", out var schedProp) && schedProp.ValueKind != JsonValueKind.Null && schedProp.ValueKind != JsonValueKind.Undefined)
-    {
-      scheduledDate = schedProp.GetDateTime();
-    }
+    var images = root.TryGetProperty("Images", out var imagesProp)
+        ? imagesProp.EnumerateArray().Select(i => i.GetString() ?? "").ToList()
+        : new List<string>();
 
     var body = File.ReadAllText(bodyPath);
 
-    return new Post(title, description, body, author, publishedDate, lastModified ?? publishedDate, tags, categories, slug, isPublished, scheduledDate);
+    var post = new Post(title, description, body, author, publishedDate, lastModified, tags, categories, slug, isPublished, scheduledDate);
+    post.Images = images;
+
+    return post;
   }
 
-  public void CreatePost(CreatePostRequest request, string authorUsername)
+  public async Task<dynamic> CreatePostAsync(CreatePostRequest request, string authorUsername)
   {
+    if (SlugExists(request.CustomUrl ?? request.Title.Replace(" ", "-").ToLowerInvariant()))
+      throw new Exception("A post with the same slug already exists.");
+
     var date = DateTime.UtcNow;
     var slug = request.CustomUrl ?? request.Title.Replace(" ", "-").ToLowerInvariant();
     var folder = Path.Combine(_rootPath, $"{date:yyyy-MM-dd}-{slug}");
 
-    // Check for slug collision
-    if (Directory.GetDirectories(_rootPath).Any(d => d.EndsWith(slug, StringComparison.OrdinalIgnoreCase)))
-      throw new Exception("A post with the same slug already exists.");
-
     Directory.CreateDirectory(folder);
-    Directory.CreateDirectory(Path.Combine(folder, "assets"));
+    var assetsDirectory = Path.Combine(folder, "assets");
+    Directory.CreateDirectory(assetsDirectory);
+
+    var savedImages = new List<string>();
+
+    if (request.Images != null && request.Images.Count > 0)
+    {
+      foreach (var image in request.Images)
+      {
+        if (image.Length > 0)
+        {
+          var fileName = Path.GetFileName(image.FileName);
+          fileName = string.Join("_", fileName.Split(Path.GetInvalidFileNameChars()));
+
+          string uniqueFileName = fileName;
+          int counter = 1;
+          while (File.Exists(Path.Combine(assetsDirectory, uniqueFileName)))
+          {
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+            string extension = Path.GetExtension(fileName);
+            uniqueFileName = $"{fileNameWithoutExt}_{counter++}{extension}";
+          }
+
+          var filePath = Path.Combine(assetsDirectory, uniqueFileName);
+          using (var stream = new FileStream(filePath, FileMode.Create))
+          {
+            await image.CopyToAsync(stream);
+          }
+
+          savedImages.Add($"/assets/{uniqueFileName}");
+        }
+      }
+    }
+    if (request.ScheduledDate != null)
+    {
+      request.IsPublished = false;
+      request.ScheduledDate = request.ScheduledDate.Value.ToUniversalTime();
+    }
 
     var postMeta = new
     {
       request.Title,
       request.Description,
-      request.Body,
       request.CustomUrl,
       AuthorUsername = authorUsername,
       Tags = request.Tags,
       Categories = request.Categories,
       PublishedDate = date,
-      ModifiedDate = date,
+      ModifiedDate = (DateTime?)null,
       Slug = slug,
-      IsPublished = request.IsPublished, // Will default to false if not provided, adjust here if needed
-      ScheduledDate = request.ScheduledDate
+      IsPublished = request.IsPublished,
+      ScheduledDate = request.ScheduledDate,
+      Images = savedImages
     };
 
     var meta = JsonSerializer.Serialize(postMeta, new JsonSerializerOptions { WriteIndented = true });
-    File.WriteAllText(Path.Combine(folder, "meta.json"), meta);
-    File.WriteAllText(Path.Combine(folder, "content.md"), request.Body);
+    await File.WriteAllTextAsync(Path.Combine(folder, "meta.json"), meta);
+    await File.WriteAllTextAsync(Path.Combine(folder, "content.md"), request.Body);
+
+    return new
+    {
+      Id = folder,
+      Slug = slug,
+      Date = date,
+      Title = request.Title,
+      Description = request.Description,
+      Body = request.Body,
+      AuthorUsername = authorUsername,
+      Tags = request.Tags,
+      Categories = request.Categories,
+      PublishedDate = date,
+      IsPublished = request.IsPublished,
+      ScheduledDate = request.ScheduledDate,
+      Images = savedImages.Select(img => $"/{date:yyyy-MM-dd}-{slug}{img}")
+    };
   }
 
-  public bool ModifyPost(string slug, CreatePostRequest updatedData, string currentUsername, out string message)
+  private bool SlugExists(string slug)
+  {
+    foreach (var dir in Directory.GetDirectories(_rootPath))
+    {
+      var post = LoadPost(dir);
+      if (post != null && post.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase))
+        return true;
+    }
+    return false;
+  }
+
+  public async Task<(bool Success, string Message)> ModifyPostAsync(string slug, CreatePostRequest updatedData, string currentUsername)
   {
     var folder = Directory.GetDirectories(_rootPath)
         .FirstOrDefault(dir => dir.EndsWith(slug, StringComparison.OrdinalIgnoreCase));
 
     if (folder == null)
-    {
-      message = "Post not found.";
-      return false;
-    }
+      return (false, "Post not found.");
 
     var metaPath = Path.Combine(folder, "meta.json");
     var bodyPath = Path.Combine(folder, "content.md");
+    var assetsDirectory = Path.Combine(folder, "assets");
 
     if (!File.Exists(metaPath) || !File.Exists(bodyPath))
-    {
-      message = "Post files are missing or corrupted.";
-      return false;
-    }
+      return (false, "Post files are missing or corrupted.");
 
-    var metaJson = File.ReadAllText(metaPath);
+    var metaJson = await File.ReadAllTextAsync(metaPath);
     using var doc = JsonDocument.Parse(metaJson);
     var root = doc.RootElement;
 
     var authorUsername = root.GetProperty("AuthorUsername").GetString();
     var publishedDate = root.GetProperty("PublishedDate").GetDateTime();
-    var lastModified = DateTime.UtcNow;
 
     if (!string.Equals(authorUsername, currentUsername, StringComparison.OrdinalIgnoreCase))
+      return (false, "Unauthorized: only the author can modify this post.");
+
+    var existingImages = root.TryGetProperty("Images", out var imagesArray)
+        ? imagesArray.EnumerateArray().Select(i => i.GetString() ?? "").Where(i => !string.IsNullOrEmpty(i)).ToList()
+        : new List<string>();
+
+    if (updatedData.Images != null && updatedData.Images.Count > 0)
     {
-      message = "Unauthorized: only the author can modify this post.";
-      return false;
+      if (!Directory.Exists(assetsDirectory))
+        Directory.CreateDirectory(assetsDirectory);
+
+      foreach (var image in updatedData.Images)
+      {
+        if (image.Length > 0)
+        {
+          var fileName = Path.GetFileName(image.FileName);
+          fileName = string.Join("_", fileName.Split(Path.GetInvalidFileNameChars()));
+
+          string uniqueFileName = fileName;
+          int counter = 1;
+          while (File.Exists(Path.Combine(assetsDirectory, uniqueFileName)))
+          {
+            string fileNameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
+            string extension = Path.GetExtension(fileName);
+            uniqueFileName = $"{fileNameWithoutExt}_{counter++}{extension}";
+          }
+
+          var filePath = Path.Combine(assetsDirectory, uniqueFileName);
+          using (var stream = new FileStream(filePath, FileMode.Create))
+          {
+            await image.CopyToAsync(stream);
+          }
+
+          existingImages.Add($"/assets/{uniqueFileName}");
+        }
+      }
     }
 
-    // Preserve old values if not provided in update
     var title = string.IsNullOrWhiteSpace(updatedData.Title) ? root.GetProperty("Title").GetString() : updatedData.Title;
     var description = string.IsNullOrWhiteSpace(updatedData.Description) ? root.GetProperty("Description").GetString() : updatedData.Description;
     var customUrl = string.IsNullOrWhiteSpace(updatedData.CustomUrl) ? root.GetProperty("CustomUrl").GetString() : updatedData.CustomUrl;
@@ -202,113 +308,124 @@ public class BlogPostService
         ? root.GetProperty("Categories").EnumerateArray().Select(c => c.GetString() ?? "").ToList()
         : updatedData.Categories;
 
-    var isPublished = updatedData.IsPublished;
+    var isPublished = updatedData.IsPublished ?? (root.TryGetProperty("IsPublished", out var publishedProp) && publishedProp.GetBoolean());
 
-    if (updatedData.IsPublished == null)
-    {
-      if (root.TryGetProperty("IsPublished", out var publishedProp))
-        isPublished = publishedProp.GetBoolean();
-      else
-        isPublished = true; // Default to true if completely missing
-    }
-
-    DateTime? scheduledDate = null;
-
-    if (updatedData.ScheduledDate.HasValue)
-    {
-      scheduledDate = updatedData.ScheduledDate;
-    }
-    else if (root.TryGetProperty("ScheduledDate", out var schedProp) && schedProp.ValueKind != JsonValueKind.Null && schedProp.ValueKind != JsonValueKind.Undefined)
-    {
+    DateTime? scheduledDate = updatedData.ScheduledDate;
+    if (!scheduledDate.HasValue && root.TryGetProperty("ScheduledDate", out var schedProp) && schedProp.ValueKind != JsonValueKind.Null)
       scheduledDate = schedProp.GetDateTime();
-    }
 
     var updatedMeta = new
     {
       Title = title,
       Description = description,
-      Body = updatedData.Body ?? File.ReadAllText(bodyPath),
       CustomUrl = customUrl,
       AuthorUsername = authorUsername,
       Tags = tags,
       Categories = categories,
       PublishedDate = publishedDate,
-      ModifiedDate = lastModified,
+      ModifiedDate = DateTime.UtcNow,
       Slug = slug,
       IsPublished = isPublished,
-      ScheduledDate = scheduledDate
+      ScheduledDate = scheduledDate,
+      Images = existingImages
     };
 
     var newMeta = JsonSerializer.Serialize(updatedMeta, new JsonSerializerOptions { WriteIndented = true });
-    File.WriteAllText(metaPath, newMeta);
+    await File.WriteAllTextAsync(metaPath, newMeta);
 
-    // Update body only if a new one was provided
     if (!string.IsNullOrWhiteSpace(updatedData.Body))
-      File.WriteAllText(bodyPath, updatedData.Body);
+      await File.WriteAllTextAsync(bodyPath, updatedData.Body);
 
-    message = "Post updated successfully.";
-    return true;
+    return (true, "Post updated successfully.");
   }
-  public bool PublishPost(string slug, string currentUsername, out string message)
+
+  public async Task<(bool Success, string Message)> PublishPostAsync(string slug, string currentUsername)
   {
     var folder = Directory.GetDirectories(_rootPath)
         .FirstOrDefault(dir => dir.EndsWith(slug, StringComparison.OrdinalIgnoreCase));
 
     if (folder == null)
-    {
-      message = "Post not found.";
-      return false;
-    }
+      return (false, "Post not found.");
 
     var metaPath = Path.Combine(folder, "meta.json");
 
     if (!File.Exists(metaPath))
-    {
-      message = "Post metadata is missing.";
-      return false;
-    }
+      return (false, "Post metadata is missing.");
 
-    var metaJson = File.ReadAllText(metaPath);
+    var metaJson = await File.ReadAllTextAsync(metaPath);
     using var doc = JsonDocument.Parse(metaJson);
     var root = doc.RootElement;
 
     var authorUsername = root.GetProperty("AuthorUsername").GetString();
     if (!string.Equals(authorUsername, currentUsername, StringComparison.OrdinalIgnoreCase))
+      return (false, "Unauthorized: only the author can publish this post.");
+
+    if (root.TryGetProperty("ScheduledDate", out var schedProp) && schedProp.ValueKind != JsonValueKind.Null)
     {
-      message = "Unauthorized: only the author can publish this post.";
-      return false;
+      var scheduledDate = schedProp.GetDateTime();
+
+      if (scheduledDate.ToUniversalTime() > DateTime.UtcNow)
+      {
+        return (false, "Cannot publish a scheduled post before its scheduled time.");
+      }
     }
 
     var publishedDate = root.GetProperty("PublishedDate").GetDateTime();
-    var lastModified = DateTime.UtcNow;
 
-    // Only allow publish if not scheduled
-    if (root.TryGetProperty("ScheduledDate", out var schedProp) && schedProp.ValueKind != JsonValueKind.Null && schedProp.ValueKind != JsonValueKind.Undefined)
-    {
-      message = "Cannot publish a scheduled post directly.";
-      return false;
-    }
+    var existingImages = root.TryGetProperty("Images", out var imagesProp)
+        ? imagesProp.EnumerateArray().Select(i => i.GetString() ?? "").Where(i => !string.IsNullOrEmpty(i)).ToList()
+        : new List<string>();
 
     var updatedMeta = new
     {
       Title = root.GetProperty("Title").GetString(),
       Description = root.GetProperty("Description").GetString(),
-      Body = root.GetProperty("Body").GetString(),
       CustomUrl = root.GetProperty("CustomUrl").GetString(),
       AuthorUsername = authorUsername,
       Tags = root.GetProperty("Tags").EnumerateArray().Select(t => t.GetString() ?? "").ToList(),
       Categories = root.GetProperty("Categories").EnumerateArray().Select(c => c.GetString() ?? "").ToList(),
       PublishedDate = publishedDate,
-      ModifiedDate = lastModified,
+      ModifiedDate = DateTime.UtcNow,
       Slug = slug,
-      IsPublished = true
+      IsPublished = true,
+      ScheduledDate = null as DateTime?,
+      Images = existingImages
     };
 
     var newMeta = JsonSerializer.Serialize(updatedMeta, new JsonSerializerOptions { WriteIndented = true });
-    File.WriteAllText(metaPath, newMeta);
+    await File.WriteAllTextAsync(metaPath, newMeta);
 
-    message = "Post published successfully.";
-    return true;
+    return (true, "Post published successfully.");
   }
 
+  public async Task<bool> DeletePostAsync(string slug)
+  {
+    var folder = Directory.GetDirectories(_rootPath)
+        .FirstOrDefault(dir => dir.EndsWith(slug, StringComparison.OrdinalIgnoreCase));
+
+    if (folder == null)
+      return false;
+
+    try
+    {
+      await Task.Run(() => Directory.Delete(folder, true));
+      return true;
+    }
+    catch
+    {
+      return false;
+    }
+  }
+
+  public IEnumerable<Post> GetAllPostsIncludingDrafts()
+  {
+    if (!Directory.Exists(_rootPath)) yield break;
+
+    foreach (var dir in Directory.GetDirectories(_rootPath, "*", SearchOption.AllDirectories))
+    {
+      var post = LoadPost(dir);
+      if (post != null)
+        yield return post;
+    }
+  }
 }

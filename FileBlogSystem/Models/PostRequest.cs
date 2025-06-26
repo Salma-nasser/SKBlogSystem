@@ -10,5 +10,6 @@ public class CreatePostRequest
   public string CustomUrl { get; set; } = string.Empty;
   public bool? IsPublished { get; set; } = false;
   public DateTime? ScheduledDate { get; set; }
+  public List<IFormFile>? Images { get; set; }
 
 }

@@ -1,4 +1,5 @@
 using System.IO;
+using System.Security.Claims;
 using System.Text.Json;
 using FileBlogSystem.Models;
 
@@ -10,21 +11,15 @@ public class UserService
   private readonly PasswordService _passwordService;
   private readonly JwtService _jwtService;
 
-  public UserService(PasswordService passwordService, JwtService jwtService, IConfiguration configuration)
+  public UserService(PasswordService passwordService, JwtService jwtService, IConfiguration configuration, IWebHostEnvironment env)
   {
     _passwordService = passwordService;
     _jwtService = jwtService;
 
     // Get content directory from configuration
-    string? contentRoot = configuration["ContentDirectory"];
+    string? contentRoot = configuration["ContentDirectory"] ?? "Content";
 
-    // If not configured, fall back to project root
-    if (string.IsNullOrEmpty(contentRoot))
-    {
-      contentRoot = "c:\\Users\\salma\\Desktop\\SK_BlogSystem\\FileBlogSystem\\Content";
-    }
-
-    string usersDirectoryPath = Path.Combine(contentRoot, "users");
+    string usersDirectoryPath = Path.Combine(env.ContentRootPath, contentRoot, "users");
 
     Console.WriteLine($"Users directory path: {usersDirectoryPath}");
 
@@ -34,8 +29,6 @@ public class UserService
       Directory.CreateDirectory(usersDirectoryPath);
     }
     _usersDirectory = new DirectoryInfo(usersDirectoryPath);
-    // Add to UserService constructor
-    Console.WriteLine($"Creating users directory at: {Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "content", "users")}");
   }
 
   public async Task<IResult> LoginUser(string username, string password)
@@ -152,30 +145,6 @@ public class UserService
       user = publicUser
     });
   }
-
-  // public async Task<string> SaveFileToUserDirectory(string username, string fileName, byte[] fileContent)
-  // {
-  //   string userDirectoryPath = CreateUserDirectory(username);
-
-  //   string filePath = Path.Combine(userDirectoryPath, fileName);
-
-  //   await File.WriteAllBytesAsync(filePath, fileContent);
-
-  //   return filePath;
-  // }
-
-  // public async Task<string> SaveTextFileToUserDirectory(string username, string fileName, string content)
-  // {
-  //   string userDirectoryPath = CreateUserDirectory(username);
-
-  //   string filePath = Path.Combine(userDirectoryPath, fileName);
-
-  //   await File.WriteAllTextAsync(filePath, content);
-
-  //   return filePath;
-  // }
-
-  // Check if a user directory exists
   public bool UserDirectoryExists(string username)
   {
     string sanitizedUsername = SanitizeDirectoryName(username);
@@ -271,4 +240,48 @@ public class UserService
 
     return Results.Ok(publicUser);
   }
+  public bool IsAdmin(ClaimsPrincipal user)
+  {
+    return user.IsInRole("Admin") || user.Claims.Any(c => c.Type == ClaimTypes.Role && c.Value == "Admin");
+  }
+  public async Task<IResult> PromoteUserToAdmin(string targetUsername, string requestedBy)
+  {
+    if (!UserDirectoryExists(targetUsername))
+    {
+      return Results.NotFound(new { message = "User not found." });
+    }
+
+    if (targetUsername.Equals(requestedBy, StringComparison.OrdinalIgnoreCase))
+    {
+      return Results.BadRequest(new { message = "You cannot promote yourself." });
+    }
+
+    string sanitizedUsername = SanitizeDirectoryName(targetUsername);
+    string profilePath = Path.Combine(_usersDirectory.FullName, sanitizedUsername, "profile.json");
+
+    if (!File.Exists(profilePath))
+    {
+      return Results.NotFound(new { message = "User profile not found." });
+    }
+
+    string profileJson = await File.ReadAllTextAsync(profilePath);
+    var user = JsonSerializer.Deserialize<User>(profileJson);
+
+    if (user == null)
+    {
+      return Results.Problem("Invalid user profile data", statusCode: StatusCodes.Status500InternalServerError);
+    }
+
+    if (user.Role == "Admin")
+    {
+      return Results.BadRequest(new { message = "User is already an admin." });
+    }
+
+    user.Role = "Admin";
+
+    await File.WriteAllTextAsync(profilePath, JsonSerializer.Serialize(user, new JsonSerializerOptions { WriteIndented = true }));
+
+    return Results.Ok(new { message = $"{targetUsername} has been promoted to Admin." });
+  }
+
 }

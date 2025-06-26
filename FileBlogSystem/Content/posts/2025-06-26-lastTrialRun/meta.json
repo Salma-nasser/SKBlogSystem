@@ -1,0 +1,19 @@
+{
+  "Title": "hello",
+  "Description": "trying a new draft",
+  "CustomUrl": "lastTrialRun",
+  "AuthorUsername": "Salma",
+  "Tags": [
+    "trials"
+  ],
+  "Categories": [
+    "draft",
+    "Testing"
+  ],
+  "PublishedDate": "2025-06-26T00:41:26.648602Z",
+  "ModifiedDate": "2025-06-26T00:41:33.2906911Z",
+  "Slug": "lastTrialRun",
+  "IsPublished": true,
+  "ScheduledDate": null,
+  "Images": []
+}

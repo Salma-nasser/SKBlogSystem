@@ -15,6 +15,6 @@ public class JwtMiddleware
         var token = context.Request.Headers["Authorization"].FirstOrDefault();
         Console.WriteLine($"🔐 Token received: {token}");
 
-        await _next(context); // Pass control to the next middleware
+        await _next(context);
     }
 }
