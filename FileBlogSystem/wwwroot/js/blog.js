@@ -44,7 +44,7 @@ function loadPosts() {
   const searchQuery =
     document.getElementById("searchInput")?.value.trim().toLowerCase() || "";
 
-  fetch("http://localhost:5000/api/posts", {
+  fetch("https://localhost:7189/api/posts", {
     headers: { Authorization: `Bearer ${token}` },
   })
     .then((res) => res.json())
@@ -99,18 +99,8 @@ function renderPosts(posts) {
 
     const title = post.Title || "Untitled";
     const description = post.Description || "No description provided.";
-    const body = post.Body || "No content available.";
-    const author = post.Author || "Anonymous";
-
-    // Show date and time
+    const author = post.AuthorUsername || "Anonymous";
     const createdAt = new Date(post.PublishedDate).toLocaleString();
-
-    // Only show "Modified" if LastModified is DIFFERENT from PublishedDate
-    let updatedAt = "";
-    if (post.LastModified && post.LastModified !== post.PublishedDate) {
-      updatedAt = new Date(post.LastModified).toLocaleString();
-    }
-
     const tags = post.Tags.join(", ") || "No tags";
     const categories = post.Categories.join(", ") || "No categories";
     const scheduledDate = post.ScheduledDate
@@ -122,19 +112,14 @@ function renderPosts(posts) {
     const dateOnly = new Date(post.PublishedDate).toISOString().split("T")[0];
 
     if (post.Images && post.Images.length > 0) {
-      imageHtml = post.Images.map(
-        (imgUrl) =>
-          `<img src="http://localhost:5000/Content/posts/${dateOnly}-${post.Slug}${imgUrl}" alt="Post Image" class="post-image"/>`
-      ).join("");
+      imageHtml = `<img src="https://localhost:7189/Content/posts/${dateOnly}-${post.Slug}${post.Images[0]}" alt="Post Image" class="post-image" />`;
     }
 
     postCard.innerHTML = `
-      <h3>${title}</h3>
+      <h3><a href="post.html?slug=${post.Slug}">${title}</a></h3>
       <p>${description}</p>
-      <div class="post-body">${body}</div>
       ${imageHtml}
       <small>By ${author} • Created: ${createdAt}</small><br>
-      ${updatedAt ? `<small>Modified: ${updatedAt}</small><br>` : ""}
       <small>Tags: ${tags} • Categories: ${categories}</small><br>
       ${
         scheduledDate
@@ -205,7 +190,7 @@ document
     }
 
     try {
-      const res = await fetch("http://localhost:5000/api/posts/create", {
+      const res = await fetch("https://localhost:7189/api/posts/create", {
         method: "POST",
         headers: {
           // Don't set Content-Type here - FormData will set it automatically with boundary
@@ -274,7 +259,7 @@ document.getElementById("saveDraftBtn")?.addEventListener("click", async () => {
   }
 
   try {
-    const res = await fetch("http://localhost:5000/api/posts/create", {
+    const res = await fetch("https://localhost:7189/api/posts/create", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -340,7 +325,7 @@ document
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/posts/blog-modify/${slug}`,
+        `https://localhost:7189/api/posts/blog-modify/${slug}`,
         {
           method: "PUT",
           headers: { Authorization: `Bearer ${token}` },

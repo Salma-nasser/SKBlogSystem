@@ -46,7 +46,7 @@ if (registerForm) {
     const password = registerPasswordInput.value;
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/register", {
+      const response = await fetch("https://localhost:7189/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -104,20 +104,27 @@ if (loginForm) {
     const password = loginPasswordInput.value;
 
     try {
-      const response = await fetch("http://localhost:5000/api/auth/login", {
+      const response = await fetch("https://localhost:7189/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ Username: username, Password: password }),
       });
 
-      const data = await response.json();
-
       if (response.ok) {
-        localStorage.setItem("jwtToken", data.token); // Store securely
-        localStorage.setItem("username", username); // Store username
+        const data = await response.json();
+        localStorage.setItem("jwtToken", data.token);
+        localStorage.setItem("username", username);
         window.location.href = "blog.html";
       } else {
-        alert("Login failed: " + data.message);
+        let errorMessage = "Login failed.";
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          // The response is not JSON (probably HTML)
+          errorMessage = `Server returned a non-JSON response: ${response.statusText}`;
+        }
+        alert(errorMessage);
       }
     } catch (err) {
       alert("Something went wrong: " + err.message);

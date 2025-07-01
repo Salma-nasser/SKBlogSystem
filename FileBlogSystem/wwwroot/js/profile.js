@@ -36,7 +36,7 @@ function loadUserData() {
 function loadUserDrafts() {
   const token = localStorage.getItem("jwtToken");
 
-  fetch("http://localhost:5000/api/posts/drafts", {
+  fetch("https://localhost:7189/api/posts/drafts", {
     headers: { Authorization: `Bearer ${token}` },
   })
     .then((res) => res.json())
@@ -97,7 +97,7 @@ document.addEventListener("click", async (e) => {
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/posts/publish/${slug}`,
+        `https://localhost:7189/api/posts/publish/${slug}`,
         {
           method: "PUT",
           headers: { Authorization: `Bearer ${token}` },
@@ -123,7 +123,7 @@ document.addEventListener("click", async (e) => {
 function loadDraftDetails(slug) {
   const token = localStorage.getItem("jwtToken");
 
-  fetch(`http://localhost:5000/api/posts/${slug}`, {
+  fetch(`https://localhost:7189/api/posts/${slug}`, {
     headers: { Authorization: `Bearer ${token}` },
   })
     .then((res) => res.json())
@@ -174,7 +174,7 @@ document
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/posts/modify/${slug}`,
+        `https://localhost:7189/api/posts/modify/${slug}`,
         {
           method: "PUT",
           headers: {

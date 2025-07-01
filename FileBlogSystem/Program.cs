@@ -1,31 +1,28 @@
 using FileBlogSystem.Endpoints;
-using FileBlogSystem.Models;
-using FileBlogSystem.Middleware;
 using FileBlogSystem.Services;
+using FileBlogSystem.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.FileProviders;
-using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configure JSON options
+// JSON
 builder.Services.Configure<JsonOptions>(options =>
 {
   options.SerializerOptions.PropertyNamingPolicy = null;
   options.SerializerOptions.WriteIndented = true;
 });
 
-//  Service registration
+// Services
 builder.Services.AddScoped<PasswordService>();
-builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<JwtService>();
-builder.Services.AddScoped<BlogPostService>();
+builder.Services.AddScoped<IBlogPostService, BlogPostService>();
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddHostedService<ScheduledPostPublisher>();
 
-
-//  Authentication setup
+// Auth
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -34,70 +31,56 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
       options.TokenValidationParameters = jwtService.GetTokenValidationParameters();
     });
 
-//  CORS policy
+// CORS
 builder.Services.AddCors(options =>
 {
   options.AddPolicy("AllowFrontend", policy =>
   {
-    policy.WithOrigins("http://localhost:5500", "http://127.0.0.1:5500")
+    policy.WithOrigins("https://localhost:7189", "http://localhost:5500")
             .AllowAnyHeader()
             .AllowAnyMethod();
   });
 });
 
 builder.Services.AddAuthorization();
-builder.Services.AddRouting();
-
 builder.Services.Configure<FormOptions>(options =>
 {
-  // Set up any form limits you need
-  options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10MB limit for uploads
+  options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10MB limit
 });
-
-// Replace your existing antiforgery services with this
-if (builder.Environment.IsDevelopment())
-{
-  // For development only - disable antiforgery
-  builder.Services.AddAntiforgery(options => options.SuppressXFrameOptionsHeader = true);
-}
 
 var app = builder.Build();
 
-//  Middleware pipeline
-app.UseRouting();
-app.UseCors("AllowFrontend");
-app.UseMiddleware<JwtMiddleware>();
-app.UseAuthentication();
-app.UseAuthorization();
-app.UseAntiforgery();
+// Pipeline
+app.UseHttpsRedirection();
+
+// Static Files for wwwroot
+app.UseDefaultFiles(new DefaultFilesOptions
+{
+  DefaultFileNames = { "login.html" }
+});
 app.UseStaticFiles();
+
+// Static Files for posts
 app.UseStaticFiles(new StaticFileOptions
 {
   FileProvider = new PhysicalFileProvider(
-        Path.Combine(builder.Environment.ContentRootPath,"Content", "posts")),
+        Path.Combine(builder.Environment.ContentRootPath, "Content", "posts")),
   RequestPath = "/Content/posts"
 });
 
+app.UseRouting();
+app.UseCors("AllowFrontend");
+app.UseAuthentication();
+app.UseAuthorization();
 
-
-// Configure default files - this makes login.html a default document
-var options = new DefaultFilesOptions();
-options.DefaultFileNames.Clear();
-options.DefaultFileNames.Add("login.html");
-app.UseDefaultFiles(options);
-
-// Redirect root to login explicitly (as a fallback)
-app.MapGet("/", () => Results.Redirect("/login.html"));
-
-//  Map endpoints
+// Map API endpoints
 app.MapBlogPostEndpoints();
-
 app.MapAuthEndpoints();
 
-// Only in Development, open browser automatically
+// Only in development, open browser
 if (app.Environment.IsDevelopment())
 {
-  var url = "http://localhost:5000";
+  var url = "https://localhost:7189/login.html";
   try
   {
     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo

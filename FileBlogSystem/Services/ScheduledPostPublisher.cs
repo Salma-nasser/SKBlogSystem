@@ -1,4 +1,4 @@
-using FileBlogSystem.Services;
+using FileBlogSystem.Interfaces;
 
 public class ScheduledPostPublisher : BackgroundService
 {
@@ -19,7 +19,7 @@ public class ScheduledPostPublisher : BackgroundService
       try
       {
         using var scope = _scopeFactory.CreateScope();
-        var blogService = scope.ServiceProvider.GetRequiredService<BlogPostService>();
+        var blogService = scope.ServiceProvider.GetRequiredService<IBlogPostService>();
 
         var now = DateTime.UtcNow;
         var scheduledPosts = blogService.GetAllPostsIncludingDrafts()

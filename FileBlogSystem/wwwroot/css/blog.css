@@ -312,3 +312,12 @@ form textarea {
 body.dark-mode #modeToggle {
   transform: rotate(180deg);
 }
+.tags {
+    display: inline-block;
+    background-color: #e0f7fa;
+    color: #00796b;
+    padding: 4px 8px;
+    margin: 4px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+}
