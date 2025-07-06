@@ -138,9 +138,27 @@ public static class BlogPostEndpoints
 
             return Results.Content(rss.ToString(), "application/rss+xml");
         });
+        app.MapGet("/api/posts/user", [Authorize] (HttpContext ctx, IBlogPostService service) =>
+        {
+            var username = ctx.User.Identity?.Name;
+            if (string.IsNullOrEmpty(username))
+                return Results.Unauthorized();
+
+            var posts = service.GetPostsByUser(username);
+            return Results.Ok(posts);
+        });
+
+        app.MapDelete("/api/posts/delete/{slug}", [Authorize] async (string slug, HttpContext ctx, IBlogPostService service) =>
+        {
+            var username = ctx.User.Identity?.Name;
+            if (string.IsNullOrEmpty(username))
+                return Results.Unauthorized();
+
+            var deleted = await service.DeletePostAsync(slug);
+            return deleted ? Results.Ok(new { message = "Post deleted successfully." }) : Results.NotFound(new { message = "Post not found." });
+        });
 
     }
-
     private static async Task<ParseResult> ParseFormRequest(HttpContext ctx, bool allowSchedule)
     {
         var form = await ctx.Request.ReadFormAsync();

@@ -4,7 +4,7 @@ using FileBlogSystem.Interfaces;
 
 namespace FileBlogSystem.Services;
 
-public class BlogPostService: IBlogPostService
+public class BlogPostService : IBlogPostService
 {
   private readonly string _rootPath;
 
@@ -127,6 +127,26 @@ public class BlogPostService: IBlogPostService
     }
   }
 
+  public IEnumerable<Post> GetPostsByUser(string username)
+  {
+    if (!Directory.Exists(_rootPath)) yield break;
+
+    foreach (var dir in Directory.GetDirectories(_rootPath, "*", SearchOption.AllDirectories))
+    {
+      Post? post = null;
+      try
+      {
+        post = LoadPost(dir);
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"Error loading post from {dir}: {ex.Message}");
+      }
+
+      if (post != null && post.Author.Equals(username, StringComparison.OrdinalIgnoreCase) && post.IsPublished)
+        yield return post;
+    }
+  }
   private Post? LoadPost(string folder)
   {
     try

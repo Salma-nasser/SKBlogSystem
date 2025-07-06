@@ -6,10 +6,19 @@
     <link rel="stylesheet" href="css/auth.css" />
     <script src="js/auth.js" defer></script>
   </head>
-<body> 
-  <div class="register-box">
-      <h2>Register</h2>
-      <form  id = "RegisterForm">
+<body>
+  <div class="page-wrapper">
+    <header class="top-banner">
+      <div class="banner-content">
+        <h1 class="blog-name">MyBlog</h1>
+        <a href="login.html" class="login-link">Sign in</a>
+      </div>
+    </header>
+
+    <main class="content-area">
+      <div class="register-box">
+        <h2>Register</h2>
+        <form id="RegisterForm">
           <input type="email" id="email" placeholder="Email" required />
           <input type="text" id="username" placeholder="Username" required />
             <div id="passwordWrapper" style="position: relative;">
@@ -32,6 +41,10 @@
   </p>
       <p id="errorMessage" style="display: none; color: red; text-align: center;">
     </p>
-</div>
+      </div>
+    </main>
+    <button id="modeToggle" title="Toggle dark mode">🌓</button>
+
+  </div>
 </body>
     </html>

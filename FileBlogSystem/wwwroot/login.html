@@ -7,23 +7,38 @@
     <script src="js/auth.js" defer></script>
   </head>
   <body>
-
-    <div class="login-box">
-      <h2>Login</h2>
-      <form id="LoginForm">
-        <input type="text" id="username" placeholder="Username" required />
-        <div class="password-wrapper">
-          <input type="password" id="loginPassword" placeholder="Password" required />
-          <span id="toggleLoginPassword">👁️</span>
+    <div class="page-wrapper">
+      <header class="top-banner">
+        <div class="banner-content">
+          <h1 class="blog-name">MyBlog</h1>
+          <a href="register.html" class="login-link">Register</a>
         </div>
+      </header>
+      <main class="content-area">
+        <div class="login-box">
+          <h2>Login</h2>
+          <form id="LoginForm">
+            <input type="text" id="username" placeholder="Username" required />
+            <div class="password-wrapper">
+              <input type="password" id="loginPassword" placeholder="Password" required />
+              <span id="toggleLoginPassword">👁️</span>
+            </div>
 
-        <button type="submit">Login</button>
-        <p id="loginSuccess" class="success-message">Login successful!</p>
-      </form>
-      <p class="account-switch">
-      Don't have an account?
-      <a href="register.html">Register</a>
-    </p>
+            <button type="submit">Login</button>
+            <p id="loginSuccess" class="success-message">Login successful!</p>
+          </form>
+          <p class="account-switch">
+          Don't have an account?
+          <a href="register.html">Register Now</a>
+          </p>
+          <p id="successMessage" style="display: none; color: green; text-align: center;">
+          Registration successful!
+          </p>
+          <p id="errorMessage" style="display: none; color: red; text-align: center;"></p>
+        </div>
+      </main>
+      <button id="modeToggle" title="Toggle dark mode">🌓</button>
+
     </div>
   </body>
 </html>

@@ -20,9 +20,16 @@
   <div id="messageBanner" class="hidden"></div>
 
   <div class="search-container">
-  <input type="text" id="searchInput" placeholder="Search posts..." />
-  <i class="fas fa-search search-icon"></i>
-</div>
+    <div class="input-wrapper">
+      <input type="text" id="searchInput" placeholder="Search posts...">
+    </div>
+    <div class="button-wrapper">
+      <button id="clearFilterBtn">Show All Posts</button>
+    </div>
+  </div>
+
+
+<div id="postsContainer"></div>
 
 
   <main id="postsContainer">
@@ -92,6 +99,6 @@
     <button id="nextPage">Next</button>
   </div>
 
-  <script src="js/blog.js"></script>
+  <script type="module" src="js/blog.js"></script>
 </body>
 </html>

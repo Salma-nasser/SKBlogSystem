@@ -14,5 +14,8 @@ namespace FileBlogSystem.Interfaces
         Task<(bool Success, string Message)> PublishPostAsync(string slug, string currentUsername);
         Task<bool> DeletePostAsync(string slug);
         IEnumerable<Post> GetAllPostsIncludingDrafts();
+
+        IEnumerable<Post> GetPostsByUser(string username);
+        
     }
 }

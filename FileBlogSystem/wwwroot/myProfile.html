@@ -1,0 +1,53 @@
+<body>
+  <header>
+    <h1>Your Profile</h1>
+    <div class="header-actions">
+      <button id="profileBtn">Modify Profile</button>
+      <button id="backToBlogBtn">Back to Blog</button>
+      <button id="logoutBtn">Logout</button>
+      <link rel="stylesheet" href="css/myProfile.css" />
+    </div>
+  </header>
+
+  <nav class="profile-nav">
+    <button data-tab="published" class="active">Published Posts</button>
+    <button data-tab="drafts">Drafts & Scheduled</button>
+  </nav>
+
+  <main>
+    <!-- PUBLISHED POSTS -->
+    <section id="publishedSection" class="tab-content">
+      <h2>Published Posts</h2>
+      <div id="publishedContainer" class="posts-grid"></div>
+    </section>
+
+    <!-- DRAFTS & SCHEDULED POSTS -->
+    <section id="draftsSection" class="tab-content hidden">
+      <h2>Your Drafts &amp; Scheduled Posts</h2>
+      <div id="draftsContainer" class="posts-grid"></div>
+    </section>
+  </main>
+
+  <div id="modifyPostModal" class="modal hidden"> 
+    <div class="modal-content"> 
+      <span class="close" id="closeModifyModal">&times;</span>
+      <h2>Modify Draft</h2> 
+      <form id="modifyPostForm">
+        <input type="text" name="modifyTitle" id="modifyTitle" placeholder="Title" required />
+        <input type="text" name="modifyDescription" id="modifyDescription" placeholder="Description" required /> 
+        <textarea name="modifyBody" id="modifyBody" placeholder="Edit your Markdown content..." required></textarea> 
+        <input type="text" name="modifyCustomUrl" id="modifyCustomUrl" placeholder="Custom URL (optional)" /> 
+        <input type="text" name="modifyTags" id="modifyTags" placeholder="Tags (comma separated)" /> 
+        <input type="text" name="modifyCategories" id="modifyCategories" placeholder="Categories (comma separated)" /> 
+        <label for="modifyScheduledDate">Scheduled Date:</label> 
+        <input type="datetime-local" name="modifyScheduledDate" id="modifyScheduledDate" /> 
+        <label for="modifyImages">Upload Image:</label> 
+        <input type="file" name="modifyImages" id="modifyImages" multiple /> 
+        <input type="hidden" name="postSlug" id="postSlug" /> 
+        <button type="submit">Save Changes</button> 
+      </form> 
+    </div> 
+  </div>
+
+  <script type="module" src="js/myProfile.js"></script>
+</body>

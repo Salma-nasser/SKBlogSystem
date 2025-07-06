@@ -1,7 +1,6 @@
-/* Reset & Base Styles */
 body {
   margin: 0;
-  font-family: 'Segoe UI', sans-serif;
+  font-family: "Segoe UI", sans-serif;
   background-color: var(--bg-color);
   color: var(--text-color);
   transition: background-color 0.3s ease, color 0.3s ease;
@@ -37,7 +36,7 @@ header {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background-color: var(--header-bg);
+  background-color: var(--button-bg);
   color: var(--header-text);
   box-shadow: 0 2px 6px var(--header-shadow);
 }
@@ -71,6 +70,15 @@ main {
   margin: 0 auto;
 }
 
+#postsContainer {
+  display: flex;
+  flex-wrap: wrap; /* allow multiple cards on a row */
+  justify-content: center; /* center horizontally */
+  gap: 20px; /* space between cards */
+  margin: 0 auto; /* center container if it has a max-width */
+  padding: 20px;
+}
+
 .post-card {
   padding: 20px;
   border: 1px solid #ddd;
@@ -90,13 +98,41 @@ main {
   box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
-.post-image {
-  max-width: 100%;
-  max-height: 300px;
-  object-fit: cover;
-  border-radius: 10px;
-  display: block;
-  margin: 10px auto;
+.post-images {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.post-images img {
+  cursor: pointer;
+  border-radius: 8px;
+  transition: transform 0.2s ease;
+}
+
+/* When there's 1 image: make it large */
+.post-images-1 img {
+  max-width: 80%;
+}
+
+/* When there are 2 images: make them medium */
+.post-images-2 img {
+  max-width: 45%;
+}
+
+/* When there are 3 or more images: make them smaller */
+.post-images-3 img,
+.post-images-4 img,
+.post-images-5 img,
+.post-images-6 img {
+  max-width: 30%;
+}
+
+/* Optional: hover effect */
+.post-images img:hover {
+  transform: scale(1.05);
 }
 
 .post-card h3 {
@@ -194,7 +230,8 @@ main {
 }
 
 /* Form Styling */
-form input, form textarea {
+form input,
+form textarea {
   display: block;
   width: 100%;
   margin-bottom: 1rem;
@@ -251,32 +288,54 @@ form textarea {
 }
 
 .search-container {
-  position: relative;
-  width: 350px;
-  margin: 0 auto 20px auto;
+  display: flex; /* keep items in a row */
+  justify-content: center; /* center the whole block */
+  align-items: center; /* vertical alignment */
+  margin: 0 auto 20px; /* space above and below */
+  gap: 10px; /* add some space between input and button */
+}
+
+.input-wrapper,
+.button-wrapper {
+  display: flex; /* forces children to fully obey flex alignment */
+  align-items: center; /* vertically center input and button */
 }
 
 #searchInput {
-  width: 100%;
+  width: 300px;
   height: 40px;
-  padding: 0 40px 0 10px;
+  padding: 0 10px;
   font-size: 16px;
-  border-radius: 5px;
   border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
 }
 
-.search-icon {
-  position: absolute;
-  right: 10px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #888;
+#clearFilterBtn {
+  visibility: hidden;
+  height: 40px; /* same as input */
+  padding: 0 16px;
+  font-size: 0.9rem;
+  line-height: 40px; /* align text vertically */
+  background-color: var(--accent-color);
+  color: var(--button-text);
+  border: 1px solid var(--accent-color);
+  border-radius: 4px;
   cursor: pointer;
+  box-sizing: border-box;
+  transition: background-color 0.3s ease;
+  display: flex; /* ensure text centering */
+  align-items: center; /* vertically center text */
+  justify-content: center; /* horizontally center text */
+}
+
+#clearFilterBtn:hover {
+  background-color: var(--accent-hover);
 }
 
 #modeToggle {
   position: fixed;
-  top: 20px;
+  bottom: 20px;
   right: 20px;
   width: 40px;
   height: 40px;
@@ -312,12 +371,101 @@ form textarea {
 body.dark-mode #modeToggle {
   transform: rotate(180deg);
 }
-.tags {
-    display: inline-block;
-    background-color: #e0f7fa;
-    color: #00796b;
-    padding: 4px 8px;
-    margin: 4px;
-    border-radius: 4px;
-    font-size: 0.85rem;
+.tag {
+  display: inline-block;
+  background-color: #e0f7fa;
+  color: #00796b;
+  padding: 4px 8px;
+  margin: 4px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.category {
+  display: inline-block;
+  background-color: #fce4ec;
+  color: #ad1457;
+  padding: 4px 8px;
+  margin: 4px 4px 0 0;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+
+.clickable-tag.active-filter {
+  background-color: #00796b;
+  color: #fff;
+  font-weight: bold;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.hidden {
+  display: none;
+}
+
+.modal-content {
+  position: relative;
+  background-color: transparent;
+  padding: 10px;
+  border-radius: 10px;
+  max-width: 90%;
+  max-height: 90%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content img {
+  max-width: 100%;
+  max-height: 80vh;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  cursor: zoom-in;
+}
+
+.modal-content .close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 5px 10px;
+  background-color: transparent;
+  color: white;
+  border-radius: 5px;
+}
+
+.modal-content .close:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.nav-btn {
+  cursor: pointer;
+  font-size: 18px;
+  background-color: transparent;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 5px;
+  margin: 0 10px;
+  user-select: none;
+}
+
+.nav-btn:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }
