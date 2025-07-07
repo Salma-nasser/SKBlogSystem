@@ -7,27 +7,36 @@ body {
 }
 
 :root {
-  --bg-color: #f5f0eb;
-  --text-color: #3e3e3e;
-  --accent-color: #c8b6a6;
-  --accent-hover: #b39b87;
-  --button-bg: #e6d3c5;
-  --button-text: #3e3e3e;
-  --header-bg: #f0e6dd;
-  --header-text: #3e3e3e;
-  --header-shadow: rgba(0, 0, 0, 0.08);
+  --bg-color: #fdfaf6; /* soft warm cream */
+  --text-color: #3e3e3e; /* deep neutral gray */
+  --accent-color: #c89b7b; /* soft terracotta */
+  --accent-hover: #a6765b; /* rich terracotta hover */
+  --button-bg: #8c6e63; /* soft brown button */
+  --button-text: #ffffff; /* white button text */
+  --header-bg: #bfa89a; /* muted beige header */
+  --header-text: #3e3e3e; /* header text remains dark */
+  --header-shadow: rgba(0, 0, 0, 0.1);
+  --post-bg: #ffffff; /* clean white post background */
 }
 
 body.dark-mode {
-  --bg-color: #2c2a28;
-  --text-color: #f5f0eb;
-  --accent-color: #a68c7c;
-  --accent-hover: #8c7263;
-  --button-bg: #5a4a42;
-  --button-text: #f5f0eb;
-  --header-bg: #3a322d;
-  --header-text: #f5f0eb;
-  --header-shadow: rgba(255, 255, 255, 0.06);
+  --bg-color: #3a2e2a; /* deep chocolate */
+  --text-color: #f0eae4; /* light beige text */
+  --accent-color: #d6a07b; /* warm bronze accent */
+  --accent-hover: #b67f5f; /* rich bronze hover */
+  --button-bg: #6e554a; /* muted coffee brown button */
+  --button-text: #fdfaf6; /* soft cream text */
+  --header-bg: #4f3c35; /* dark coffee header */
+  --header-text: #fdfaf6; /* light header text */
+  --header-shadow: rgba(0, 0, 0, 0.2);
+  --post-bg: #4a3a35; /* soft coffee post background */
+}
+
+body.dark-mode .post-card h3,
+body.dark-mode .post-card p,
+body.dark-mode .post-body,
+body.dark-mode .post-card small {
+  color: #f0eae4; /* light beige for dark mode text */
 }
 
 header {
@@ -202,59 +211,6 @@ main {
   background-color: #a71d2a;
 }
 
-.modal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.hidden {
-  display: none;
-}
-
-.modal-content {
-  position: relative;
-  background-color: transparent;
-  padding: 10px;
-  border-radius: 10px;
-  max-width: 90%;
-  max-height: 90%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-content img {
-  max-width: 100%;
-  max-height: 80vh;
-  border-radius: 10px;
-  transition: all 0.3s ease;
-  cursor: zoom-in;
-}
-
-.modal-content .close {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  cursor: pointer;
-  font-size: 18px;
-  padding: 5px 10px;
-  background-color: transparent;
-  color: white;
-  border-radius: 5px;
-}
-
-.modal-content .close:hover {
-  background-color: rgba(255, 255, 255, 0.1);
-}
-
 .nav-btn {
   cursor: pointer;
   font-size: 18px;
@@ -298,4 +254,140 @@ main {
   border-radius: 50%;
   margin-bottom: 1rem;
   border: 2px solid #ccc;
+}
+/* ========================= */
+/* 📸 Image Modal (Transparent) */
+/* ========================= */
+.modal.imageModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7); /* Transparent dark overlay */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal.imageModal.hidden {
+  display: none !important;
+}
+
+.modal.imageModal .modal-content {
+  background-color: transparent; /* Fully transparent background */
+  padding: 10px;
+  border-radius: 10px;
+  max-width: 90%;
+  max-height: 90%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal.imageModal .modal-content img {
+  max-width: 100%;
+  max-height: 80vh;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  cursor: zoom-in;
+}
+
+.modal.imageModal .close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+  cursor: pointer;
+}
+
+.modal.imageModal .close:hover {
+  color: var(--accent-color);
+}
+
+
+/* ========================= */
+/* 🛠️ Modify Post Modal (White Form) */
+/* ========================= */
+#modifyPostModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
+  z-index: 1000;
+}
+
+#modifyPostModal.hidden {
+  display: none !important;
+}
+
+#modifyPostModal .modal-content {
+  background: #fff; /* White background for the form */
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+#modifyPostModal .close {
+  position: absolute;
+  top: 1rem;
+  right: 1.25rem;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 🎨 Form Styling */
+#modifyPostModal form input,
+#modifyPostModal form textarea {
+  display: block;
+  width: 100%;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+  font-size: 1rem;
+  background-color: #fff; /* Ensure white inputs */
+  color: #333;
+}
+
+#modifyPostModal form textarea {
+  resize: vertical;
+  min-height: 150px;
+}
+
+#modifyPostModal form button {
+  padding: 0.5rem 1rem;
+  background-color: var(--button-bg);
+  color: var(--button-text);
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#modifyPostModal form button:hover {
+  background-color: var(--accent-hover);
 }

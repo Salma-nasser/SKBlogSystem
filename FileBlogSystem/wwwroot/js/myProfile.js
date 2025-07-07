@@ -1,5 +1,6 @@
 import { renderPosts } from "./utils/renderPost.js";
 import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
+import { initializeThemeToggle } from "./utils/themeToggle.js";
 
 window.addEventListener("DOMContentLoaded", () => {
   const publishedSection = document.getElementById("publishedSection");
@@ -34,6 +35,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const token = localStorage.getItem("jwtToken");
 
   initializeImageModal();
+  initializeThemeToggle();
 
   publishedBtn.addEventListener("click", () => switchTab("published"));
   draftsBtn.addEventListener("click", () => switchTab("drafts"));

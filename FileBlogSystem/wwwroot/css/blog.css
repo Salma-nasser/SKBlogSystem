@@ -7,27 +7,36 @@ body {
 }
 
 :root {
-  --bg-color: #f5f0eb;
-  --text-color: #3e3e3e;
-  --accent-color: #c8b6a6;
-  --accent-hover: #b39b87;
-  --button-bg: #e6d3c5;
-  --button-text: #3e3e3e;
-  --header-bg: #f0e6dd;
-  --header-text: #3e3e3e;
-  --header-shadow: rgba(0, 0, 0, 0.08);
+  --bg-color: #fdfaf6; /* soft warm cream */
+  --text-color: #3e3e3e; /* deep neutral gray */
+  --accent-color: #c89b7b; /* soft terracotta */
+  --accent-hover: #a6765b; /* rich terracotta hover */
+  --button-bg: #8c6e63; /* soft brown button */
+  --button-text: #ffffff; /* white button text */
+  --header-bg: #bfa89a; /* muted beige header */
+  --header-text: #3e3e3e; /* header text remains dark */
+  --header-shadow: rgba(0, 0, 0, 0.1);
+  --post-bg: #ffffff; /* clean white post background */
 }
 
 body.dark-mode {
-  --bg-color: #2c2a28;
-  --text-color: #f5f0eb;
-  --accent-color: #a68c7c;
-  --accent-hover: #8c7263;
-  --button-bg: #5a4a42;
-  --button-text: #f5f0eb;
-  --header-bg: #3a322d;
-  --header-text: #f5f0eb;
-  --header-shadow: rgba(255, 255, 255, 0.06);
+  --bg-color: #3a2e2a; /* deep chocolate */
+  --text-color: #f0eae4; /* light beige text */
+  --accent-color: #d6a07b; /* warm bronze accent */
+  --accent-hover: #b67f5f; /* rich bronze hover */
+  --button-bg: #6e554a; /* muted coffee brown button */
+  --button-text: #fdfaf6; /* soft cream text */
+  --header-bg: #4f3c35; /* dark coffee header */
+  --header-text: #fdfaf6; /* light header text */
+  --header-shadow: rgba(0, 0, 0, 0.2);
+  --post-bg: #4a3a35; /* soft coffee post background */
+}
+
+body.dark-mode .post-card h3,
+body.dark-mode .post-card p,
+body.dark-mode .post-body,
+body.dark-mode .post-card small {
+  color: #f0eae4; /* light beige for dark mode text */
 }
 
 header {
@@ -89,16 +98,16 @@ main {
 
 .post-card {
   padding: 20px;
-  border: 1px solid #ddd;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
-  background-color: #fff;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   max-width: 800px;
   width: 100%;
+  background-color: var(--post-bg, #fff);
+  border: 1px solid rgba(255, 255, 255, 0.1); /* subtle border for dark mode */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* soft shadow to lift the card */
 }
 
 .post-card:hover {
@@ -171,22 +180,6 @@ main {
   display: block;
   margin-bottom: 8px;
   text-align: center;
-}
-
-.modifyBtn {
-  margin-top: 10px;
-  background-color: var(--accent-color);
-  color: var(--button-text);
-  padding: 10px 15px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  align-self: center;
-  transition: background-color 0.2s ease;
-}
-
-.modifyBtn:hover {
-  background-color: var(--accent-hover);
 }
 
 /* Modal Styles */

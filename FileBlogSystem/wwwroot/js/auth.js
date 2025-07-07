@@ -1,4 +1,6 @@
-// === REGISTER password handling ===
+import { initializeThemeToggle } from "./themeToggle.js";
+
+initializeThemeToggle();
 const registerPasswordInput = document.getElementById("registerPassword");
 const toggleRegisterPassword = document.getElementById("togglePassword");
 const passwordRules = document.getElementById("passwordRules");
@@ -132,18 +134,4 @@ if (loginForm) {
   });
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-  const toggle = document.getElementById("modeToggle");
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  const savedTheme = localStorage.getItem("theme");
 
-  if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
-    document.body.classList.add("dark-mode");
-  }
-
-  toggle.addEventListener("click", () => {
-    document.body.classList.toggle("dark-mode");
-    const isDark = document.body.classList.contains("dark-mode");
-    localStorage.setItem("theme", isDark ? "dark" : "light");
-  });
-});

@@ -1,4 +1,5 @@
 import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
+import { initializeThemeToggle } from "./utils/themeToggle.js";
 
 window.addEventListener("DOMContentLoaded", async () => {
   const urlParams = new URLSearchParams(window.location.search);
@@ -11,6 +12,7 @@ window.addEventListener("DOMContentLoaded", async () => {
   }
 
   initializeImageModal();
+  initializeThemeToggle();
 
   try {
     const token = localStorage.getItem("jwtToken");

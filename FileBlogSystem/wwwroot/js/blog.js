@@ -1,5 +1,6 @@
 import { renderPosts } from "./utils/renderPost.js";
 import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
+import { initializeThemeToggle } from "./utils/themeToggle.js";
 let currentPage = 1;
 const pageSize = 5;
 let allPosts = [];
@@ -14,16 +15,7 @@ window.addEventListener("DOMContentLoaded", () => {
     return (window.location.href = "login.html");
   }
   initializeImageModal();
-  const savedTheme = localStorage.getItem("theme");
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  if (savedTheme === "dark" || (!savedTheme && prefersDark)) {
-    document.body.classList.add("dark-mode");
-    modeToggle.setAttribute("data-theme", "dark");
-    modeToggle.textContent = "🌙";
-  } else {
-    modeToggle.setAttribute("data-theme", "light");
-    modeToggle.textContent = "☀️";
-  }
+  initializeThemeToggle();
   // Show the “New Post” modal
   document.getElementById("newPostBtn")?.addEventListener("click", () => {
     document.getElementById("postModal")?.classList.remove("hidden");

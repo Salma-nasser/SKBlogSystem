@@ -1,3 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Your Profile</title>
+  <link rel="stylesheet" href="css/myProfile.css" />
+</head>
+
 <body>
   <header>
     <h1>Your Profile</h1>
@@ -5,16 +15,17 @@
       <button id="profileBtn">Modify Profile</button>
       <button id="backToBlogBtn">Back to Blog</button>
       <button id="logoutBtn">Logout</button>
-      <link rel="stylesheet" href="css/myProfile.css" />
     </div>
   </header>
+
+  <div id="modeToggle" data-theme="light">☀️</div>
 
   <!-- 👤 User Info Section -->
   <section id="userInfoSection" class="user-info">
     <img id="userProfilePic" src="" alt="Profile Picture" class="hidden" />
     <p><strong>Username:</strong> <span id="userUsername"></span></p>
     <p><strong>Email:</strong> <span id="userEmail"></span></p>
-    <o><strong>Role:</strong> <span id="userRole"></span></o>
+    <p><strong>Role:</strong> <span id="userRole"></span></p> <!-- ✅ fixed here -->
     <p><strong>Member Since:</strong> <span id="userMemberSince"></span></p>
     <p><strong>Posts Published:</strong> <span id="userPostsCount"></span></p>
   </section>
@@ -79,3 +90,5 @@
 
   <script type="module" src="js/myProfile.js"></script>
 </body>
+
+</html>
