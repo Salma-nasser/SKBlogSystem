@@ -220,8 +220,16 @@ function paginate(items, page, size) {
 function updatePagination(totalItems) {
   const totalPages = Math.max(Math.ceil(totalItems / pageSize), 1);
   const info = document.getElementById("pageInfo");
+  const prevButton = document.getElementById("prevPage");
+  const nextButton = document.getElementById("nextPage");
   if (info) {
     info.textContent = `Page ${currentPage} of ${totalPages}`;
+  }
+  if (prevButton) {
+    prevButton.disabled = currentPage === 1;
+  }
+  if (nextButton) {
+    nextButton.disabled = currentPage === totalPages;
   }
 }
 

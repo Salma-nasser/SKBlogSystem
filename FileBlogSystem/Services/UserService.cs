@@ -69,7 +69,8 @@ public class UserService : IUserService
         user.Username,
         user.Email,
         user.Role,
-        user.CreatedAt
+        user.CreatedAt,
+        user.ProfilePictureUrl
       };
 
       return Results.Ok(new { token, user = publicUser });
@@ -137,7 +138,8 @@ public class UserService : IUserService
         user.Username,
         user.Email,
         user.Role,
-        user.CreatedAt
+        user.CreatedAt,
+        user.ProfilePictureUrl
       };
 
       return Results.Created($"/users/{username}", new { token, user = publicUser });
@@ -185,7 +187,9 @@ public class UserService : IUserService
         user.Username,
         user.Email,
         user.Role,
-        user.CreatedAt
+        user.CreatedAt,
+        user.ProfilePictureUrl
+
       };
 
       return Results.Ok(publicUser);
@@ -195,57 +199,67 @@ public class UserService : IUserService
       return Results.Problem($"An error occurred: {ex.Message}", statusCode: StatusCodes.Status500InternalServerError);
     }
   }
-
-  public async Task<IResult> UpdateUserProfile(string username, string? email = null, string? role = null)
+  public async Task<IResult> UpdateUserProfile(string username, UpdateProfileRequest request)
   {
     try
     {
       if (!UserDirectoryExists(username))
-      {
         return Results.NotFound(new { message = "User not found" });
-      }
 
       string sanitizedUsername = SanitizeDirectoryName(username);
-      string profilePath = Path.Combine(_usersDirectory.FullName, sanitizedUsername, "profile.json");
+      string userDir = Path.Combine(_usersDirectory.FullName, sanitizedUsername);
+      string profilePath = Path.Combine(userDir, "profile.json");
 
       if (!File.Exists(profilePath))
-      {
         return Results.NotFound(new { message = "User profile not found" });
-      }
 
       string profileJson = await File.ReadAllTextAsync(profilePath);
       var user = JsonSerializer.Deserialize<User>(profileJson);
 
       if (user == null)
+        return Results.Problem("Invalid user profile data", statusCode: 500);
+
+      if (!string.IsNullOrEmpty(request.Email))
+        user.Email = request.Email;
+
+      if (!string.IsNullOrEmpty(request.Role))
+        user.Role = request.Role;
+
+      if (!string.IsNullOrEmpty(request.ProfilePictureBase64) && !string.IsNullOrEmpty(request.ProfilePictureFileName))
       {
-        return Results.Problem("Invalid user profile data", statusCode: StatusCodes.Status500InternalServerError);
+        // Create user asset folder if it doesn't exist
+        string assetsDir = Path.Combine(userDir, "assets");
+        Directory.CreateDirectory(assetsDir);
+
+        // Sanitize and generate unique file name
+        string fileName = $"{username}_{Path.GetFileName(request.ProfilePictureFileName)}";
+        string filePath = Path.Combine(assetsDir, fileName);
+
+        // Save image
+        byte[] imageBytes = Convert.FromBase64String(request.ProfilePictureBase64);
+        await File.WriteAllBytesAsync(filePath, imageBytes);
+
+        // Set relative URL
+        user.ProfilePictureUrl = $"/Content/users/{username}/assets/{fileName}";
       }
 
-      if (!string.IsNullOrEmpty(email))
-      {
-        user.Email = email;
-      }
-
-      if (!string.IsNullOrEmpty(role))
-      {
-        user.Role = role;
-      }
-
-      await File.WriteAllTextAsync(profilePath, JsonSerializer.Serialize(user, new JsonSerializerOptions { WriteIndented = true }));
+      string updatedJson = JsonSerializer.Serialize(user, new JsonSerializerOptions { WriteIndented = true });
+      await File.WriteAllTextAsync(profilePath, updatedJson);
 
       var publicUser = new
       {
         user.Username,
         user.Email,
         user.Role,
-        user.CreatedAt
+        user.CreatedAt,
+        user.ProfilePictureUrl
       };
 
       return Results.Ok(publicUser);
     }
     catch (Exception ex)
     {
-      return Results.Problem($"An error occurred: {ex.Message}", statusCode: StatusCodes.Status500InternalServerError);
+      return Results.Problem($"An error occurred: {ex.Message}", statusCode: 500);
     }
   }
 

@@ -7,28 +7,27 @@ body {
 }
 
 :root {
-  /* Pastel Theme */
-  --bg-color: #fef6f0;
-  --text-color: #3d3d3d;
-  --accent-color: #a3d2ca; /* Soft mint */
-  --accent-hover: #7eb8ae; /* Slightly deeper mint */
-  --button-bg: #ffcad4; /* Soft rose */
-  --button-text: #3d3d3d;
-  --header-bg: #f2e9e4; /* Light beige */
-  --header-text: #3d3d3d;
-  --header-shadow: rgba(0, 0, 0, 0.1);
+  --bg-color: #f5f0eb;
+  --text-color: #3e3e3e;
+  --accent-color: #c8b6a6;
+  --accent-hover: #b39b87;
+  --button-bg: #e6d3c5;
+  --button-text: #3e3e3e;
+  --header-bg: #f0e6dd;
+  --header-text: #3e3e3e;
+  --header-shadow: rgba(0, 0, 0, 0.08);
 }
 
 body.dark-mode {
-  --bg-color: #2d2d2d;
-  --text-color: #ffffff;
-  --accent-color: #9ad4d6;
-  --accent-hover: #68b0b3;
-  --button-bg: #ffb3c1;
-  --button-text: #ffffff;
-  --header-bg: #3c3c3c;
-  --header-text: #ffffff;
-  --header-shadow: rgba(255, 255, 255, 0.08);
+  --bg-color: #2c2a28;
+  --text-color: #f5f0eb;
+  --accent-color: #a68c7c;
+  --accent-hover: #8c7263;
+  --button-bg: #5a4a42;
+  --button-text: #f5f0eb;
+  --header-bg: #3a322d;
+  --header-text: #f5f0eb;
+  --header-shadow: rgba(255, 255, 255, 0.06);
 }
 
 header {
@@ -60,6 +59,11 @@ button:hover {
   background-color: var(--accent-hover);
 }
 
+button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 main {
   padding: 2rem;
   display: flex;
@@ -72,10 +76,14 @@ main {
 
 #postsContainer {
   display: flex;
-  flex-wrap: wrap; /* allow multiple cards on a row */
-  justify-content: center; /* center horizontally */
-  gap: 20px; /* space between cards */
-  margin: 0 auto; /* center container if it has a max-width */
+  flex-wrap: wrap;
+  /* allow multiple cards on a row */
+  justify-content: center;
+  /* center horizontally */
+  gap: 20px;
+  /* space between cards */
+  margin: 0 auto;
+  /* center container if it has a max-width */
   padding: 20px;
 }
 
@@ -223,6 +231,7 @@ main {
     opacity: 0;
     transform: scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -288,17 +297,24 @@ form textarea {
 }
 
 .search-container {
-  display: flex; /* keep items in a row */
-  justify-content: center; /* center the whole block */
-  align-items: center; /* vertical alignment */
-  margin: 0 auto 20px; /* space above and below */
-  gap: 10px; /* add some space between input and button */
+  display: flex;
+  /* keep items in a row */
+  justify-content: center;
+  /* center the whole block */
+  align-items: center;
+  /* vertical alignment */
+  margin: 0 auto 20px;
+  /* space above and below */
+  gap: 10px;
+  /* add some space between input and button */
 }
 
 .input-wrapper,
 .button-wrapper {
-  display: flex; /* forces children to fully obey flex alignment */
-  align-items: center; /* vertically center input and button */
+  display: flex;
+  /* forces children to fully obey flex alignment */
+  align-items: center;
+  /* vertically center input and button */
 }
 
 #searchInput {
@@ -313,10 +329,12 @@ form textarea {
 
 #clearFilterBtn {
   visibility: hidden;
-  height: 40px; /* same as input */
+  height: 40px;
+  /* same as input */
   padding: 0 16px;
   font-size: 0.9rem;
-  line-height: 40px; /* align text vertically */
+  line-height: 40px;
+  /* align text vertically */
   background-color: var(--accent-color);
   color: var(--button-text);
   border: 1px solid var(--accent-color);
@@ -324,9 +342,12 @@ form textarea {
   cursor: pointer;
   box-sizing: border-box;
   transition: background-color 0.3s ease;
-  display: flex; /* ensure text centering */
-  align-items: center; /* vertically center text */
-  justify-content: center; /* horizontally center text */
+  display: flex;
+  /* ensure text centering */
+  align-items: center;
+  /* vertically center text */
+  justify-content: center;
+  /* horizontally center text */
 }
 
 #clearFilterBtn:hover {
@@ -371,6 +392,7 @@ form textarea {
 body.dark-mode #modeToggle {
   transform: rotate(180deg);
 }
+
 .tag {
   display: inline-block;
   background-color: #e0f7fa;

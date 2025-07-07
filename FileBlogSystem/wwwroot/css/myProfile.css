@@ -7,28 +7,27 @@ body {
 }
 
 :root {
-  /* Pastel Theme */
-  --bg-color: #fef6f0;
-  --text-color: #3d3d3d;
-  --accent-color: #a3d2ca; /* Soft mint */
-  --accent-hover: #7eb8ae; /* Slightly deeper mint */
-  --button-bg: #ffcad4; /* Soft rose */
-  --button-text: #3d3d3d;
-  --header-bg: #f2e9e4; /* Light beige */
-  --header-text: #3d3d3d;
-  --header-shadow: rgba(0, 0, 0, 0.1);
+  --bg-color: #f5f0eb;
+  --text-color: #3e3e3e;
+  --accent-color: #c8b6a6;
+  --accent-hover: #b39b87;
+  --button-bg: #e6d3c5;
+  --button-text: #3e3e3e;
+  --header-bg: #f0e6dd;
+  --header-text: #3e3e3e;
+  --header-shadow: rgba(0, 0, 0, 0.08);
 }
 
 body.dark-mode {
-  --bg-color: #2d2d2d;
-  --text-color: #ffffff;
-  --accent-color: #9ad4d6;
-  --accent-hover: #68b0b3;
-  --button-bg: #ffb3c1;
-  --button-text: #ffffff;
-  --header-bg: #3c3c3c;
-  --header-text: #ffffff;
-  --header-shadow: rgba(255, 255, 255, 0.08);
+  --bg-color: #2c2a28;
+  --text-color: #f5f0eb;
+  --accent-color: #a68c7c;
+  --accent-hover: #8c7263;
+  --button-bg: #5a4a42;
+  --button-text: #f5f0eb;
+  --header-bg: #3a322d;
+  --header-text: #f5f0eb;
+  --header-shadow: rgba(255, 255, 255, 0.06);
 }
 
 header {
@@ -82,6 +81,7 @@ main {
   gap: 1rem;
   margin: 1rem 0;
 }
+
 .profile-nav button {
   padding: 0.5rem 1rem;
   background: var(--header-bg);
@@ -89,6 +89,7 @@ main {
   border-radius: 5px;
   cursor: pointer;
 }
+
 .profile-nav button.active {
   background: var(--accent-color);
   color: #fff;
@@ -107,6 +108,7 @@ main {
 .post-card {
   position: relative;
 }
+
 .post-card .modifyBtn {
   position: absolute;
   top: 10px;
@@ -267,4 +269,33 @@ main {
 
 .nav-btn:hover {
   background-color: rgba(255, 255, 255, 0.1);
+}
+#editProfileSection {
+  margin-top: 2rem;
+  padding: 1rem;
+  border: 1px solid #ccc;
+  background-color: #f9f9f9;
+}
+.user-info {
+  text-align: center;
+  margin: 2rem auto;
+  padding: 1rem;
+  max-width: 600px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.user-info img {
+  max-width: 100px;
+  border-radius: 50%;
+  margin-bottom: 1rem;
+}
+#userProfilePic {
+  max-width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 50%;
+  margin-bottom: 1rem;
+  border: 2px solid #ccc;
 }

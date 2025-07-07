@@ -1,13 +1,25 @@
 :root {
-  --bg-color: #fef6f0;
-  --text-color: #3d3d3d;
-  --accent-color: #a3d2ca;
-  --accent-hover: #7eb8ae;
-  --button-bg: #ffcad4;
-  --button-text: #3d3d3d;
-  --header-bg: #f2e9e4;
-  --header-text: #3d3d3d;
-  --header-shadow: rgba(0, 0, 0, 0.1);
+  --bg-color: #f5f0eb;
+  --text-color: #3e3e3e;
+  --accent-color: #c8b6a6;
+  --accent-hover: #b39b87; 
+  --button-bg: #e6d3c5;
+  --button-text: #3e3e3e;
+  --header-bg: #f0e6dd;
+  --header-text: #3e3e3e;
+  --header-shadow: rgba(0, 0, 0, 0.08);
+}
+
+body.dark-mode {
+  --bg-color: #2c2a28;
+  --text-color: #f5f0eb;
+  --accent-color: #a68c7c;
+  --accent-hover: #8c7263;
+  --button-bg: #5a4a42;
+  --button-text: #f5f0eb;
+  --header-bg: #3a322d; 
+  --header-text: #f5f0eb;
+  --header-shadow: rgba(255, 255, 255, 0.06);
 }
 
 html, body {

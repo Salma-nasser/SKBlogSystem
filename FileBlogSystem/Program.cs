@@ -64,8 +64,8 @@ app.UseStaticFiles();
 app.UseStaticFiles(new StaticFileOptions
 {
   FileProvider = new PhysicalFileProvider(
-        Path.Combine(builder.Environment.ContentRootPath, "Content", "posts")),
-  RequestPath = "/Content/posts"
+        Path.Combine(builder.Environment.ContentRootPath, "Content")),
+  RequestPath = "/Content"
 });
 
 app.UseRouting();

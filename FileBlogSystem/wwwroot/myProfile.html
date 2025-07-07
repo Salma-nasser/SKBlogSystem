@@ -9,44 +9,72 @@
     </div>
   </header>
 
+  <!-- 👤 User Info Section -->
+  <section id="userInfoSection" class="user-info">
+    <img id="userProfilePic" src="" alt="Profile Picture" class="hidden" />
+    <p><strong>Username:</strong> <span id="userUsername"></span></p>
+    <p><strong>Email:</strong> <span id="userEmail"></span></p>
+    <o><strong>Role:</strong> <span id="userRole"></span></o>
+    <p><strong>Member Since:</strong> <span id="userMemberSince"></span></p>
+    <p><strong>Posts Published:</strong> <span id="userPostsCount"></span></p>
+  </section>
+
   <nav class="profile-nav">
     <button data-tab="published" class="active">Published Posts</button>
     <button data-tab="drafts">Drafts & Scheduled</button>
   </nav>
 
   <main>
-    <!-- PUBLISHED POSTS -->
+    <!-- ✏️ Edit Profile Section -->
+    <section id="editProfileSection" class="hidden">
+      <h2>Edit Your Profile</h2>
+      <form id="editProfileForm">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required />
+
+        <label for="password">New Password:</label>
+        <input type="password" id="password" name="password" />
+
+        <label for="profilePicture">Profile Picture:</label>
+        <input type="file" id="profilePicture" name="profilePicture" accept="image/*" />
+
+        <button type="submit">Update Profile</button>
+      </form>
+    </section>
+
+    <!-- 📚 Published Posts -->
     <section id="publishedSection" class="tab-content">
       <h2>Published Posts</h2>
       <div id="publishedContainer" class="posts-grid"></div>
     </section>
 
-    <!-- DRAFTS & SCHEDULED POSTS -->
+    <!-- 📝 Drafts & Scheduled -->
     <section id="draftsSection" class="tab-content hidden">
       <h2>Your Drafts &amp; Scheduled Posts</h2>
       <div id="draftsContainer" class="posts-grid"></div>
     </section>
   </main>
 
-  <div id="modifyPostModal" class="modal hidden"> 
-    <div class="modal-content"> 
+  <!-- 🛠️ Modify Post Modal -->
+  <div id="modifyPostModal" class="modal hidden">
+    <div class="modal-content">
       <span class="close" id="closeModifyModal">&times;</span>
-      <h2>Modify Draft</h2> 
+      <h2>Modify Draft</h2>
       <form id="modifyPostForm">
         <input type="text" name="modifyTitle" id="modifyTitle" placeholder="Title" required />
-        <input type="text" name="modifyDescription" id="modifyDescription" placeholder="Description" required /> 
-        <textarea name="modifyBody" id="modifyBody" placeholder="Edit your Markdown content..." required></textarea> 
-        <input type="text" name="modifyCustomUrl" id="modifyCustomUrl" placeholder="Custom URL (optional)" /> 
-        <input type="text" name="modifyTags" id="modifyTags" placeholder="Tags (comma separated)" /> 
-        <input type="text" name="modifyCategories" id="modifyCategories" placeholder="Categories (comma separated)" /> 
-        <label for="modifyScheduledDate">Scheduled Date:</label> 
-        <input type="datetime-local" name="modifyScheduledDate" id="modifyScheduledDate" /> 
-        <label for="modifyImages">Upload Image:</label> 
-        <input type="file" name="modifyImages" id="modifyImages" multiple /> 
-        <input type="hidden" name="postSlug" id="postSlug" /> 
-        <button type="submit">Save Changes</button> 
-      </form> 
-    </div> 
+        <input type="text" name="modifyDescription" id="modifyDescription" placeholder="Description" required />
+        <textarea name="modifyBody" id="modifyBody" placeholder="Edit your Markdown content..." required></textarea>
+        <input type="text" name="modifyCustomUrl" id="modifyCustomUrl" placeholder="Custom URL (optional)" />
+        <input type="text" name="modifyTags" id="modifyTags" placeholder="Tags (comma separated)" />
+        <input type="text" name="modifyCategories" id="modifyCategories" placeholder="Categories (comma separated)" />
+        <label for="modifyScheduledDate">Scheduled Date:</label>
+        <input type="datetime-local" name="modifyScheduledDate" id="modifyScheduledDate" />
+        <label for="modifyImages">Upload Image:</label>
+        <input type="file" name="modifyImages" id="modifyImages" multiple />
+        <input type="hidden" name="postSlug" id="postSlug" />
+        <button type="submit">Save Changes</button>
+      </form>
+    </div>
   </div>
 
   <script type="module" src="js/myProfile.js"></script>
