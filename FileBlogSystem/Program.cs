@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.AspNetCore.Rewrite;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,8 +27,7 @@ builder.Services.AddHostedService<ScheduledPostPublisher>();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-      using var scope = builder.Services.BuildServiceProvider().CreateScope();
-      var jwtService = scope.ServiceProvider.GetRequiredService<JwtService>();
+      var jwtService = new JwtService(builder.Configuration);
       options.TokenValidationParameters = jwtService.GetTokenValidationParameters();
     });
 
@@ -49,6 +49,18 @@ builder.Services.Configure<FormOptions>(options =>
 });
 
 var app = builder.Build();
+
+// URL Rewriting for kebab-case URLs
+var rewriteOptions = new RewriteOptions()
+    .AddRewrite("^$", "login.html", skipRemainingRules: true)
+    .AddRewrite("^login/?$", "login.html", skipRemainingRules: true)
+    .AddRewrite("^register/?$", "register.html", skipRemainingRules: true)
+    .AddRewrite("^blog/?$", "blog.html", skipRemainingRules: true)
+    .AddRewrite("^my-profile/?$", "myProfile.html", skipRemainingRules: true)
+    .AddRewrite("^post/?(.*)$", "post.html?$1", skipRemainingRules: true)
+    .AddRewrite("^welcome/?$", "welcome.html", skipRemainingRules: true);
+
+app.UseRewriter(rewriteOptions);
 
 // Pipeline
 app.UseHttpsRedirection();
@@ -80,7 +92,7 @@ app.MapAuthEndpoints();
 // Only in development, open browser
 if (app.Environment.IsDevelopment())
 {
-  var url = "https://localhost:7189/login.html";
+  var url = "https://localhost:7189/login";
   try
   {
     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo

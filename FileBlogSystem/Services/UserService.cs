@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using System.Text.Json;
+using System.ComponentModel.DataAnnotations;
 using FileBlogSystem.Models;
 using FileBlogSystem.Interfaces;
 namespace FileBlogSystem.Services;
@@ -213,38 +214,34 @@ public class UserService : IUserService
       if (!File.Exists(profilePath))
         return Results.NotFound(new { message = "User profile not found" });
 
-      string profileJson = await File.ReadAllTextAsync(profilePath);
-      var user = JsonSerializer.Deserialize<User>(profileJson);
-
+      var user = await LoadUserProfile(profilePath);
       if (user == null)
         return Results.Problem("Invalid user profile data", statusCode: 500);
 
-      if (!string.IsNullOrEmpty(request.Email))
-        user.Email = request.Email;
-
-      if (!string.IsNullOrEmpty(request.Role))
-        user.Role = request.Role;
-
-      if (!string.IsNullOrEmpty(request.ProfilePictureBase64) && !string.IsNullOrEmpty(request.ProfilePictureFileName))
+      if (request.ConfirmPassword != null && !string.IsNullOrWhiteSpace(request.ConfirmPassword))
       {
-        // Create user asset folder if it doesn't exist
-        string assetsDir = Path.Combine(userDir, "assets");
-        Directory.CreateDirectory(assetsDir);
+        // Verify current password
+        bool isPasswordValid = _passwordService.VerifyPassword(request.ConfirmPassword, user.PasswordHash);
+        if (!isPasswordValid)
+          return Results.BadRequest(new { message = "Current password is incorrect" });
+      }
+      // Update fields
+      if (!string.IsNullOrWhiteSpace(request.Email) && request.Email != user.Email)
+      {
+        // Validate email format if necessary
+        if (!new EmailAddressAttribute().IsValid(request.Email))
+          return Results.BadRequest(new { message = "Invalid email format" });
+      }
+      if (!string.IsNullOrWhiteSpace(request.Email))
+        user.Email = request.Email.Trim();
 
-        // Sanitize and generate unique file name
-        string fileName = $"{username}_{Path.GetFileName(request.ProfilePictureFileName)}";
-        string filePath = Path.Combine(assetsDir, fileName);
-
-        // Save image
-        byte[] imageBytes = Convert.FromBase64String(request.ProfilePictureBase64);
-        await File.WriteAllBytesAsync(filePath, imageBytes);
-
-        // Set relative URL
-        user.ProfilePictureUrl = $"/Content/users/{username}/assets/{fileName}";
+      if (!string.IsNullOrWhiteSpace(request.ProfilePictureBase64) && !string.IsNullOrWhiteSpace(request.ProfilePictureFileName))
+      {
+        string profilePictureUrl = await SaveProfilePictureAsync(username, request.ProfilePictureBase64, request.ProfilePictureFileName);
+        user.ProfilePictureUrl = profilePictureUrl;
       }
 
-      string updatedJson = JsonSerializer.Serialize(user, new JsonSerializerOptions { WriteIndented = true });
-      await File.WriteAllTextAsync(profilePath, updatedJson);
+      await SaveUserProfile(profilePath, user);
 
       var publicUser = new
       {
@@ -256,6 +253,42 @@ public class UserService : IUserService
       };
 
       return Results.Ok(publicUser);
+    }
+    catch (Exception ex)
+    {
+      return Results.Problem($"An error occurred: {ex.Message}", statusCode: 500);
+    }
+  }
+
+  public async Task<IResult> UpdatePassword(string username, string currentPassword, string newPassword)
+  {
+    try
+    {
+      if (!UserDirectoryExists(username))
+        return Results.NotFound(new { message = "User not found" });
+
+      string sanitizedUsername = SanitizeDirectoryName(username);
+      string userDir = Path.Combine(_usersDirectory.FullName, sanitizedUsername);
+      string profilePath = Path.Combine(userDir, "profile.json");
+
+      if (!File.Exists(profilePath))
+        return Results.NotFound(new { message = "User profile not found" });
+
+      var user = await LoadUserProfile(profilePath);
+      if (user == null)
+        return Results.Problem("Invalid user profile data", statusCode: 500);
+
+      // Verify current password
+      bool isPasswordValid = _passwordService.VerifyPassword(currentPassword, user.PasswordHash);
+      if (!isPasswordValid)
+        return Results.BadRequest(new { message = "Current password is incorrect" });
+
+      // Update password
+      user.PasswordHash = _passwordService.HashPassword(newPassword);
+
+      await SaveUserProfile(profilePath, user);
+
+      return Results.Ok(new { message = "Password updated successfully" });
     }
     catch (Exception ex)
     {
@@ -312,5 +345,32 @@ public class UserService : IUserService
     {
       return Results.Problem($"An error occurred: {ex.Message}", statusCode: StatusCodes.Status500InternalServerError);
     }
+  }
+  private async Task<User?> LoadUserProfile(string path)
+  {
+    string json = await File.ReadAllTextAsync(path);
+    return JsonSerializer.Deserialize<User>(json);
+  }
+
+  private async Task SaveUserProfile(string path, User user)
+  {
+    string updatedJson = JsonSerializer.Serialize(user, new JsonSerializerOptions { WriteIndented = true });
+    await File.WriteAllTextAsync(path, updatedJson);
+  }
+
+  private async Task<string> SaveProfilePictureAsync(string username, string base64Image, string originalFileName)
+  {
+    string sanitizedUsername = SanitizeDirectoryName(username);
+    string userDir = Path.Combine(_usersDirectory.FullName, sanitizedUsername);
+    string assetsDir = Path.Combine(userDir, "assets");
+    Directory.CreateDirectory(assetsDir);
+
+    string cleanFileName = $"{username}_{Path.GetFileName(originalFileName)}";
+    string filePath = Path.Combine(assetsDir, cleanFileName);
+
+    byte[] imageBytes = Convert.FromBase64String(base64Image);
+    await File.WriteAllBytesAsync(filePath, imageBytes);
+
+    return $"/Content/users/{username}/assets/{cleanFileName}";
   }
 }

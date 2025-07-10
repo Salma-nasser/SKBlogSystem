@@ -1,4 +1,4 @@
-import { initializeThemeToggle } from "./themeToggle.js";
+import { initializeThemeToggle } from "./utils/themeToggle.js";
 
 initializeThemeToggle();
 const registerPasswordInput = document.getElementById("registerPassword");
@@ -59,9 +59,7 @@ if (registerForm) {
       });
 
       if (response.ok) {
-        window.location.href = `blog.html?username=${encodeURIComponent(
-          username
-        )}`;
+        window.location.href = `blog?username=${encodeURIComponent(username)}`;
       } else {
         const error = await response.json();
         document.getElementById("errorMessage").innerText =
@@ -116,7 +114,7 @@ if (loginForm) {
         const data = await response.json();
         localStorage.setItem("jwtToken", data.token);
         localStorage.setItem("username", username);
-        window.location.href = "blog.html";
+        window.location.href = "blog";
       } else {
         let errorMessage = "Login failed.";
         try {
@@ -133,5 +131,3 @@ if (loginForm) {
     }
   });
 }
-
-

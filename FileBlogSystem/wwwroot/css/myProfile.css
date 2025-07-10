@@ -127,72 +127,126 @@ main {
 }
 
 /* Grid container */
+/* Grid container */
 .posts-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
-  padding: 20px;
+  gap: 2rem; /* Increased gap for better spacing */
+  padding: 1rem;
+  width: 100%;
+  box-sizing: border-box; /* Ensures padding is included in width */
 }
 
 /* Post card styling */
 .post-card {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 15px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  padding: 16px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative;
+  padding: 1.5rem;
+  border-radius: 16px;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--post-bg);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  overflow: hidden; /* Prevents content from overflowing */
+  min-height: 0; /* Fixes flexbox overflow issues */
+}
+
+/* Ensures all cards have equal height in a row */
+.post-card > * {
+  min-width: 0; /* Fixes flexbox overflow issues */
 }
 
 .post-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
 }
 
+/* Image container */
+.post-images {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin: 1rem 0;
+  width: 100%;
+}
+
+.post-images img {
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  transition: transform 0.2s ease;
+  flex-grow: 1;
+}
+
+/* Text content styling */
 .post-card h3 {
-  margin-top: 0;
+  font-size: 1.25rem;
+  margin: 0.5rem 0;
+  color: var(--text-color);
+  word-break: break-word; /* Prevents text overflow */
 }
 
-.post-card img {
-  max-width: 100%;
-  border-radius: 10px;
-  margin: 10px 0;
+.post-card p {
+  color: var(--text-color);
+  opacity: 0.9;
+  margin: 0.5rem 0;
+  line-height: 1.5;
+  word-break: break-word; /* Prevents text overflow */
 }
 
-.post-card small {
-  color: #666;
-  display: block;
-  margin-bottom: 10px;
+.post-body {
+  flex: 1;
+  margin-bottom: 1rem;
+  overflow: hidden; /* Contains content */
 }
 
+/* Meta information */
 .meta-info {
-  margin-top: 10px;
+  margin-top: auto; /* Pushes to bottom of card */
+  padding-top: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
 }
 
 .meta-info .tag,
 .meta-info .category {
   display: inline-block;
-  background-color: #f0f0f0;
-  color: #333;
-  padding: 4px 8px;
-  border-radius: 12px;
-  margin: 2px;
-  font-size: 0.85em;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  padding: 0.25rem 0.75rem;
+  border-radius: 1rem;
+  font-size: 0.8rem;
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
+/* Action buttons */
 .post-actions {
-  margin-top: 10px;
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  justify-content: flex-end;
 }
 
 .post-actions button {
-  margin-right: 8px;
-  padding: 6px 12px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.2s;
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  border-radius: 6px;
 }
 
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .posts-grid {
+    grid-template-columns: 1fr; /* Single column on mobile */
+    gap: 1.5rem;
+  }
+
+  .post-card {
+    padding: 1.25rem;
+  }
+}
 .post-actions .modifyBtn {
   background-color: #007bff;
   color: white;
@@ -226,57 +280,271 @@ main {
 .nav-btn:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
-#editProfileSection {
-  margin-top: 2rem;
-  padding: 1rem;
-  border: 1px solid #ccc;
-  background-color: #f9f9f9;
-}
+
+/* ========================= */
+/* 👤 User Profile Section */
+/* ========================= */
 .user-info {
-  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   margin: 2rem auto;
-  padding: 1rem;
-  max-width: 600px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+  max-width: 800px;
+  background-color: var(--post-bg);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
 }
 
-.user-info img {
-  max-width: 100px;
-  border-radius: 50%;
-  margin-bottom: 1rem;
+.user-info:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
 }
+
+.profile-picture-container {
+  position: relative;
+  margin-bottom: 1.5rem;
+}
+
 #userProfilePic {
-  max-width: 100px;
-  height: 100px;
+  width: 120px;
+  height: 120px;
   object-fit: cover;
   border-radius: 50%;
-  margin-bottom: 1rem;
-  border: 2px solid #ccc;
+  border: 4px solid var(--accent-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease;
 }
+
+#userProfilePic:hover {
+  transform: scale(1.05);
+}
+
+#changePictureBtn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background-color: var(--accent-color);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+#changePictureBtn:hover {
+  background-color: var(--accent-hover);
+  transform: scale(1.1);
+}
+
+.user-details {
+  width: 100%;
+  text-align: center;
+}
+
+.user-details p {
+  margin: 0.8rem 0;
+  font-size: 1.1rem;
+  color: var(--text-color);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.user-details strong {
+  min-width: 150px;
+  text-align: right;
+  margin-right: 1rem;
+  color: var(--accent-color);
+}
+
+.user-details span {
+  text-align: left;
+  flex-grow: 1;
+}
+
+.edit-btn {
+  margin-left: 1rem;
+  padding: 0.4rem 0.8rem;
+  background-color: transparent;
+  color: var(--accent-color);
+  border: 1px solid var(--accent-color);
+  border-radius: 20px;
+  font-size: 0.85rem;
+  transition: all 0.2s ease;
+}
+
+.edit-btn:hover {
+  background-color: var(--accent-color);
+  color: white;
+}
+
 /* ========================= */
-/* 📸 Image Modal (Transparent) */
+/* ✏️ Edit Sections */
 /* ========================= */
-.modal.imageModal {
+.edit-section {
+  width: 100%;
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background-color: var(--post-bg);
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.edit-section h2 {
+  margin-top: 0;
+  color: var(--accent-color);
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.edit-section label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.edit-section input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: border-color 0.2s ease;
+}
+
+.edit-section input:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 2px rgba(200, 155, 123, 0.2);
+}
+
+.picture-preview {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+
+#picturePreview {
+  width: 150px;
+  height: 150px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 3px solid var(--accent-color);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 1.5rem;
+}
+
+.confirm-btn {
+  background-color: var(--accent-color);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+.confirm-btn:hover {
+  background-color: var(--accent-hover);
+}
+
+.cancel-btn {
+  background-color: transparent;
+  color: var(--text-color);
+  padding: 0.75rem 1.5rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-color: var(--accent-color);
+  color: var(--accent-color);
+}
+#modeToggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  background-color: var(--button-bg);
+  color: var(--button-text);
+  border: 1px solid var(--accent-color);
+  border-radius: 50%;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px var(--header-shadow);
+  transition: transform 0.6s ease, background-color 0.3s ease, color 0.3s ease;
+  transform-style: preserve-3d;
+}
+
+#modeToggle:hover {
+  transform: scale(1.1);
+  color: #fff;
+}
+
+#modeToggle[data-theme="light"]:hover {
+  background-color: #ffe5ec;
+  color: #333;
+}
+
+#modeToggle[data-theme="dark"]:hover {
+  background-color: #2b2b2b;
+  color: #fff;
+}
+
+body.dark-mode #modeToggle {
+  transform: rotate(180deg);
+}
+.input-error {
+  color: #e63946;
+  font-size: 0.9em;
+  margin-top: 4px;
+}
+
+.modal {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7); /* Transparent dark overlay */
+  background-color: rgba(0, 0, 0, 0.7);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
 }
 
-.modal.imageModal.hidden {
-  display: none !important;
+.hidden {
+  display: none;
 }
 
-.modal.imageModal .modal-content {
-  background-color: transparent; /* Fully transparent background */
+.modal-content {
+  position: relative;
+  background-color: transparent;
   padding: 10px;
   border-radius: 10px;
   max-width: 90%;
@@ -286,7 +554,7 @@ main {
   justify-content: center;
 }
 
-.modal.imageModal .modal-content img {
+.modal-content img {
   max-width: 100%;
   max-height: 80vh;
   border-radius: 10px;
@@ -294,100 +562,18 @@ main {
   cursor: zoom-in;
 }
 
-.modal.imageModal .close {
+.modal-content .close {
   position: absolute;
   top: 10px;
-  right: 15px;
-  font-size: 24px;
-  font-weight: bold;
+  right: 10px;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 5px 10px;
+  background-color: transparent;
   color: white;
-  cursor: pointer;
-}
-
-.modal.imageModal .close:hover {
-  color: var(--accent-color);
-}
-
-
-/* ========================= */
-/* 🛠️ Modify Post Modal (White Form) */
-/* ========================= */
-#modifyPostModal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-  background-color: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay */
-  z-index: 1000;
-}
-
-#modifyPostModal.hidden {
-  display: none !important;
-}
-
-#modifyPostModal .modal-content {
-  background: #fff; /* White background for the form */
-  padding: 2rem;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  position: relative;
-  animation: fadeIn 0.3s ease-in-out;
-}
-
-#modifyPostModal .close {
-  position: absolute;
-  top: 1rem;
-  right: 1.25rem;
-  font-size: 1.5rem;
-  cursor: pointer;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-/* 🎨 Form Styling */
-#modifyPostModal form input,
-#modifyPostModal form textarea {
-  display: block;
-  width: 100%;
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
   border-radius: 5px;
-  font-size: 1rem;
-  background-color: #fff; /* Ensure white inputs */
-  color: #333;
 }
 
-#modifyPostModal form textarea {
-  resize: vertical;
-  min-height: 150px;
-}
-
-#modifyPostModal form button {
-  padding: 0.5rem 1rem;
-  background-color: var(--button-bg);
-  color: var(--button-text);
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-#modifyPostModal form button:hover {
-  background-color: var(--accent-hover);
+.modal-content .close:hover {
+  background-color: rgba(255, 255, 255, 0.1);
 }

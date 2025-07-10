@@ -484,3 +484,45 @@ body.dark-mode #modeToggle {
 .nav-btn:hover {
   background-color: rgba(255, 255, 255, 0.1);
 }
+
+.interaction-bar {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 10px 0;
+  border-top: 1px solid #eee;
+  margin-top: 15px;
+}
+
+.like-toggle {
+  cursor: pointer;
+  font-size: 1.2em;
+  transition: transform 0.2s ease;
+}
+
+.like-toggle:hover {
+  transform: scale(1.1);
+}
+
+.like-count {
+  cursor: pointer;
+  color: var(--accent-color);
+  font-size: 0.9em;
+  transition: color 0.2s ease;
+}
+
+.like-count:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+.comment-count {
+  color: var(--text-color);
+  font-size: 0.9em;
+}
+
+.like-avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}

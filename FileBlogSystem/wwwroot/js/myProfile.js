@@ -3,33 +3,55 @@ import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
 
 window.addEventListener("DOMContentLoaded", () => {
+  // Tab sections
   const publishedSection = document.getElementById("publishedSection");
   const draftsSection = document.getElementById("draftsSection");
   const publishedBtn = document.querySelector('button[data-tab="published"]');
   const draftsBtn = document.querySelector('button[data-tab="drafts"]');
 
+  // Navigation buttons
   const backToBlogBtn = document.getElementById("backToBlogBtn");
   const logoutBtn = document.getElementById("logoutBtn");
 
+  // Post modification modal
   const modifyPostModal = document.getElementById("modifyPostModal");
   const closeModifyModal = document.getElementById("closeModifyModal");
   const modifyPostForm = document.getElementById("modifyPostForm");
 
-  const profileBtn = document.getElementById("profileBtn");
-  const editProfileSection = document.getElementById("editProfileSection");
-
-  const userInfoSection = document.getElementById("userInfoSection");
+  // User info elements
   const userUsername = document.getElementById("userUsername");
   const userEmail = document.getElementById("userEmail");
   const userProfilePic = document.getElementById("userProfilePic");
-
-  const editProfileForm = document.getElementById("editProfileForm");
-  const emailInput = document.getElementById("email");
-  const passwordInput = document.getElementById("password");
-  const profilePictureInput = document.getElementById("profilePicture");
   const userRole = document.getElementById("userRole");
   const userMemberSince = document.getElementById("userMemberSince");
   const userPostsCount = document.getElementById("userPostsCount");
+
+  // Edit sections
+  const changeEmailSection = document.getElementById("changeEmailSection");
+  const changePasswordSection = document.getElementById(
+    "changePasswordSection"
+  );
+  const changePictureSection = document.getElementById("changePictureSection");
+
+  // Edit buttons
+  const changeEmailBtn = document.getElementById("changeEmailBtn");
+  const changePasswordBtn = document.getElementById("changePasswordBtn");
+  const changePictureBtn = document.getElementById("changePictureBtn");
+
+  // Edit forms
+  const changeEmailForm = document.getElementById("changeEmailForm");
+  const changePasswordForm = document.getElementById("changePasswordForm");
+  const changePictureForm = document.getElementById("changePictureForm");
+
+  // Form elements
+  const currentEmailInput = document.getElementById("currentEmail");
+  const newEmailInput = document.getElementById("newEmail");
+  const emailPasswordInput = document.getElementById("emailPassword");
+  const currentPasswordInput = document.getElementById("currentPassword");
+  const newPasswordInput = document.getElementById("newPassword");
+  const confirmPasswordInput = document.getElementById("confirmPassword");
+  const newProfilePictureInput = document.getElementById("newProfilePicture");
+  const picturePreview = document.getElementById("picturePreview");
 
   const currentUsername = localStorage.getItem("username");
   const token = localStorage.getItem("jwtToken");
@@ -37,56 +59,80 @@ window.addEventListener("DOMContentLoaded", () => {
   initializeImageModal();
   initializeThemeToggle();
 
+  // Event listeners for tab switching
   publishedBtn.addEventListener("click", () => switchTab("published"));
   draftsBtn.addEventListener("click", () => switchTab("drafts"));
 
+  // Navigation event listeners
   backToBlogBtn.addEventListener(
     "click",
-    () => (window.location.href = "blog.html")
+    () => (window.location.href = "blog")
   );
   logoutBtn.addEventListener("click", () => {
     localStorage.removeItem("jwtToken");
-    window.location.href = "login.html";
+    window.location.href = "login";
   });
 
+  // Modal close event
   closeModifyModal.addEventListener("click", () => {
     modifyPostModal.classList.add("hidden");
   });
 
+  // Post modification form submission
   modifyPostForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     await submitModification();
   });
 
-  profileBtn.addEventListener("click", () => {
-    const isVisible = !editProfileSection.classList.contains("hidden");
-    editProfileSection.classList.toggle("hidden", isVisible);
-    publishedSection.classList.toggle("hidden", !isVisible);
-    draftsSection.classList.add("hidden");
+  // Edit section toggle buttons
+  changeEmailBtn.addEventListener("click", () => toggleEditSection("email"));
+  changePasswordBtn.addEventListener("click", () =>
+    toggleEditSection("password")
+  );
+  changePictureBtn.addEventListener("click", () =>
+    toggleEditSection("picture")
+  );
+
+  // Cancel buttons
+  document
+    .getElementById("cancelEmailChange")
+    .addEventListener("click", () => toggleEditSection("email", false));
+  document
+    .getElementById("cancelPasswordChange")
+    .addEventListener("click", () => toggleEditSection("password", false));
+  document
+    .getElementById("cancelPictureChange")
+    .addEventListener("click", () => toggleEditSection("picture", false));
+
+  // Form submissions
+  changeEmailForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    await updateEmail();
   });
 
-  editProfileForm.addEventListener("submit", async (e) => {
+  changePasswordForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    await updatePassword();
+  });
 
-    const payload = {
-      email: emailInput.value,
-    };
+  changePictureForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    await updateProfilePicture();
+  });
 
-    const file = profilePictureInput.files[0];
+  // Profile picture preview
+  newProfilePictureInput.addEventListener("change", (e) => {
+    const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = async () => {
-        const base64 = reader.result.split(",")[1];
-        payload.profilePictureBase64 = base64;
-        payload.profilePictureFileName = file.name;
-        await updateUserProfile(payload);
+      reader.onload = (event) => {
+        picturePreview.src = event.target.result;
       };
       reader.readAsDataURL(file);
-    } else {
-      await updateUserProfile(payload);
     }
   });
 
+  // Initial data loading
   fetchPublishedPosts();
   fetchDraftPosts();
   loadUserInfo();
@@ -94,10 +140,40 @@ window.addEventListener("DOMContentLoaded", () => {
   function switchTab(tab) {
     publishedSection.classList.toggle("hidden", tab !== "published");
     draftsSection.classList.toggle("hidden", tab !== "drafts");
-    editProfileSection.classList.add("hidden");
+
+    // Hide all edit sections when switching tabs
+    changeEmailSection.classList.add("hidden");
+    changePasswordSection.classList.add("hidden");
+    changePictureSection.classList.add("hidden");
 
     publishedBtn.classList.toggle("active", tab === "published");
     draftsBtn.classList.toggle("active", tab === "drafts");
+  }
+
+  function toggleEditSection(section, show = true) {
+    // Hide all edit sections first
+    changeEmailSection.classList.add("hidden");
+    changePasswordSection.classList.add("hidden");
+    changePictureSection.classList.add("hidden");
+
+    // Hide posts sections when showing an edit section
+    publishedSection.classList.toggle("hidden", show);
+    draftsSection.classList.add("hidden");
+
+    // Show the requested section
+    switch (section) {
+      case "email":
+        changeEmailSection.classList.toggle("hidden", !show);
+        if (show) currentEmailInput.value = userEmail.textContent;
+        break;
+      case "password":
+        changePasswordSection.classList.toggle("hidden", !show);
+        break;
+      case "picture":
+        changePictureSection.classList.toggle("hidden", !show);
+        picturePreview.src = userProfilePic.src;
+        break;
+    }
   }
 
   async function fetchPublishedPosts() {
@@ -149,7 +225,6 @@ window.addEventListener("DOMContentLoaded", () => {
 
       userUsername.textContent = user.Username || currentUsername;
       userEmail.textContent = user.Email || "";
-      emailInput.value = user.Email || "";
       userRole.textContent = user.Role || "Author";
       userMemberSince.textContent = user.CreatedAt
         ? new Date(user.CreatedAt).toLocaleDateString("en-GB", {
@@ -159,19 +234,40 @@ window.addEventListener("DOMContentLoaded", () => {
           })
         : "";
       userPostsCount.textContent = user.PostsCount || 0;
+
       if (user.ProfilePictureUrl) {
-        // If the backend already returns a relative path like /Content/users/...
         userProfilePic.src = `https://localhost:7189${user.ProfilePictureUrl}`;
+        userProfilePic.classList.remove("hidden");
       } else {
         userProfilePic.src = "placeholders/profile.png";
+        userProfilePic.classList.remove("hidden");
       }
-      userProfilePic.classList.remove("hidden");
     } catch (err) {
       console.error("Error loading user info:", err);
     }
   }
 
-  async function updateUserProfile(payload) {
+  async function updateEmail() {
+    const newEmail = newEmailInput.value.trim();
+    const currentPassword = emailPasswordInput.value;
+
+    clearErrors("newEmail", "emailPassword");
+
+    if (!newEmail) {
+      showError("newEmail", "New email is required.");
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (newEmail && !emailRegex.test(newEmail)) {
+      showError("newEmail", "Please enter a valid email.");
+    }
+
+    if (!currentPassword) {
+      showError("emailPassword", "Password is required.");
+    }
+
+    if (!newEmail || !currentPassword || !emailRegex.test(newEmail)) return;
+
     try {
       const response = await fetch(
         `https://localhost:7189/api/users/${currentUsername}`,
@@ -181,20 +277,141 @@ window.addEventListener("DOMContentLoaded", () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({
+            Email: newEmail,
+            ConfirmPassword: currentPassword,
+          }),
         }
       );
 
       if (response.ok) {
-        alert("Profile updated successfully!");
+        toggleEditSection("email", false);
         loadUserInfo();
       } else {
         const error = await response.json();
-        alert("Error: " + error.message);
+        showError("newEmail", error.message || "Failed to update email.");
       }
     } catch (err) {
-      console.error("Error updating profile:", err);
+      showError("newEmail", "Network error. Please try again.");
     }
+  }
+
+  async function updatePassword() {
+    const current = currentPasswordInput.value;
+    const newPass = newPasswordInput.value;
+    const confirm = confirmPasswordInput.value;
+
+    clearErrors("currentPassword", "newPassword", "confirmPassword");
+
+    if (!current) showError("currentPassword", "Current password is required.");
+    if (!newPass) showError("newPassword", "New password is required.");
+    if (newPass.length > 0 && newPass.length < 6)
+      showError("newPassword", "Must be at least 6 characters.");
+    if (!confirm) showError("confirmPassword", "Please confirm password.");
+    if (newPass && confirm && newPass !== confirm)
+      showError("confirmPassword", "Passwords do not match.");
+
+    if (
+      !current ||
+      !newPass ||
+      !confirm ||
+      newPass.length < 6 ||
+      newPass !== confirm
+    )
+      return;
+
+    try {
+      const response = await fetch(
+        `https://localhost:7189/api/users/${currentUsername}/password`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            CurrentPassword: current,
+            NewPassword: newPass,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        toggleEditSection("password", false);
+        currentPasswordInput.value = "";
+        newPasswordInput.value = "";
+        confirmPasswordInput.value = "";
+      } else {
+        const error = await response.json();
+        showError("currentPassword", error.message || "Update failed.");
+      }
+    } catch (err) {
+      showError("currentPassword", "Network error. Please try again.");
+    }
+  }
+
+  async function updateProfilePicture() {
+    const file = newProfilePictureInput.files[0];
+    const errorEl = document.getElementById("pictureError");
+    errorEl.textContent = "";
+
+    if (!file) {
+      errorEl.textContent = "Please select a file.";
+      return;
+    }
+
+    const validTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!validTypes.includes(file.type)) {
+      errorEl.textContent = "Invalid file type.";
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      errorEl.textContent = "File must be smaller than 2MB.";
+      return;
+    }
+
+    try {
+      // Convert the file to base64
+      const base64Image = await convertFileToBase64(file);
+
+      // Send the update request with base64 image
+      const response = await fetch(
+        `https://localhost:7189/api/users/${currentUsername}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            ProfilePictureBase64: base64Image.split(",")[1], // Remove the data:image/xxx;base64, prefix
+            ProfilePictureFileName: file.name,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        toggleEditSection("picture", false);
+        loadUserInfo();
+      } else {
+        const error = await response.json();
+        errorEl.textContent = error.message || "Failed to update.";
+      }
+    } catch (err) {
+      errorEl.textContent = "Network error. Please try again.";
+      console.error(err);
+    }
+  }
+
+  // Helper function to convert File to base64
+  function convertFileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
   }
 
   function openModifyModal(post) {
@@ -240,17 +457,18 @@ window.addEventListener("DOMContentLoaded", () => {
       console.error("Error updating post:", error);
     }
   }
+});
 
-  document.body.addEventListener("click", (e) => {
-    if (e.target.classList.contains("post-image")) {
-      const postCard = e.target.closest(".post-card");
-      const images = Array.from(postCard.querySelectorAll(".post-image")).map(
-        (img) => img.src
-      );
-      const clickedIndex = images.indexOf(e.target.src);
-      openImageModal(images, clickedIndex);
-    }
-  });
+// Image click handler for modal (moved outside DOMContentLoaded)
+document.body.addEventListener("click", (e) => {
+  if (e.target.classList.contains("post-image")) {
+    const postCard = e.target.closest(".post-card");
+    const images = Array.from(postCard.querySelectorAll(".post-image")).map(
+      (img) => img.src
+    );
+    const clickedIndex = images.indexOf(e.target.src);
+    openImageModal(images, clickedIndex);
+  }
 });
 
 async function deletePost(slug, isDraft) {
@@ -282,4 +500,24 @@ async function deletePost(slug, isDraft) {
   } catch (error) {
     console.error("Error deleting post:", error);
   }
+}
+
+function showError(inputId, message) {
+  const errorElement = document.getElementById(inputId + "Error");
+  if (errorElement) {
+    errorElement.textContent = message;
+  } else {
+    console.warn(`Error element not found: ${inputId}Error`);
+  }
+}
+
+function clearErrors(...inputIds) {
+  inputIds.forEach((id) => {
+    const errorElement = document.getElementById(id + "Error");
+    if (errorElement) {
+      errorElement.textContent = "";
+    } else {
+      console.warn(`Error element not found: ${id}Error`);
+    }
+  });
 }

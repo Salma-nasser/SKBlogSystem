@@ -14,6 +14,9 @@ public class Post
   public bool IsPublished { get; set; }
   public DateTime? ScheduledDate { get; set; }
   public List<string> Images { get; set; } = new List<string>();
+  public List<string> Likes { get; set; } = new List<string>();
+  public bool LikedByCurrentUser { get; set; }
+  public int CommentCount { get; set; }
 
   public Post(string title, string description, string body, string author, DateTime publishedDate, DateTime? lastModified,
               List<string> tags, List<string> categories, string slug, bool isPublished, DateTime? scheduledDate)
@@ -29,7 +32,10 @@ public class Post
     Slug = slug;
     IsPublished = isPublished;
     ScheduledDate = scheduledDate;
-    Images = new List<string>(); // Initialize empty, will be populated separately
+    Images = new List<string>();
+    Likes = new List<string>();
+    LikedByCurrentUser = false;
+    CommentCount = 0;
   }
 }
 

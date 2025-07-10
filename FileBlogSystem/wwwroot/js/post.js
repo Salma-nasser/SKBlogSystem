@@ -69,7 +69,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
 // Back to Blog Button
 document.getElementById("backToBlogBtn").addEventListener("click", () => {
-  window.location.href = "blog.html";
+  window.location.href = "blog";
 });
 
 // Render tags/categories

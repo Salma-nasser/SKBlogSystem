@@ -12,7 +12,6 @@
   <header>
     <h1>Your Profile</h1>
     <div class="header-actions">
-      <button id="profileBtn">Modify Profile</button>
       <button id="backToBlogBtn">Back to Blog</button>
       <button id="logoutBtn">Logout</button>
     </div>
@@ -22,12 +21,22 @@
 
   <!-- 👤 User Info Section -->
   <section id="userInfoSection" class="user-info">
-    <img id="userProfilePic" src="" alt="Profile Picture" class="hidden" />
-    <p><strong>Username:</strong> <span id="userUsername"></span></p>
-    <p><strong>Email:</strong> <span id="userEmail"></span></p>
-    <p><strong>Role:</strong> <span id="userRole"></span></p> <!-- ✅ fixed here -->
-    <p><strong>Member Since:</strong> <span id="userMemberSince"></span></p>
-    <p><strong>Posts Published:</strong> <span id="userPostsCount"></span></p>
+    <div class="profile-picture-container">
+      <img id="userProfilePic" src="" alt="Profile Picture" class="hidden" />
+      <button id="changePictureBtn" class="edit-btn">Change Picture</button>
+    </div>
+    <div class="user-details">
+      <p><strong>Username:</strong> <span id="userUsername"></span></p>
+      <p>
+        <strong>Email:</strong> 
+        <span id="userEmail"></span>
+        <button id="changeEmailBtn" class="edit-btn">Change Email</button>
+      </p>
+      <p><strong>Role:</strong> <span id="userRole"></span></p>
+      <p><strong>Member Since:</strong> <span id="userMemberSince"></span></p>
+      <p><strong>Posts Published:</strong> <span id="userPostsCount"></span></p>
+      <button id="changePasswordBtn" class="edit-btn">Change Password</button>
+    </div>
   </section>
 
   <nav class="profile-nav">
@@ -36,20 +45,63 @@
   </nav>
 
   <main>
-    <!-- ✏️ Edit Profile Section -->
-    <section id="editProfileSection" class="hidden">
-      <h2>Edit Your Profile</h2>
-      <form id="editProfileForm">
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required />
+    <!-- ✉️ Change Email Section -->
+    <section id="changeEmailSection" class="hidden edit-section">
+      <h2>Change Email Address</h2>
+      <form id="changeEmailForm">
+        <label for="currentEmail">Current Email:</label>
+        <input type="email" id="currentEmail" name="currentEmail" readonly />
+        <div class="input-error" id="currentEmailError"></div>
+        <label for="newEmail">New Email:</label>
+        <input type="email" id="newEmail" name="newEmail" required />
+        <div class="input-error" id="newEmailError"></div>
+        <label for="emailPassword">Confirm Password:</label>
+        <input type="password" id="emailPassword" name="emailPassword" required />
+        <div class="input-error" id="emailPasswordError"></div>
 
-        <label for="password">New Password:</label>
-        <input type="password" id="password" name="password" />
+        <div class="form-actions">
+          <button type="button" id="cancelEmailChange" class="cancel-btn">Cancel</button>
+          <button type="submit" class="confirm-btn">Update Email</button>
+        </div>
+      </form>
+    </section>
 
-        <label for="profilePicture">Profile Picture:</label>
-        <input type="file" id="profilePicture" name="profilePicture" accept="image/*" />
+    <!-- 🔑 Change Password Section -->
+    <section id="changePasswordSection" class="hidden edit-section">
+      <h2>Change Password</h2>
+      <form id="changePasswordForm">
+        <label for="currentPassword">Current Password:</label>
+        <input type="password" id="currentPassword" name="currentPassword" required />
+        <div class="input-error" id="currentPasswordError"></div>
+        <label for="newPassword">New Password:</label>
+        <input type="password" id="newPassword" name="newPassword" required />
+        <div class="input-error" id="newPasswordError"></div>
+        <label for="confirmPassword">Confirm New Password:</label>
+        <input type="password" id="confirmPassword" name="confirmPassword" required />
+        <div class="input-error" id="confirmPasswordError"></div>
+        
+        <div class="form-actions">
+          <button type="button" id="cancelPasswordChange" class="cancel-btn">Cancel</button>
+          <button type="submit" class="confirm-btn">Update Password</button>
+        </div>
+      </form>
+    </section>
 
-        <button type="submit">Update Profile</button>
+    <!-- 🖼️ Change Profile Picture Section -->
+    <section id="changePictureSection" class="hidden edit-section">
+      <h2>Change Profile Picture</h2>
+      <form id="changePictureForm">
+        <div class="picture-preview">
+          <img id="picturePreview" src="" alt="Current Profile Picture" />
+        </div>
+        
+        <label for="newProfilePicture">Select New Image:</label>
+        <input type="file" id="newProfilePicture" name="newProfilePicture" accept="image/*" required />
+        <div class="input-error" id="pictureError"></div>
+        <div class="form-actions">
+          <button type="button" id="cancelPictureChange" class="cancel-btn">Cancel</button>
+          <button type="submit" class="confirm-btn">Update Picture</button>
+        </div>
       </form>
     </section>
 

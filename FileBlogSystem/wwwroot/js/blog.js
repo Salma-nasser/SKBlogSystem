@@ -12,7 +12,7 @@ const modeToggle = document.getElementById("modeToggle");
 window.addEventListener("DOMContentLoaded", () => {
   const token = localStorage.getItem("jwtToken");
   if (!token) {
-    return (window.location.href = "login.html");
+    return (window.location.href = "login");
   }
   initializeImageModal();
   initializeThemeToggle();
@@ -82,7 +82,7 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   // ---------- VIEW PROFILE ----------
   document.getElementById("profileBtn")?.addEventListener("click", () => {
-    window.location.href = "myProfile.html";
+    window.location.href = "my-profile";
   });
   // ---------- USER INFO & LOGOUT ----------
   const username = localStorage.getItem("username");
@@ -93,7 +93,7 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("logoutBtn")?.addEventListener("click", () => {
     localStorage.removeItem("jwtToken");
     localStorage.removeItem("username");
-    window.location.href = "login.html";
+    window.location.href = "login";
   });
 
   // ---------- SEARCH & PAGINATION ----------

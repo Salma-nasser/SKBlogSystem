@@ -1,18 +1,19 @@
 {
-  "Title": "Palestine",
-  "Description": "Discussing the issue in palestine",
-  "Body": "I am writing here now to discuss an ongoing issue with you that seems to have died down, people have started to go back to their lives and put the issue to the back of their mind, such a thing is expected, as people feel their contribution means nothing and watecer they do or have done doesn\u0027t seem to create an effect on their lives but I want you to know that it does differ and just your support can help people feel that they are cared about and it would be a support to them to keep going.\n",
-  "CustomUrl": "",
-  "AuthorUsername": "Salma",
-  "Tags": [
+  "title": "Palestine",
+  "description": "Discussing the issue in palestine",
+  "author": "Salma",
+  "publishedDate": "2025-06-23T22:21:09.7121984Z",
+  "lastModified": "2025-06-23T22:22:08.890753Z",
+  "tags": [
     ""
   ],
-  "Categories": [
+  "categories": [
     ""
   ],
-  "PublishedDate": "2025-06-23T22:21:09.7121984Z",
-  "ModifiedDate": "2025-06-23T22:22:08.890753Z",
-  "Slug": "Palestine",
-  "IsPublished": true,
-  "ScheduledDate": null
+  "slug": "Palestine",
+  "isPublished": true,
+  "scheduledDate": null,
+  "images": [],
+  "likes": [],
+  "commentCount": 0
 }

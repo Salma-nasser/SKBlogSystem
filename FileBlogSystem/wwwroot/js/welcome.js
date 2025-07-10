@@ -64,7 +64,7 @@ window.addEventListener("DOMContentLoaded", () => {
     }, 5000); // 5 seconds delay for fireworks to start after welcome message
   }
   document.getElementById("logoutBtn").addEventListener("click", () => {
-    window.location.href = "login.html";
+    window.location.href = "login";
   });
 });
 const modeToggle = document.getElementById("modeToggle");

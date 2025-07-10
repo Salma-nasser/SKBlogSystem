@@ -22,28 +22,7 @@ public class BlogPostService : IBlogPostService
     Console.WriteLine($"Blog posts directory path: {_rootPath}");
   }
 
-  public IEnumerable<Post> GetAllPosts()
-  {
-    if (!Directory.Exists(_rootPath)) yield break;
-
-    foreach (var dir in Directory.GetDirectories(_rootPath, "*", SearchOption.AllDirectories))
-    {
-      Post? post = null;
-      try
-      {
-        post = LoadPost(dir);
-      }
-      catch (Exception ex)
-      {
-        Console.WriteLine($"Error loading post from {dir}: {ex.Message}");
-      }
-
-      if (post != null && post.IsPublished)
-        yield return post;
-    }
-  }
-
-  public IEnumerable<Post> GetPostsByCategory(string category)
+  public IEnumerable<Post> GetPostsByCategory(string category, string currentUsername)
   {
     if (!Directory.Exists(_rootPath)) yield break;
 
@@ -60,11 +39,17 @@ public class BlogPostService : IBlogPostService
       }
 
       if (post != null && post.IsPublished && post.Categories.Contains(category, StringComparer.OrdinalIgnoreCase))
+      {
+        if (!string.IsNullOrEmpty(currentUsername))
+        {
+          post.LikedByCurrentUser = post.Likes.Contains(currentUsername, StringComparer.OrdinalIgnoreCase);
+        }
         yield return post;
+      }
     }
   }
 
-  public IEnumerable<Post> GetPostsByTag(string tag)
+  public IEnumerable<Post> GetPostsByTag(string tag, string currentUsername)
   {
     if (!Directory.Exists(_rootPath)) yield break;
 
@@ -81,11 +66,17 @@ public class BlogPostService : IBlogPostService
       }
 
       if (post != null && post.IsPublished && post.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
+      {
+        if (!string.IsNullOrEmpty(currentUsername))
+        {
+          post.LikedByCurrentUser = post.Likes.Contains(currentUsername, StringComparer.OrdinalIgnoreCase);
+        }
         yield return post;
+      }
     }
   }
 
-  public Post? GetPostBySlug(string slug)
+  public Post? GetPostBySlug(string slug, string currentUsername)
   {
     if (!Directory.Exists(_rootPath)) return null;
 
@@ -95,7 +86,13 @@ public class BlogPostService : IBlogPostService
       {
         var post = LoadPost(dir);
         if (post != null && post.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase))
+        {
+          if (!string.IsNullOrEmpty(currentUsername))
+          {
+            post.LikedByCurrentUser = post.Likes.Contains(currentUsername, StringComparer.OrdinalIgnoreCase);
+          }
           return post;
+        }
       }
       catch (Exception ex)
       {
@@ -144,7 +141,13 @@ public class BlogPostService : IBlogPostService
       }
 
       if (post != null && post.Author.Equals(username, StringComparison.OrdinalIgnoreCase) && post.IsPublished)
+      {
+        if (!string.IsNullOrEmpty(username))
+        {
+          post.LikedByCurrentUser = post.Likes.Contains(username, StringComparer.OrdinalIgnoreCase);
+        }
         yield return post;
+      }
     }
   }
   private Post? LoadPost(string folder)
@@ -163,41 +166,84 @@ public class BlogPostService : IBlogPostService
       var root = doc.RootElement;
 
       string GetSafeString(string propertyName)
-          => root.TryGetProperty(propertyName, out var prop) ? prop.GetString() ?? "" : "";
+      {
+        // Try lowercase first, then uppercase (for backwards compatibility)
+        if (root.TryGetProperty(propertyName, out var prop))
+          return prop.GetString() ?? "";
+        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
+          return upperProp.GetString() ?? "";
+        return "";
+      }
 
-      var title = GetSafeString("Title");
-      var description = GetSafeString("Description");
-      var author = GetSafeString("AuthorUsername");
-      var slug = GetSafeString("Slug");
+      DateTime GetSafeDateTime(string propertyName, DateTime defaultValue = default)
+      {
+        if (root.TryGetProperty(propertyName, out var prop))
+          return prop.GetDateTime();
+        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
+          return upperProp.GetDateTime();
+        return defaultValue;
+      }
 
-      var publishedDate = root.TryGetProperty("PublishedDate", out var pdProp) ? pdProp.GetDateTime() : DateTime.UtcNow;
+      DateTime? GetSafeNullableDateTime(string propertyName)
+      {
+        if (root.TryGetProperty(propertyName, out var prop) && prop.ValueKind != JsonValueKind.Null)
+          return prop.GetDateTime();
+        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp) && upperProp.ValueKind != JsonValueKind.Null)
+          return upperProp.GetDateTime();
+        return null;
+      }
 
-      DateTime? lastModified = null;
-      if (root.TryGetProperty("ModifiedDate", out var lmProp) && lmProp.ValueKind != JsonValueKind.Null)
-        lastModified = lmProp.GetDateTime();
+      bool GetSafeBool(string propertyName, bool defaultValue = false)
+      {
+        if (root.TryGetProperty(propertyName, out var prop))
+          return prop.GetBoolean();
+        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
+          return upperProp.GetBoolean();
+        return defaultValue;
+      }
 
-      var isPublished = root.TryGetProperty("IsPublished", out var ipProp) && ipProp.GetBoolean();
+      List<string> GetSafeStringArray(string propertyName)
+      {
+        if (root.TryGetProperty(propertyName, out var prop))
+          return prop.EnumerateArray().Select(t => t.GetString() ?? "").ToList();
+        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
+          return upperProp.EnumerateArray().Select(t => t.GetString() ?? "").ToList();
+        return new List<string>();
+      }
 
-      DateTime? scheduledDate = null;
-      if (root.TryGetProperty("ScheduledDate", out var schedProp) && schedProp.ValueKind != JsonValueKind.Null)
-        scheduledDate = schedProp.GetDateTime();
+      int GetSafeInt(string propertyName, int defaultValue = 0)
+      {
+        if (root.TryGetProperty(propertyName, out var prop))
+          return prop.GetInt32();
+        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
+          return upperProp.GetInt32();
+        return defaultValue;
+      }
 
-      var tags = root.TryGetProperty("Tags", out var tagsProp)
-          ? tagsProp.EnumerateArray().Select(t => t.GetString() ?? "").ToList()
-          : new List<string>();
+      var title = GetSafeString("title");
+      var description = GetSafeString("description");
+      var author = GetSafeString("author");
+      if (string.IsNullOrEmpty(author))
+        author = GetSafeString("authorUsername"); // fallback for old format
+      var slug = GetSafeString("slug");
 
-      var categories = root.TryGetProperty("Categories", out var catsProp)
-          ? catsProp.EnumerateArray().Select(c => c.GetString() ?? "").ToList()
-          : new List<string>();
+      var publishedDate = GetSafeDateTime("publishedDate", DateTime.UtcNow);
+      var lastModified = GetSafeNullableDateTime("lastModified") ?? GetSafeNullableDateTime("modifiedDate");
+      var isPublished = GetSafeBool("isPublished");
+      var scheduledDate = GetSafeNullableDateTime("scheduledDate");
 
-      var images = root.TryGetProperty("Images", out var imagesProp)
-          ? imagesProp.EnumerateArray().Select(i => i.GetString() ?? "").ToList()
-          : new List<string>();
+      var tags = GetSafeStringArray("tags");
+      var categories = GetSafeStringArray("categories");
+      var images = GetSafeStringArray("images");
+      var likes = GetSafeStringArray("likes");
+      var commentCount = GetSafeInt("commentCount");
 
       var body = File.ReadAllText(bodyPath);
 
       var post = new Post(title, description, body, author, publishedDate, lastModified, tags, categories, slug, isPublished, scheduledDate);
       post.Images = images;
+      post.Likes = likes;
+      post.CommentCount = commentCount;
 
       return post;
     }
@@ -537,6 +583,139 @@ public class BlogPostService : IBlogPostService
       }
     }
     return false;
+  }
+
+  public IResult LikePost(string slug, string username)
+  {
+    var postDir = GetPostDirectoryBySlug(slug);
+    if (postDir == null)
+      return Results.NotFound(new { message = "Post not found" });
+
+    var post = LoadPost(postDir);
+    if (post == null)
+      return Results.NotFound(new { message = "Post not found" });
+
+    if (post.Likes.Contains(username, StringComparer.OrdinalIgnoreCase))
+      return Results.BadRequest(new { message = "Post already liked" });
+
+    post.Likes.Add(username);
+    SavePost(postDir, post);
+
+    return Results.Ok(new { message = "Post liked successfully", likeCount = post.Likes.Count });
+  }
+
+  public IResult UnlikePost(string slug, string username)
+  {
+    var postDir = GetPostDirectoryBySlug(slug);
+    if (postDir == null)
+      return Results.NotFound(new { message = "Post not found" });
+
+    var post = LoadPost(postDir);
+    if (post == null)
+      return Results.NotFound(new { message = "Post not found" });
+
+    if (!post.Likes.Contains(username, StringComparer.OrdinalIgnoreCase))
+      return Results.BadRequest(new { message = "Post not liked yet" });
+
+    post.Likes.RemoveAll(u => u.Equals(username, StringComparison.OrdinalIgnoreCase));
+    SavePost(postDir, post);
+
+    return Results.Ok(new { message = "Post unliked successfully", likeCount = post.Likes.Count });
+  }
+
+  public IResult GetPostLikes(string slug)
+  {
+    var postDir = GetPostDirectoryBySlug(slug);
+    if (postDir == null)
+      return Results.NotFound(new { message = "Post not found" });
+
+    var post = LoadPost(postDir);
+    if (post == null)
+      return Results.NotFound(new { message = "Post not found" });
+
+    var likesWithProfiles = post.Likes.Select(username => new
+    {
+      username = username,
+      profilePictureUrl = $"/placeholders/profile.png" // You can enhance this later
+    });
+
+    return Results.Ok(likesWithProfiles);
+  }
+
+  public IEnumerable<Post> GetAllPosts(string? currentUsername = null)
+  {
+    if (!Directory.Exists(_rootPath)) yield break;
+
+    foreach (var dir in Directory.GetDirectories(_rootPath, "*", SearchOption.AllDirectories))
+    {
+      Post? post = null;
+      try
+      {
+        post = LoadPost(dir);
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"Error loading post from {dir}: {ex.Message}");
+      }
+
+      if (post != null && post.IsPublished)
+      {
+        if (!string.IsNullOrEmpty(currentUsername))
+        {
+          post.LikedByCurrentUser = post.Likes.Contains(currentUsername, StringComparer.OrdinalIgnoreCase);
+        }
+        yield return post;
+      }
+    }
+  }
+
+  private string? GetPostDirectoryBySlug(string slug)
+  {
+    foreach (var dir in Directory.GetDirectories(_rootPath))
+    {
+      try
+      {
+        var post = LoadPost(dir);
+        if (post != null && post.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase))
+          return dir;
+      }
+      catch (Exception ex)
+      {
+        Console.WriteLine($"Error checking slug in {dir}: {ex.Message}");
+      }
+    }
+    return null;
+  }
+
+  private void SavePost(string postDir, Post post)
+  {
+    try
+    {
+      var metaFilePath = Path.Combine(postDir, "meta.json");
+      var metaData = new
+      {
+        title = post.Title,
+        description = post.Description,
+        author = post.Author,
+        publishedDate = post.PublishedDate,
+        lastModified = post.LastModified,
+        tags = post.Tags,
+        categories = post.Categories,
+        slug = post.Slug,
+        isPublished = post.IsPublished,
+        scheduledDate = post.ScheduledDate,
+        images = post.Images,
+        likes = post.Likes,
+        commentCount = post.CommentCount
+      };
+
+      var jsonString = JsonSerializer.Serialize(metaData, new JsonSerializerOptions { WriteIndented = true });
+      File.WriteAllText(metaFilePath, jsonString);
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"Error saving post: {ex.Message}");
+    }
   }
 
 }

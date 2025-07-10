@@ -9,24 +9,36 @@ public static class BlogPostEndpoints
 {
     public static void MapBlogPostEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/posts", [Authorize] (IBlogPostService service) =>
+        app.MapGet("/api/posts", [Authorize] (IBlogPostService service, HttpContext ctx) =>
         {
-            return Results.Ok(service.GetAllPosts());
+            var currentUsername = ctx.User.Identity?.Name;
+            if (string.IsNullOrEmpty(currentUsername))
+                return Results.Unauthorized();
+            return Results.Ok(service.GetAllPosts(currentUsername));
         });
 
-        app.MapGet("/api/posts/category/{category}", [Authorize] (string category, IBlogPostService service) =>
+        app.MapGet("/api/posts/category/{category}", [Authorize] (string category, IBlogPostService service, HttpContext ctx) =>
         {
-            return Results.Ok(service.GetPostsByCategory(category));
+            var currentUsername = ctx.User.Identity?.Name;
+            if (string.IsNullOrEmpty(currentUsername))
+                return Results.Unauthorized();
+            return Results.Ok(service.GetPostsByCategory(category, currentUsername));
         });
 
-        app.MapGet("/api/posts/tag/{tag}", [Authorize] (string tag, IBlogPostService service) =>
+        app.MapGet("/api/posts/tag/{tag}", [Authorize] (string tag, IBlogPostService service, HttpContext ctx) =>
         {
-            return Results.Ok(service.GetPostsByTag(tag));
+            var currentUsername = ctx.User.Identity?.Name;
+            if (string.IsNullOrEmpty(currentUsername))
+                return Results.Unauthorized();
+            return Results.Ok(service.GetPostsByTag(tag, currentUsername));
         });
 
-        app.MapGet("/api/posts/{slug}", [Authorize] (string slug, IBlogPostService service) =>
+        app.MapGet("/api/posts/{slug}", [Authorize] (string slug, IBlogPostService service, HttpContext ctx) =>
         {
-            var post = service.GetPostBySlug(slug);
+            var currentUsername = ctx.User.Identity?.Name;
+            if (string.IsNullOrEmpty(currentUsername))
+                return Results.Unauthorized();
+            var post = service.GetPostBySlug(slug, currentUsername);
             return post != null ? Results.Ok(post) : Results.NotFound(new { message = "Post not found." });
         });
 
@@ -156,6 +168,34 @@ public static class BlogPostEndpoints
 
             var deleted = await service.DeletePostAsync(slug);
             return deleted ? Results.Ok(new { message = "Post deleted successfully." }) : Results.NotFound(new { message = "Post not found." });
+        });
+
+        // Like endpoints
+        app.MapPost("/api/posts/{slug}/like", [Authorize] (string slug, HttpContext ctx, IBlogPostService service) =>
+        {
+            var userName = ctx.User.Identity?.Name;
+
+            if (string.IsNullOrEmpty(userName))
+                return Results.Unauthorized();
+
+            return service.LikePost(slug, userName);
+        })
+        .WithName("LikePost")
+        .WithTags("BlogPosts");
+
+        app.MapDelete("/api/posts/{slug}/like", [Authorize] (string slug, HttpContext ctx, IBlogPostService service) =>
+        {
+            var userName = ctx.User.Identity?.Name;
+
+            if (string.IsNullOrEmpty(userName))
+                return Results.Unauthorized();
+
+            return service.UnlikePost(slug, userName);
+        });
+
+        app.MapGet("/api/posts/{slug}/likes", [Authorize] (string slug, IBlogPostService service) =>
+        {
+            return service.GetPostLikes(slug);
         });
 
     }

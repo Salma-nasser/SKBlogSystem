@@ -62,6 +62,25 @@ public static class AuthEndpoints
     .WithName("UpdateUserProfile")
     .WithTags("Users");
 
+    app.MapPut("/api/users/{username}/password", [Authorize] async (
+        string username,
+        HttpContext context,
+        IUserService userService,
+        ChangePasswordRequest request) =>
+    {
+      var currentUser = context.User.Identity?.Name;
+      if (currentUser == null || !string.Equals(currentUser, username, StringComparison.OrdinalIgnoreCase))
+        return Results.Forbid();
+
+      var validationResult = ValidateChangePasswordRequest(request);
+      if (validationResult != null)
+        return Results.BadRequest(new { message = validationResult });
+
+      return await userService.UpdatePassword(username, request.CurrentPassword, request.NewPassword);
+    })
+    .RequireAuthorization()
+    .WithName("ChangePassword")
+    .WithTags("Users");
     app.MapPut("/api/users/promote/{username}", [Authorize(Roles = "Admin")] async (string username, IUserService userService, HttpContext ctx) =>
     {
       var currentUser = ctx.User.Identity?.Name;
@@ -111,5 +130,17 @@ public static class AuthEndpoints
   {
     var emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
     return Regex.IsMatch(email, emailPattern, RegexOptions.IgnoreCase);
+  }
+
+  private static string? ValidateChangePasswordRequest(ChangePasswordRequest request)
+  {
+    if (string.IsNullOrWhiteSpace(request.CurrentPassword))
+      return "Current password is required.";
+    if (string.IsNullOrWhiteSpace(request.NewPassword))
+      return "New password is required.";
+    if (request.NewPassword.Length < 6)
+      return "New password must be at least 6 characters long.";
+
+    return null;
   }
 }
