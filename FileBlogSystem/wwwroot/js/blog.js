@@ -7,15 +7,14 @@ let allPosts = [];
 let activeFilter = null; // { type: "tag"|"category", value: "..." }
 
 const clearFilterBtn = document.getElementById("clearFilterBtn");
-const modeToggle = document.getElementById("modeToggle");
-
+initializeImageModal();
+initializeThemeToggle();
 window.addEventListener("DOMContentLoaded", () => {
   const token = localStorage.getItem("jwtToken");
   if (!token) {
     return (window.location.href = "login");
   }
-  initializeImageModal();
-  initializeThemeToggle();
+
   // Show the “New Post” modal
   document.getElementById("newPostBtn")?.addEventListener("click", () => {
     document.getElementById("postModal")?.classList.remove("hidden");
@@ -144,19 +143,25 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // ---------- DARK MODE TOGGLE ----------
-  modeToggle?.addEventListener("click", () => {
-    const isDark = document.body.classList.toggle("dark-mode");
-    modeToggle.setAttribute("data-theme", isDark ? "dark" : "light");
-    modeToggle.textContent = isDark ? "🌙" : "☀️";
-    localStorage.setItem("theme", isDark ? "dark" : "light");
-  });
-
   // ---------- INITIAL POSTS LOAD ----------
   reloadPosts();
 });
 
 // ---------- SHARED HELPERS ----------
+
+function showMessageBanner(message, type = "success") {
+  const banner = document.getElementById("messageBanner");
+  if (banner) {
+    banner.textContent = message;
+    banner.className = type === "success" ? "success" : "error";
+    banner.classList.remove("hidden");
+
+    // Auto-hide after 3 seconds
+    setTimeout(() => {
+      banner.classList.add("hidden");
+    }, 3000);
+  }
+}
 
 function getAuthHeaders() {
   const token = localStorage.getItem("jwtToken");

@@ -7,11 +7,13 @@ namespace FileBlogSystem.Services;
 public class BlogPostService : IBlogPostService
 {
   private readonly string _rootPath;
+  private readonly string _usersDirectory; // Added field for users directory
 
   public BlogPostService(IConfiguration configuration, IWebHostEnvironment env)
   {
     string? contentRoot = configuration["ContentDirectory"] ?? "Content";
     _rootPath = Path.Combine(env.ContentRootPath, contentRoot, "posts");
+    _usersDirectory = Path.Combine(env.ContentRootPath, contentRoot, "users"); // Initialize users directory
 
     if (!Directory.Exists(_rootPath))
     {
@@ -224,7 +226,7 @@ public class BlogPostService : IBlogPostService
       var description = GetSafeString("description");
       var author = GetSafeString("author");
       if (string.IsNullOrEmpty(author))
-        author = GetSafeString("authorUsername"); // fallback for old format
+        author = GetSafeString("authorUsername");
       var slug = GetSafeString("slug");
 
       var publishedDate = GetSafeDateTime("publishedDate", DateTime.UtcNow);
@@ -238,12 +240,26 @@ public class BlogPostService : IBlogPostService
       var likes = GetSafeStringArray("likes");
       var commentCount = GetSafeInt("commentCount");
 
+      // Read the body content from content.md
       var body = File.ReadAllText(bodyPath);
 
-      var post = new Post(title, description, body, author, publishedDate, lastModified, tags, categories, slug, isPublished, scheduledDate);
+      // Enhanced debug logging
+      Console.WriteLine($"LoadPost - Reading post {slug}:");
+      Console.WriteLine($"  - Body file exists: {File.Exists(bodyPath)}");
+      Console.WriteLine($"  - Body content length: {body?.Length ?? 0}");
+      Console.WriteLine($"  - Body preview: {(string.IsNullOrEmpty(body) ? "EMPTY" : body.Substring(0, Math.Min(50, body.Length)))}...");
+
+      var post = new Post(title, description, body ?? string.Empty, author, publishedDate, lastModified, tags, categories, slug, isPublished, scheduledDate);
+
+      // Verify the body was set correctly after construction
+      Console.WriteLine($"  - Post.Body after construction: {(string.IsNullOrEmpty(post.Body) ? "NULL/EMPTY" : $"Length {post.Body.Length}")}");
+
       post.Images = images;
       post.Likes = likes;
       post.CommentCount = commentCount;
+
+      // Final verification
+      Console.WriteLine($"  - Final Post.Body: {(string.IsNullOrEmpty(post.Body) ? "NULL/EMPTY" : $"Length {post.Body.Length}")}");
 
       return post;
     }
@@ -625,21 +641,73 @@ public class BlogPostService : IBlogPostService
 
   public IResult GetPostLikes(string slug)
   {
-    var postDir = GetPostDirectoryBySlug(slug);
-    if (postDir == null)
-      return Results.NotFound(new { message = "Post not found" });
-
-    var post = LoadPost(postDir);
-    if (post == null)
-      return Results.NotFound(new { message = "Post not found" });
-
-    var likesWithProfiles = post.Likes.Select(username => new
+    try
     {
-      username = username,
-      profilePictureUrl = $"/placeholders/profile.png" // You can enhance this later
-    });
+      var post = GetPostBySlug(slug, "");
+      if (post == null)
+      {
+        return Results.NotFound($"Post with slug '{slug}' not found");
+      }
 
-    return Results.Ok(likesWithProfiles);
+      // Get full user objects instead of just usernames
+      var userObjects = new List<object>();
+
+      foreach (var username in post.Likes)
+      {
+        // Get user profile information
+        var userProfilePath = Path.Combine(_usersDirectory, username, "profile.json");
+
+        if (File.Exists(userProfilePath))
+        {
+          try
+          {
+            var userProfileJson = File.ReadAllText(userProfilePath);
+            var userProfile = JsonSerializer.Deserialize<User>(userProfileJson, new JsonSerializerOptions
+            {
+              PropertyNameCaseInsensitive = true
+            });
+
+            userObjects.Add(new
+            {
+              username = username,
+              displayName = userProfile?.Username ?? username,
+              profilePictureUrl = userProfile?.ProfilePictureUrl ?? "",
+              bio = userProfile?.Bio ?? ""
+            });
+          }
+          catch (Exception ex)
+          {
+            Console.WriteLine($"Error reading profile for {username}: {ex.Message}");
+            // Fallback to username only if profile reading fails
+            userObjects.Add(new
+            {
+              username = username,
+              displayName = username,
+              profilePictureUrl = "",
+              bio = ""
+            });
+          }
+        }
+        else
+        {
+          // Fallback if no profile exists
+          userObjects.Add(new
+          {
+            username = username,
+            displayName = username,
+            profilePictureUrl = "",
+            bio = ""
+          });
+        }
+      }
+
+      return Results.Ok(userObjects);
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"Error getting post likes: {ex.Message}");
+      return Results.Problem("Failed to get post likes", statusCode: StatusCodes.Status500InternalServerError);
+    }
   }
 
   public IEnumerable<Post> GetAllPosts(string? currentUsername = null)
@@ -692,6 +760,8 @@ public class BlogPostService : IBlogPostService
     try
     {
       var metaFilePath = Path.Combine(postDir, "meta.json");
+      var bodyFilePath = Path.Combine(postDir, "content.md");
+
       var metaData = new
       {
         title = post.Title,
@@ -711,6 +781,12 @@ public class BlogPostService : IBlogPostService
 
       var jsonString = JsonSerializer.Serialize(metaData, new JsonSerializerOptions { WriteIndented = true });
       File.WriteAllText(metaFilePath, jsonString);
+
+      // Save the body content to content.md
+      if (!string.IsNullOrEmpty(post.Body))
+      {
+        File.WriteAllText(bodyFilePath, post.Body);
+      }
     }
     catch (Exception ex)
     {

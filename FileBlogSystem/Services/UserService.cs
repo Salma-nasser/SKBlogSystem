@@ -158,7 +158,7 @@ public class UserService : IUserService
     return Directory.Exists(userDirectoryPath);
   }
 
-  public async Task<IResult> GetUserProfile(string username)
+  public async Task<IResult> GetUserProfile(string username, string? requestingUser = null)
   {
     try
     {
@@ -183,17 +183,36 @@ public class UserService : IUserService
         return Results.Problem("Invalid user profile data", statusCode: StatusCodes.Status500InternalServerError);
       }
 
-      var publicUser = new
+      bool isOwnProfile = !string.IsNullOrEmpty(requestingUser) && username.Equals(requestingUser, StringComparison.OrdinalIgnoreCase);
+
+      if (isOwnProfile)
       {
-        user.Username,
-        user.Email,
-        user.Role,
-        user.CreatedAt,
-        user.ProfilePictureUrl
-
-      };
-
-      return Results.Ok(publicUser);
+        var privateProfile = new
+        {
+          user.Username,
+          user.Email, // Include email for own profile
+          user.Role,
+          user.CreatedAt,
+          user.ProfilePictureUrl,
+          user.Bio,
+          PostsCount = GetUserPostsCount(sanitizedUsername)
+        };
+        return Results.Ok(privateProfile);
+      }
+      else
+      {
+        // Return public profile without email
+        var publicProfile = new
+        {
+          user.Username,
+          user.Role,
+          user.CreatedAt,
+          user.ProfilePictureUrl,
+          user.Bio,
+          PostsCount = GetUserPostsCount(sanitizedUsername)
+        };
+        return Results.Ok(publicProfile);
+      }
     }
     catch (Exception ex)
     {
@@ -235,6 +254,10 @@ public class UserService : IUserService
       if (!string.IsNullOrWhiteSpace(request.Email))
         user.Email = request.Email.Trim();
 
+      // Handle bio updates
+      if (request.Bio != null)
+        user.Bio = request.Bio.Trim();
+
       if (!string.IsNullOrWhiteSpace(request.ProfilePictureBase64) && !string.IsNullOrWhiteSpace(request.ProfilePictureFileName))
       {
         string profilePictureUrl = await SaveProfilePictureAsync(username, request.ProfilePictureBase64, request.ProfilePictureFileName);
@@ -249,7 +272,8 @@ public class UserService : IUserService
         user.Email,
         user.Role,
         user.CreatedAt,
-        user.ProfilePictureUrl
+        user.ProfilePictureUrl,
+        user.Bio
       };
 
       return Results.Ok(publicUser);
@@ -301,51 +325,6 @@ public class UserService : IUserService
     return user.IsInRole("Admin") || user.Claims.Any(c => c.Type == ClaimTypes.Role && c.Value == "Admin");
   }
 
-  public async Task<IResult> PromoteUserToAdmin(string targetUsername, string requestedBy)
-  {
-    try
-    {
-      if (!UserDirectoryExists(targetUsername))
-      {
-        return Results.NotFound(new { message = "User not found." });
-      }
-
-      if (targetUsername.Equals(requestedBy, StringComparison.OrdinalIgnoreCase))
-      {
-        return Results.BadRequest(new { message = "You cannot promote yourself." });
-      }
-
-      string sanitizedUsername = SanitizeDirectoryName(targetUsername);
-      string profilePath = Path.Combine(_usersDirectory.FullName, sanitizedUsername, "profile.json");
-
-      if (!File.Exists(profilePath))
-      {
-        return Results.NotFound(new { message = "User profile not found." });
-      }
-
-      string profileJson = await File.ReadAllTextAsync(profilePath);
-      var user = JsonSerializer.Deserialize<User>(profileJson);
-
-      if (user == null)
-      {
-        return Results.Problem("Invalid user profile data", statusCode: StatusCodes.Status500InternalServerError);
-      }
-
-      if (user.Role == "Admin")
-      {
-        return Results.BadRequest(new { message = "User is already an admin." });
-      }
-
-      user.Role = "Admin";
-      await File.WriteAllTextAsync(profilePath, JsonSerializer.Serialize(user, new JsonSerializerOptions { WriteIndented = true }));
-
-      return Results.Ok(new { message = $"{targetUsername} has been promoted to Admin." });
-    }
-    catch (Exception ex)
-    {
-      return Results.Problem($"An error occurred: {ex.Message}", statusCode: StatusCodes.Status500InternalServerError);
-    }
-  }
   private async Task<User?> LoadUserProfile(string path)
   {
     string json = await File.ReadAllTextAsync(path);
@@ -372,5 +351,70 @@ public class UserService : IUserService
     await File.WriteAllBytesAsync(filePath, imageBytes);
 
     return $"/Content/users/{username}/assets/{cleanFileName}";
+  }
+
+  private int GetUserPostsCount(string sanitizedUsername)
+  {
+    try
+    {
+      string postsDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Content", "posts");
+      if (!Directory.Exists(postsDirectory))
+      {
+        return 0;
+      }
+
+      var postDirectories = Directory.GetDirectories(postsDirectory);
+      int count = 0;
+
+      foreach (var postDir in postDirectories)
+      {
+        string metaFile = Path.Combine(postDir, "meta.json");
+        if (!File.Exists(metaFile)) continue;
+
+        try
+        {
+          string metaJson = File.ReadAllText(metaFile);
+          if (string.IsNullOrWhiteSpace(metaJson))
+          {
+            continue;
+          }
+
+          // Configure JsonSerializer to handle camelCase property names
+          var options = new JsonSerializerOptions
+          {
+            PropertyNameCaseInsensitive = true,
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+          };
+
+          var post = JsonSerializer.Deserialize<Post>(metaJson, options);
+
+          if (post == null || string.IsNullOrEmpty(post.Author))
+          {
+            continue;
+          }
+
+          if (post.Author.Equals(sanitizedUsername, StringComparison.OrdinalIgnoreCase) &&
+              post.IsPublished)
+          {
+            count++;
+          }
+        }
+        catch (JsonException jsonEx)
+        {
+          Console.WriteLine($"JSON error reading post meta for count in {postDir}: {jsonEx.Message}");
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine($"Error reading post meta for count: {ex.Message}");
+        }
+      }
+
+      return count;
+    }
+    catch (Exception ex)
+    {
+      Console.WriteLine($"Error getting user posts count: {ex.Message}");
+      return 0;
+    }
   }
 }

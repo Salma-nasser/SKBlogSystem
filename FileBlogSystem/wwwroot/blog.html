@@ -39,61 +39,62 @@
 
   <!-- Modal for New Post -->
   <div id="postModal" class="modal hidden">
-  <div class="modal-content">
-    <span class="close" id="closeModal">&times;</span>
-    <h2>Create a New Post</h2>
-    <form id="createPostForm">
-      <label>Title</label>
-      <input type="text" name="title" placeholder="Post Title" required />
-
-      <label>Description</label>
-      <input type="text" name="description" placeholder="Post Description" required />
-
-      <label>Body</label>
-      <textarea name="body" placeholder="Write your Markdown content here..." required></textarea>
-
-      <label>Custom URL (optional)</label>
-      <input type="text" name="customUrl" placeholder="Custom URL" />
-
-      <label>Tags (comma separated)</label>
-      <input type="text" name="tags" placeholder="e.g. technology, coding" />
-
-      <label>Categories (comma separated)</label>
-      <input type="text" name="categories" placeholder="e.g. Blog, Tutorial" />
-
-      <label>Scheduled Date (optional)</label>
-      <input type="datetime-local" name="scheduledDate" />
-
-      <label>Upload Image</label>
-      <input type="file" name="Images" multiple />
-
-      <div style="display: flex; justify-content: space-between; margin-top: 1rem;">
-        <button type="submit">Publish</button>
-        <button type="button" id="saveDraftBtn">Save as Draft</button>
-      </div>
-    </form>
-  </div>
-</div>
-
-
-  <!-- Modal for Modify Post -->
-  <div id="modifyPostModal" class="modal hidden">
     <div class="modal-content">
-      <span class="close" id="closeModifyModal">&times;</span>
-      <h2>Modify Post</h2>
-      <form id="modifyPostForm">
-        <input type="text" name="modifyTitle" id="modifyTitle" placeholder="Title" required />
-        <input type="text" name="modifyDescription" id="modifyDescription" placeholder="Description" required />
-        <textarea name="modifyBody" id="modifyBody" placeholder="Edit your Markdown content..." required></textarea>
-        <input type="text" name="modifyCustomUrl" id="modifyCustomUrl" placeholder="Custom URL (optional)" />
-        <input type="text" name="modifyTags" id="modifyTags" placeholder="Tags (comma separated)" />
-        <input type="text" name="modifyCategories" id="modifyCategories" placeholder="Categories (comma separated)" />
-        <input type="file" name="Images" id="modifyImages" multiple />
-        <input type="hidden" name="postSlug" id="postSlug" />
-        <button type="submit">Save Changes</button>
+      <div class="modal-header">
+        <h2>Create a New Post</h2>
+        <button type="button" class="close" id="closeModal">✖</button>
+      </div>
+      <form id="createPostForm">
+        <div class="form-group">
+          <label for="postTitle">Title</label>
+          <input type="text" id="postTitle" name="title" placeholder="Enter your post title" required />
+        </div>
+
+        <div class="form-group">
+          <label for="postDescription">Description</label>
+          <input type="text" id="postDescription" name="description" placeholder="Brief description of your post" required />
+        </div>
+
+        <div class="form-group">
+          <label for="postBody">Content</label>
+          <textarea id="postBody" name="body" placeholder="Write your Markdown content here..." required></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="customUrl">Custom URL (optional)</label>
+            <input type="text" id="customUrl" name="customUrl" placeholder="custom-url-slug" />
+          </div>
+          <div class="form-group">
+            <label for="scheduledDate">Scheduled Date (optional)</label>
+            <input type="datetime-local" id="scheduledDate" name="scheduledDate" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="postTags">Tags (comma separated)</label>
+            <input type="text" id="postTags" name="tags" placeholder="e.g. technology, coding" />
+          </div>
+          <div class="form-group">
+            <label for="postCategories">Categories (comma separated)</label>
+            <input type="text" id="postCategories" name="categories" placeholder="e.g. Blog, Tutorial" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="postImages">Upload Images</label>
+          <input type="file" id="postImages" name="Images" multiple accept="image/*" />
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn-secondary" id="saveDraftBtn">Save as Draft</button>
+          <button type="submit" class="btn-primary">Publish Post</button>
+        </div>
       </form>
     </div>
   </div>
+
   <div id="paginationControls" style="margin-top: 20px; text-align: center;">
     <button id="prevPage">Previous</button>
     <span id="pageInfo">Page 1</span>

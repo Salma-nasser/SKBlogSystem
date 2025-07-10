@@ -1,19 +1,22 @@
 {
-  "Title": "hello",
-  "Description": "trying a new draft",
-  "CustomUrl": "lastTrialRun",
-  "AuthorUsername": "Salma",
-  "Tags": [
+  "title": "hello",
+  "description": "trying a new draft",
+  "author": "Salma",
+  "publishedDate": "2025-06-26T00:41:26.648602Z",
+  "lastModified": "2025-06-26T00:41:33.2906911Z",
+  "tags": [
     "trials"
   ],
-  "Categories": [
+  "categories": [
     "draft",
     "Testing"
   ],
-  "PublishedDate": "2025-06-26T00:41:26.648602Z",
-  "ModifiedDate": "2025-06-26T00:41:33.2906911Z",
-  "Slug": "lastTrialRun",
-  "IsPublished": true,
-  "ScheduledDate": null,
-  "Images": []
+  "slug": "lastTrialRun",
+  "isPublished": true,
+  "scheduledDate": null,
+  "images": [],
+  "likes": [
+    "Henry"
+  ],
+  "commentCount": 0
 }

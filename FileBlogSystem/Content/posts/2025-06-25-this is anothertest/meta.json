@@ -1,16 +1,19 @@
 {
-  "Title": "test",
-  "Description": "testing images",
-  "CustomUrl": "this is anothertest",
-  "AuthorUsername": "Salma",
-  "Tags": [],
-  "Categories": [],
-  "PublishedDate": "2025-06-25T23:14:03.3586323Z",
-  "ModifiedDate": "2025-06-26T00:19:01.5611473Z",
-  "Slug": "this is anothertest",
-  "IsPublished": true,
-  "ScheduledDate": null,
-  "Images": [
+  "title": "test",
+  "description": "testing images",
+  "author": "Salma",
+  "publishedDate": "2025-06-25T23:14:03.3586323Z",
+  "lastModified": "2025-06-26T00:19:01.5611473Z",
+  "tags": [],
+  "categories": [],
+  "slug": "this is anothertest",
+  "isPublished": true,
+  "scheduledDate": null,
+  "images": [
     "/assets/WhatsApp Image 2024-11-24 at 08.36.22_43d3c791.jpg"
-  ]
+  ],
+  "likes": [
+    "Salma"
+  ],
+  "commentCount": 0
 }

@@ -89,24 +89,6 @@ public static class BlogPostEndpoints
             return success ? Results.Ok(new { message }) : Results.BadRequest(new { message });
         });
 
-        app.MapPut("/api/posts/blog-modify/{slug}", [Authorize] async (string slug, HttpContext ctx, IBlogPostService service) =>
-        {
-            var userName = ctx.User.Identity?.Name;
-
-            if (string.IsNullOrEmpty(userName))
-                return Results.Unauthorized();
-
-            var parseResult = await ParseFormRequest(ctx, allowSchedule: false);
-            if (parseResult.IsInvalid || parseResult.Request == null)
-                return Results.BadRequest(new { message = parseResult.ErrorMessage });
-
-            parseResult.Request.IsPublished = true;
-            parseResult.Request.ScheduledDate = null;
-
-            var (success, message) = await service.ModifyPostAsync(slug, parseResult.Request, userName);
-
-            return success ? Results.Ok(new { message }) : Results.BadRequest(new { message });
-        });
 
         app.MapPut("/api/posts/publish/{slug}", [Authorize] async (string slug, HttpContext ctx, IBlogPostService service) =>
         {

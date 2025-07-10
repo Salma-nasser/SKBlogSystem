@@ -3,5 +3,9 @@
   "Email": "henry@email.com",
   "PasswordHash": "QzFYtVucOA7BzDaafBt9hIJQvXdEtzTCKA8Sel9IOx0HZ\u002BJ1MCnDu\u002Bsftx0/yqW5",
   "Role": "Author",
-  "CreatedAt": "2025-06-25T17:58:50.550857Z"
+  "CreatedAt": "2025-06-25T17:58:50.550857Z",
+  "ProfilePictureUrl": "",
+  "Bio": "",
+  "LastLoginDate": "0001-01-01T00:00:00",
+  "IsActive": true
 }

@@ -1,20 +1,23 @@
 {
-  "Title": "testttting",
-  "Description": "last time",
-  "CustomUrl": "wasUsingOldFiles",
-  "AuthorUsername": "Salma",
-  "Tags": [
+  "title": "testttting",
+  "description": "last time",
+  "author": "Salma",
+  "publishedDate": "2025-06-25T23:24:32.7621115Z",
+  "lastModified": "2025-06-25T23:24:32.7621115Z",
+  "tags": [
     "reboot"
   ],
-  "Categories": [
+  "categories": [
     "fixed"
   ],
-  "PublishedDate": "2025-06-25T23:24:32.7621115Z",
-  "ModifiedDate": "2025-06-25T23:24:32.7621115Z",
-  "Slug": "wasUsingOldFiles",
-  "IsPublished": true,
-  "ScheduledDate": null,
-  "Images": [
+  "slug": "wasUsingOldFiles",
+  "isPublished": true,
+  "scheduledDate": null,
+  "images": [
     "/assets/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg"
-  ]
+  ],
+  "likes": [
+    "Henry"
+  ],
+  "commentCount": 0
 }

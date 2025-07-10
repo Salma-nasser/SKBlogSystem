@@ -21,6 +21,7 @@ builder.Services.AddScoped<PasswordService>();
 builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<IBlogPostService, BlogPostService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddHostedService<ScheduledPostPublisher>();
 
 // Auth
@@ -88,6 +89,8 @@ app.UseAuthorization();
 // Map API endpoints
 app.MapBlogPostEndpoints();
 app.MapAuthEndpoints();
+app.MapUserEndpoints();
+app.MapAdminEndpoints();
 
 // Only in development, open browser
 if (app.Environment.IsDevelopment())

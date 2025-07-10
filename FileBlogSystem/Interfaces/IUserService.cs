@@ -7,10 +7,10 @@ namespace FileBlogSystem.Interfaces
     {
         Task<IResult> LoginUser(string username, string password);
         Task<IResult> RegisterUser(string username, string password, string email, string role = "Author");
-        Task<IResult> GetUserProfile(string username);
+        Task<IResult> GetUserProfile(string username, string? requestingUser = null);
         Task<IResult> UpdateUserProfile(string username, UpdateProfileRequest formData);
         Task<IResult> UpdatePassword(string username, string currentPassword, string newPassword);
         bool IsAdmin(ClaimsPrincipal user);
-        Task<IResult> PromoteUserToAdmin(string targetUsername, string requestedBy);
+
     }
 }

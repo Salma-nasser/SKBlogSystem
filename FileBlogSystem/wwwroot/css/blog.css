@@ -9,6 +9,7 @@ body {
 :root {
   --bg-color: #fdfaf6; /* soft warm cream */
   --text-color: #3e3e3e; /* deep neutral gray */
+  --text-muted: #666; /* muted text color */
   --accent-color: #c89b7b; /* soft terracotta */
   --accent-hover: #a6765b; /* rich terracotta hover */
   --button-bg: #8c6e63; /* soft brown button */
@@ -17,11 +18,13 @@ body {
   --header-text: #3e3e3e; /* header text remains dark */
   --header-shadow: rgba(0, 0, 0, 0.1);
   --post-bg: #ffffff; /* clean white post background */
+  --card-background: #f9f9f9; /* light card background */
 }
 
 body.dark-mode {
   --bg-color: #3a2e2a; /* deep chocolate */
   --text-color: #f0eae4; /* light beige text */
+  --text-muted: #c0c0c0; /* lighter muted text for dark mode */
   --accent-color: #d6a07b; /* warm bronze accent */
   --accent-hover: #b67f5f; /* rich bronze hover */
   --button-bg: #6e554a; /* muted coffee brown button */
@@ -30,6 +33,7 @@ body.dark-mode {
   --header-text: #fdfaf6; /* light header text */
   --header-shadow: rgba(0, 0, 0, 0.2);
   --post-bg: #4a3a35; /* soft coffee post background */
+  --card-background: #5a4a45; /* darker card background for dark mode */
 }
 
 body.dark-mode .post-card h3,
@@ -159,20 +163,33 @@ main {
   text-align: center;
 }
 
-.post-card p {
-  color: #555;
-  font-size: 1rem;
-  margin-bottom: 15px;
-  text-align: center;
-}
-
 .post-body {
   flex: none;
-  margin-bottom: 15px;
-  color: #444;
+  margin: 1rem 0;
+  padding: 1rem;
+  background-color: var(--card-background, #f9f9f9);
+  border-radius: 8px;
+  border-left: 4px solid var(--accent-color, #8b7355);
+  line-height: 1.6;
+  color: var(--text-color); /* Changed from fixed #333 to use CSS variable */
   overflow: visible;
   text-overflow: unset;
   max-height: none;
+}
+
+.post-body p {
+  margin-bottom: 1rem;
+  color: var(--text-color); /* Ensure paragraphs also use the theme color */
+}
+
+.post-body:last-child {
+  margin-bottom: 0;
+}
+
+.post-description {
+  font-style: italic;
+  color: var(--text-muted, #666);
+  margin-bottom: 1rem;
 }
 
 .post-card small {
@@ -182,6 +199,19 @@ main {
   text-align: center;
 }
 
+/* Author link styling */
+.author-link {
+  color: var(--accent-color);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.author-link:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
 /* Modal Styles */
 .modal {
   position: fixed;
@@ -189,10 +219,12 @@ main {
   left: 0;
   width: 100%;
   height: 100%;
-  display: grid;
-  place-items: center;
-  background-color: rgba(0, 0, 0, 0.5);
-  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: rgba(0, 0, 0, 0.7);
+  z-index: 1000;
+  backdrop-filter: blur(3px);
 }
 
 .modal.hidden {
@@ -200,52 +232,196 @@ main {
 }
 
 .modal-content {
-  background: #fff;
-  padding: 2rem;
-  border-radius: 12px;
-  width: 90%;
-  max-width: 600px;
-  position: relative;
-  animation: fadeIn 0.3s ease-in-out;
+  background: var(--post-bg);
+  border-radius: 16px;
+  width: 95%;
+  max-width: 700px;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  animation: modalAppear 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
 }
 
-.close {
-  position: absolute;
-  top: 1rem;
-  right: 1.25rem;
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+  color: white;
+  border-radius: 16px 16px 0 0;
+}
+
+.modal-header h2 {
+  margin: 0;
   font-size: 1.5rem;
-  cursor: pointer;
+  font-weight: 600;
 }
 
-@keyframes fadeIn {
+.modal-header .close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.2rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.modal-header .close:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+  transform: rotate(90deg);
+}
+
+.modal form {
+  padding: 2rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+@keyframes modalAppear {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.9) translateY(-20px);
   }
-
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateY(0);
   }
 }
 
 /* Form Styling */
-form input,
-form textarea {
-  display: block;
-  width: 100%;
-  margin-bottom: 1rem;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 5px;
-  font-size: 1rem;
+.form-group {
+  margin-bottom: 1.5rem;
 }
 
-form textarea {
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: var(--text-color);
+  font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e1e5e9;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: var(--text-color);
+  background-color: var(--bg-color);
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(200, 155, 123, 0.1);
+}
+
+.form-group textarea {
   resize: vertical;
-  min-height: 150px;
+  min-height: 120px;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.5;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e1e5e9;
+  margin-top: 1.5rem;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 0.875rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+  color: white;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(200, 155, 123, 0.3);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-color);
+  border: 2px solid #e1e5e9;
+}
+
+.btn-secondary:hover {
+  background-color: #f8f9fa;
+  border-color: var(--accent-color);
+}
+
+/* File input styling */
+input[type="file"] {
+  padding: 0.5rem 0;
+  border: 2px dashed #e1e5e9 !important;
+  background: transparent !important;
+  border-radius: 8px !important;
+  text-align: center;
+  cursor: pointer;
+}
+
+input[type="file"]:hover {
+  border-color: var(--accent-color) !important;
+  background: rgba(200, 155, 123, 0.05) !important;
+}
+
+/* Responsive form layout */
+@media (max-width: 768px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column-reverse;
+  }
+
+  .modal-content {
+    width: 98%;
+    margin: 1rem;
+  }
+
+  .modal form {
+    padding: 1.5rem;
+  }
+
+  .modal-header {
+    padding: 1rem 1.5rem;
+  }
 }
 
 #messageBanner {

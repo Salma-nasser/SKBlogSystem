@@ -4,7 +4,7 @@ namespace FileBlogSystem.Interfaces
 {
     public interface IBlogPostService
     {
-        IEnumerable<Post> GetAllPosts(string? currentUsername=null);
+        IEnumerable<Post> GetAllPosts(string? currentUsername = null);
         IEnumerable<Post> GetPostsByCategory(string category, string currentUsername);
         IEnumerable<Post> GetPostsByTag(string tag, string currentUsername);
         Post? GetPostBySlug(string slug, string currentUsername);
@@ -15,7 +15,6 @@ namespace FileBlogSystem.Interfaces
         Task<bool> DeletePostAsync(string slug);
         IEnumerable<Post> GetAllPostsIncludingDrafts();
         IEnumerable<Post> GetPostsByUser(string username);
-
         // Like methods
         IResult LikePost(string slug, string currentUsername);
         IResult UnlikePost(string slug, string currentUsername);

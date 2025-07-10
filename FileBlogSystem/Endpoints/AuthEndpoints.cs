@@ -38,30 +38,6 @@ public static class AuthEndpoints
     .WithName("Register")
     .WithTags("Authentication");
 
-    app.MapGet("/api/users/{username}", [Authorize] async (string username, IUserService userService) =>
-    {
-      return await userService.GetUserProfile(username);
-    })
-    .RequireAuthorization()
-    .WithName("GetUserProfile")
-    .WithTags("Users");
-
-    app.MapPut("/api/users/{username}", [Authorize] async (
-        string username,
-        HttpContext context,
-        IUserService userService,
-        UpdateProfileRequest request) =>
-    {
-      var currentUser = context.User.Identity?.Name;
-      if (currentUser == null || currentUser != username)
-        return Results.Unauthorized();
-
-      return await userService.UpdateUserProfile(username, request);
-    })
-    .RequireAuthorization()
-    .WithName("UpdateUserProfile")
-    .WithTags("Users");
-
     app.MapPut("/api/users/{username}/password", [Authorize] async (
         string username,
         HttpContext context,
@@ -81,16 +57,6 @@ public static class AuthEndpoints
     .RequireAuthorization()
     .WithName("ChangePassword")
     .WithTags("Users");
-    app.MapPut("/api/users/promote/{username}", [Authorize(Roles = "Admin")] async (string username, IUserService userService, HttpContext ctx) =>
-    {
-      var currentUser = ctx.User.Identity?.Name;
-
-      if (string.IsNullOrEmpty(currentUser))
-        return Results.Unauthorized();
-
-      var result = await userService.PromoteUserToAdmin(username, currentUser);
-      return result;
-    });
   }
 
   private static string? ValidateLoginRequest(LoginRequest request)

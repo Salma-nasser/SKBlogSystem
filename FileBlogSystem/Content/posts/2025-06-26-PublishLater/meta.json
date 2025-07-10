@@ -2,7 +2,7 @@
   "Title": "trying a scheduled post",
   "Description": "schedule",
   "CustomUrl": "PublishLater",
-  "AuthorUsername": "Salma",
+  "author": "Salma",
   "Tags": [
     "test",
     "postLater"

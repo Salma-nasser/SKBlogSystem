@@ -2,15 +2,15 @@ namespace FileBlogSystem.Models;
 
 public class Post
 {
-  public string Title { get; set; }
-  public string Description { get; set; }
-  public string Body { get; set; }
-  public string Author { get; set; }
+  public string Title { get; set; } = "";
+  public string Description { get; set; } = "";
+  public string Body { get; set; } = "";
+  public string Author { get; set; } = "";
   public DateTime PublishedDate { get; set; }
   public DateTime? LastModified { get; set; }
-  public List<string> Tags { get; set; }
-  public List<string> Categories { get; set; }
-  public string Slug { get; set; }
+  public List<string> Tags { get; set; } = new List<string>();
+  public List<string> Categories { get; set; } = new List<string>();
+  public string Slug { get; set; } = "";
   public bool IsPublished { get; set; }
   public DateTime? ScheduledDate { get; set; }
   public List<string> Images { get; set; } = new List<string>();
