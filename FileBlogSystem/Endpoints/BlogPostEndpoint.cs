@@ -141,7 +141,15 @@ public static class BlogPostEndpoints
             var posts = service.GetPostsByUser(username);
             return Results.Ok(posts);
         });
+        app.MapGet("/api/posts/user/{username}", [Authorize] (string username, HttpContext ctx, IBlogPostService service) =>
+        {
+            var currentUsername = ctx.User.Identity?.Name;
+            if (string.IsNullOrEmpty(currentUsername))
+                return Results.Unauthorized();
 
+            var posts = service.GetPostsByUser(username, currentUsername);
+            return Results.Ok(posts);
+        });
         app.MapDelete("/api/posts/delete/{slug}", [Authorize] async (string slug, HttpContext ctx, IBlogPostService service) =>
         {
             var username = ctx.User.Identity?.Name;
@@ -214,6 +222,9 @@ public static class BlogPostEndpoints
 
         var images = form.Files.Where(f => f.Name == "Images").ToList();
 
+        // Add support for KeptImages
+        var keptImages = form["KeptImages"].Where(s => !string.IsNullOrEmpty(s)).Select(s => s!).ToList();
+
         var request = new CreatePostRequest
         {
             Title = title,
@@ -224,7 +235,8 @@ public static class BlogPostEndpoints
             ScheduledDate = scheduledDate,
             Tags = tags,
             Categories = categories,
-            Images = images
+            Images = images,
+            KeptImages = keptImages // Add this line
         };
 
         return ParseResult.Valid(request);

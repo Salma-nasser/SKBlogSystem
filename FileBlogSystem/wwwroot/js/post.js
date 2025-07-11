@@ -1,105 +1,473 @@
+import { renderPosts } from "./utils/renderPost.js";
 import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
+import { showMessage } from "./utils/notifications.js";
 
-window.addEventListener("DOMContentLoaded", async () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const postSlug = urlParams.get("slug");
-
-  if (!postSlug) {
-    document.getElementById("postTitle").innerText = "Post not found.";
-    document.getElementById("postDescription").innerText = "";
-    return;
-  }
-
+window.addEventListener("DOMContentLoaded", () => {
+  // Initialize components
   initializeImageModal();
   initializeThemeToggle();
 
+  // Get the post slug from URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const slug = urlParams.get("slug");
+
+  if (!slug) {
+    showMessage("Post not found", "error");
+    setTimeout(() => {
+      window.location.href = "blog.html";
+    }, 2000);
+    return;
+  }
+
+  // Load the post
+  loadPost(slug);
+
+  // Navigation event listeners
+  const backToBlogBtn = document.getElementById("backToBlogBtn");
+  const logoutBtn = document.getElementById("logoutBtn");
+
+  backToBlogBtn?.addEventListener("click", () => {
+    window.location.href = "blog.html";
+  });
+
+  logoutBtn?.addEventListener("click", () => {
+    localStorage.removeItem("jwtToken");
+    showMessage("Logged out successfully", "info");
+    setTimeout(() => {
+      window.location.href = "login.html";
+    }, 1000);
+  });
+});
+
+async function loadPost(slug) {
   try {
     const token = localStorage.getItem("jwtToken");
 
-    const response = await fetch(
-      `https://localhost:7189/api/posts/${postSlug}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
+    showMessage("Loading post...", "info");
+
+    const response = await fetch(`https://localhost:7189/api/posts/${slug}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        throw new Error("Post not found");
       }
-    );
+      throw new Error(`Failed to load post: ${response.status}`);
+    }
 
-    if (response.ok) {
-      const post = await response.json();
+    const post = await response.json();
 
-      document.getElementById("postTitle").classList.remove("skeleton");
-      document.getElementById("postTitle").style.height = "auto";
-      document.getElementById("postTitle").textContent = post.Title;
+    // Update page title
+    document.title = `${post.Title} - Blog`;
 
-      document.getElementById("postDate").innerText = new Date(
-        post.PublishedDate
-      ).toLocaleString();
-      document.getElementById("postDescription").innerText = post.Description;
-      document.getElementById("postBody").innerHTML = post.Body;
-      document.getElementById("authorName").innerText = post.Author;
+    // Render the single post
+    renderSinglePost(post);
 
-      renderList("postTags", post.Tags, "Tags");
-      renderList("postCategories", post.Categories, "Categories");
-
-      // Load all images
-      if (post.Images && post.Images.length > 0) {
-        const imagesContainer = document.getElementById("postImages");
-        const dateOnly = new Date(post.PublishedDate)
-          .toISOString()
-          .split("T")[0];
-
-        post.Images.forEach((imagePath) => {
-          const img = document.createElement("img");
-          img.src = `https://localhost:7189/Content/posts/${dateOnly}-${post.Slug}${imagePath}`; // 🔥 Correct path
-          img.alt = "Post Image";
-          img.classList.add("full-post-image");
-          imagesContainer.appendChild(img);
-        });
-      }
-    } else {
-      document.getElementById("postTitle").innerText = "Post not found.";
-      document.getElementById("postDescription").innerText = "";
+    // Clear the loading message
+    const messageContainer = document.querySelector(".message");
+    if (messageContainer) {
+      messageContainer.remove();
     }
   } catch (error) {
-    console.error(error);
-    document.getElementById("postTitle").innerText = "Error loading post.";
-    document.getElementById("postDescription").innerText = "";
+    console.error("Error loading post:", error);
+
+    // Show error in the post container
+    const container = document.getElementById("postContainer");
+    if (container) {
+      container.innerHTML = `
+        <div class="error-container">
+          <h2>Post Not Found</h2>
+          <p>${error.message}</p>
+          <button onclick="window.location.href='blog.html'" class="btn btn-primary">
+            Back to Blog
+          </button>
+        </div>
+      `;
+    }
+
+    showMessage(error.message, "error");
   }
-});
+}
 
-// Back to Blog Button
-document.getElementById("backToBlogBtn").addEventListener("click", () => {
-  window.location.href = "blog";
-});
+function renderSinglePost(post) {
+  const container = document.getElementById("postContainer");
+  if (!container) return;
 
-// Render tags/categories
-function renderList(containerId, items, label) {
-  const container = document.getElementById(containerId);
-  container.innerHTML = ""; // Clear old content if re-rendered
+  const publishedDate = post.PublishedDate || post.CreatedDate;
+  const formattedDate = publishedDate
+    ? new Date(publishedDate).toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      })
+    : "";
 
-  if (items && items.length > 0) {
-    const labelEl = document.createElement("strong");
-    labelEl.innerText = label + ": ";
-    container.appendChild(labelEl);
+  const dateOnly = publishedDate
+    ? new Date(publishedDate).toISOString().split("T")[0]
+    : "";
 
-    items.forEach((item) => {
-      const span = document.createElement("span");
-      span.innerText = item;
-      span.classList.add("tag");
-      container.appendChild(span);
+  // Generate images HTML with proper layout classes
+  let imagesHtml = "";
+  if (post.Images && post.Images.length > 0) {
+    const imageCount = post.Images.length;
+    let layoutClass = "single-image";
+
+    if (imageCount === 2) {
+      layoutClass = "multiple-images images-2";
+    } else if (imageCount === 3) {
+      layoutClass = "multiple-images images-3";
+    } else if (imageCount >= 4) {
+      layoutClass = "multiple-images images-4-plus";
+    }
+
+    imagesHtml = `
+      <div class="single-post-images ${layoutClass}">
+        ${post.Images.map(
+          (imagePath, index) =>
+            `<img 
+             src="https://localhost:7189/Content/posts/${dateOnly}-${
+              post.Slug
+            }${imagePath}" 
+             alt="Post Image ${index + 1}" 
+             class="post-image" 
+             loading="lazy"
+             data-index="${index}"
+             onerror="this.style.display='none'"
+           />`
+        ).join("")}
+      </div>
+    `;
+  }
+
+  // Tags and categories
+  const tagsHtml =
+    post.Tags && post.Tags.length > 0
+      ? `<div class="post-tags">
+         <strong>Tags:</strong> ${post.Tags.map(
+           (tag) => `<span class="tag">${tag}</span>`
+         ).join("")}
+       </div>`
+      : "";
+
+  const categoriesHtml =
+    post.Categories && post.Categories.length > 0
+      ? `<div class="post-categories">
+         <strong>Categories:</strong> ${post.Categories.map(
+           (category) => `<span class="category">${category}</span>`
+         ).join("")}
+       </div>`
+      : "";
+
+  // Interaction bar with likes and comments
+  const likeIcon = post.LikedByCurrentUser ? "❤️" : "🤍";
+  const likeCount = post.Likes?.length || 0;
+  const commentCount = post.CommentCount || 0;
+
+  const interactionBarHtml = `
+    <div class="interaction-bar">
+      <span class="like-toggle" data-slug="${post.Slug}" data-liked="${post.LikedByCurrentUser}">
+        ${likeIcon}
+      </span>
+      <span class="like-count" data-slug="${post.Slug}">${likeCount} Likes</span>
+      <span class="comment-count" data-slug="${post.Slug}">${commentCount} Comments</span>
+    </div>
+  `;
+
+  container.innerHTML = `
+    <article class="single-post">
+      <header class="post-header">
+        <h1 class="post-title">${post.Title || "Untitled"}</h1>
+        <div class="post-meta">
+          <span class="post-author">By <strong>${
+            post.Author || "Unknown Author"
+          }</strong></span>
+          <span class="post-date">${formattedDate}</span>
+        </div>
+      </header>
+      
+      <div class="post-description">
+        ${post.Description || ""}
+      </div>
+      
+      ${imagesHtml}
+      
+      <div class="post-content">
+        ${post.Body || ""}
+      </div>
+      
+      <div class="post-metadata">
+        ${tagsHtml}
+        ${categoriesHtml}
+      </div>
+      
+      ${interactionBarHtml}
+    </article>
+  `;
+
+  // Add event listeners for likes functionality
+  setupLikesInteraction(post.Slug);
+}
+
+function setupLikesInteraction(slug) {
+  const container = document.getElementById("postContainer");
+
+  // Like toggle functionality
+  const likeToggle = container.querySelector(".like-toggle");
+  if (likeToggle) {
+    likeToggle.addEventListener("click", async () => {
+      const liked = likeToggle.dataset.liked === "true";
+
+      try {
+        // Toggle visual immediately for better UX
+        likeToggle.textContent = liked ? "🤍" : "❤️";
+        likeToggle.dataset.liked = (!liked).toString();
+
+        const response = await fetch(
+          `https://localhost:7189/api/posts/${slug}/like`,
+          {
+            method: liked ? "DELETE" : "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          // Revert visual change if request failed
+          likeToggle.textContent = liked ? "❤️" : "🤍";
+          likeToggle.dataset.liked = liked.toString();
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        // Update like count
+        const likeCountSpan = container.querySelector(
+          `.like-count[data-slug="${slug}"]`
+        );
+        if (likeCountSpan) {
+          likeCountSpan.textContent = `${result.likeCount} Likes`;
+        }
+
+        showMessage(liked ? "Like removed" : "Post liked!", "success");
+      } catch (error) {
+        console.error("Error toggling like:", error);
+        // Revert visual change on error
+        likeToggle.textContent = liked ? "❤️" : "🤍";
+        likeToggle.dataset.liked = liked.toString();
+        showMessage("Failed to update like status", "error");
+      }
+    });
+  }
+
+  // Show list of users who liked the post
+  const likeCount = container.querySelector(".like-count");
+  if (likeCount) {
+    likeCount.addEventListener("click", async () => {
+      try {
+        const response = await fetch(
+          `https://localhost:7189/api/posts/${slug}/likes`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const likers = await response.json();
+
+        // Create modal to show likers
+        const modal = document.createElement("div");
+        modal.className = "like-modal";
+        modal.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0,0,0,0.6);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+        `;
+
+        modal.innerHTML = `
+          <div class="like-list" style="
+            background: var(--post-bg, #fff);
+            color: var(--text-color, #333);
+            padding: 30px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90vw;
+            max-height: 70vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+          ">
+            <h3 style="
+              margin: 0 0 20px 0;
+              font-size: 1.5rem;
+              color: var(--text-color, #333);
+              border-bottom: 2px solid var(--accent-color, #c89b7b);
+              padding-bottom: 10px;
+            ">Liked by ${likers.length} ${
+          likers.length === 1 ? "person" : "people"
+        }</h3>
+            <ul style="
+              list-style: none;
+              padding: 0;
+              margin: 0 0 20px 0;
+            ">
+              ${
+                likers.length > 0
+                  ? likers
+                      .map(
+                        (user) => `
+                  <li style="
+                    display: flex;
+                    align-items: center;
+                    margin-bottom: 15px;
+                    padding: 10px;
+                    border-radius: 8px;
+                    background: var(--card-background, #f9f9f9);
+                    transition: background-color 0.2s ease;
+                  " onmouseover="this.style.background='var(--accent-color, #c89b7b)'; this.style.opacity='0.8';" 
+                    onmouseout="this.style.background='var(--card-background, #f9f9f9)'; this.style.opacity='1';">
+                    <div style="
+                      width: 50px;
+                      height: 50px;
+                      border-radius: 50%;
+                      margin-right: 15px;
+                      overflow: hidden;
+                      background: var(--accent-color, #c89b7b);
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      flex-shrink: 0;
+                    ">
+                      ${
+                        user.profilePictureUrl && user.profilePictureUrl !== ""
+                          ? `<img src="${user.profilePictureUrl}" alt="${
+                              user.username
+                            }" 
+                            style="width: 100%; height: 100%; object-fit: cover;"
+                            onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" />
+                        <div style="
+                          display: none;
+                          width: 100%;
+                          height: 100%;
+                          align-items: center;
+                          justify-content: center;
+                          color: white;
+                          font-weight: bold;
+                          font-size: 1.2rem;
+                        ">${user.username.charAt(0).toUpperCase()}</div>`
+                          : `<div style="
+                          display: flex;
+                          width: 100%;
+                          height: 100%;
+                          align-items: center;
+                          justify-content: center;
+                          color: white;
+                          font-weight: bold;
+                          font-size: 1.2rem;
+                        ">${user.username.charAt(0).toUpperCase()}</div>`
+                      }
+                    </div>
+                    <div style="flex: 1;">
+                      <div style="
+                        font-weight: 600;
+                        font-size: 1.1rem;
+                        color: var(--text-color, #333);
+                        margin-bottom: 2px;
+                      ">${user.username}</div>
+                      ${
+                        user.displayName && user.displayName !== user.username
+                          ? `<div style="
+                          font-size: 0.9rem;
+                          color: var(--text-muted, #666);
+                        ">${user.displayName}</div>`
+                          : ""
+                      }
+                    </div>
+                    <a href="my-profile?username=${user.username}" style="
+                      padding: 5px 12px;
+                      background: var(--accent-color, #c89b7b);
+                      color: white;
+                      text-decoration: none;
+                      border-radius: 6px;
+                      font-size: 0.85rem;
+                      transition: background-color 0.2s ease;
+                    " onmouseover="this.style.background='var(--accent-hover, #a6765b)';"
+                      onmouseout="this.style.background='var(--accent-color, #c89b7b)';">
+                      View Profile
+                    </a>
+                  </li>
+                `
+                      )
+                      .join("")
+                  : `<li style="
+                    text-align: center;
+                    padding: 40px;
+                    color: var(--text-muted, #666);
+                    font-style: italic;
+                  ">
+                    <div style="font-size: 3rem; margin-bottom: 10px;">💔</div>
+                    No likes yet. Be the first to like this post!
+                  </li>`
+              }
+            </ul>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+              <button class="close-modal" style="
+                padding: 12px 24px;
+                background: var(--button-bg, #8c6e63);
+                color: var(--button-text, white);
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 1rem;
+                font-weight: 500;
+                transition: all 0.2s ease;
+              " onmouseover="this.style.background='var(--accent-hover, #a6765b)'; this.style.transform='translateY(-1px)';"
+                onmouseout="this.style.background='var(--button-bg, #8c6e63)'; this.style.transform='translateY(0)';">
+                Close
+              </button>
+            </div>
+          </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        modal
+          .querySelector(".close-modal")
+          .addEventListener("click", () => modal.remove());
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal) modal.remove();
+        });
+      } catch (error) {
+        console.error("Error fetching likes:", error);
+        showMessage("Failed to load likes. Please try again.", "error");
+      }
     });
   }
 }
 
-// Image Modal Handler
+// Image click handler for modal
 document.body.addEventListener("click", (e) => {
-  if (e.target.classList.contains("full-post-image")) {
-    // Match your image class
-    const images = Array.from(
-      document.querySelectorAll(".full-post-image")
-    ).map((img) => img.src);
+  if (e.target.classList.contains("post-image")) {
+    const images = Array.from(document.querySelectorAll(".post-image")).map(
+      (img) => img.src
+    );
     const clickedIndex = images.indexOf(e.target.src);
-
     openImageModal(images, clickedIndex);
   }
 });

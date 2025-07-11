@@ -1,4 +1,5 @@
 import { initializeThemeToggle } from "./utils/themeToggle.js";
+import { showMessage } from "./utils/notifications.js";
 
 initializeThemeToggle();
 const registerPasswordInput = document.getElementById("registerPassword");
@@ -124,10 +125,10 @@ if (loginForm) {
           // The response is not JSON (probably HTML)
           errorMessage = `Server returned a non-JSON response: ${response.statusText}`;
         }
-        alert(errorMessage);
+        showMessage(errorMessage, "error");
       }
     } catch (err) {
-      alert("Something went wrong: " + err.message);
+      showMessage("Something went wrong: " + err.message, "error");
     }
   });
 }

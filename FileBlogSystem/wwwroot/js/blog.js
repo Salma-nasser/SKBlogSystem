@@ -1,6 +1,7 @@
 import { renderPosts } from "./utils/renderPost.js";
 import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
+import { showMessage } from "./utils/notifications.js";
 let currentPage = 1;
 const pageSize = 5;
 let allPosts = [];
@@ -31,7 +32,7 @@ window.addEventListener("DOMContentLoaded", () => {
     ?.addEventListener("submit", async (e) => {
       e.preventDefault();
       const token = localStorage.getItem("jwtToken");
-      if (!token) return alert("Please log in first.");
+      if (!token) return showMessage("Please log in first.", "warning");
 
       const form = e.target;
       const fd = new FormData(form);
@@ -44,12 +45,12 @@ window.addEventListener("DOMContentLoaded", () => {
           body: fd,
         });
         if (!res.ok) throw new Error(res.status);
-        showMessageBanner("Post published!", "success");
+        showMessage("Post published!", "success");
         reloadPosts();
         form.reset();
         document.getElementById("postModal")?.classList.add("hidden");
       } catch {
-        showMessageBanner("Publish failed", "error");
+        showMessage("Publish failed", "error");
       }
     });
 
@@ -58,7 +59,7 @@ window.addEventListener("DOMContentLoaded", () => {
     .getElementById("saveDraftBtn")
     ?.addEventListener("click", async () => {
       const token = localStorage.getItem("jwtToken");
-      if (!token) return alert("Please log in first.");
+      if (!token) return showMessage("Please log in first.", "warning");
 
       const form = document.getElementById("createPostForm");
       const fd = new FormData(form);
@@ -71,12 +72,12 @@ window.addEventListener("DOMContentLoaded", () => {
           body: fd,
         });
         if (!res.ok) throw new Error(res.status);
-        showMessageBanner("Draft saved!", "success");
+        showMessage("Draft saved!", "success");
         reloadPosts();
         form.reset();
         document.getElementById("postModal")?.classList.add("hidden");
       } catch {
-        showMessageBanner("Save draft failed", "error");
+        showMessage("Save draft failed", "error");
       }
     });
   // ---------- VIEW PROFILE ----------
@@ -148,20 +149,6 @@ window.addEventListener("DOMContentLoaded", () => {
 });
 
 // ---------- SHARED HELPERS ----------
-
-function showMessageBanner(message, type = "success") {
-  const banner = document.getElementById("messageBanner");
-  if (banner) {
-    banner.textContent = message;
-    banner.className = type === "success" ? "success" : "error";
-    banner.classList.remove("hidden");
-
-    // Auto-hide after 3 seconds
-    setTimeout(() => {
-      banner.classList.add("hidden");
-    }, 3000);
-  }
-}
 
 function getAuthHeaders() {
   const token = localStorage.getItem("jwtToken");

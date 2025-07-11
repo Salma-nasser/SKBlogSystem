@@ -8,41 +8,21 @@
 </head>
 
 <body>
-
-    <!-- Header -->
     <header>
-        <h1>Aether & Ink</h1>
+        <h1><a href="blog.html">Aether & Ink</a></h1>
         <div class="header-buttons">
             <button id="backToBlogBtn">Back to Blog</button>
             <button id="logoutBtn">Logout</button>
         </div>
     </header>
     <div id="modeToggle" data-theme="light">☀️</div>
-    <!-- Post Content -->
-    <div class="container">
-        <h1 id="postTitle" class="skeleton" style="height: 2.5rem; width: 60%;"></h1>
-        <p id="postDate" class="post-date"></p>
-        <p id="postAuthor" class="post-author">By: <span id="authorName">Loading...</span></p>
-        <div id="postDescription" class="post-content">Loading description...</div>
-        <div id="postBody"></div>
-        <div id="postImages" class="post-images"></div>
-        <div id="postTags" class="post-tags"></div>
-        <div id="postCategories" class="post-categories"></div>
-    </div>
+    
+    <main class="main-content">
+        <div class="container">
+            <div id="postContainer"></div>
+        </div>
+    </main>
 
     <script type="module" src="js/post.js" defer></script>
-    <script>
-        // Back Button
-        document.getElementById("backToBlogBtn").addEventListener("click", () => {
-            window.location.href = "blog.html";
-        });
-
-        // Logout Button
-        document.getElementById("logoutBtn").addEventListener("click", () => {
-            localStorage.removeItem("jwtToken");
-            window.location.href = "login.html";
-        });
-    </script>
 </body>
-
 </html>

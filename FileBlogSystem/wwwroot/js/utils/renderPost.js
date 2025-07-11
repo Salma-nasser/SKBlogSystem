@@ -1,3 +1,5 @@
+import { showMessage } from "./notifications.js";
+
 export function renderPosts(posts, containerId, options = {}) {
   const {
     showDelete = false,
@@ -67,10 +69,10 @@ export function renderPosts(posts, containerId, options = {}) {
       const buttons = [];
 
       if (showModify) {
+        // Encode the post data as base64 to avoid JSON parsing issues
+        const encodedPost = btoa(JSON.stringify(post));
         buttons.push(
-          `<button class="modifyBtn" data-slug="${
-            post.Slug
-          }" data-post='${JSON.stringify(post)}'>Modify</button>`
+          `<button class="modifyBtn" data-slug="${post.Slug}" data-post-encoded="${encodedPost}">Modify</button>`
         );
       }
 
@@ -371,7 +373,7 @@ export function renderPosts(posts, containerId, options = {}) {
         });
       } catch (error) {
         console.error("Error fetching likes:", error);
-        alert("Failed to load likes. Please try again.");
+        showMessage("Failed to load likes. Please try again.", "error");
       }
     });
   });

@@ -13,7 +13,7 @@
 
 body.dark-mode {
   --bg-color: #3a2e2a; /* deep chocolate */
-  --text-color: #f0eae4; /* light beige text */
+  --text-color: #3e3e3e; /* light beige text */
   --accent-color: #d6a07b; /* warm bronze accent */
   --accent-hover: #b67f5f; /* rich bronze hover */
   --button-bg: #6e554a; /* muted coffee brown button */

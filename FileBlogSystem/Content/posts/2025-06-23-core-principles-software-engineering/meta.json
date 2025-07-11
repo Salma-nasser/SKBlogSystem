@@ -1,9 +1,8 @@
 {
   "title": "Software Engineering: Building the Future",
   "description": "Exploring modern practices and methodologies in software engineering.",
+  "customUrl": "",
   "author": "Salma",
-  "publishedDate": "2025-06-23T22:06:02.0870055Z",
-  "lastModified": "2025-06-26T00:31:04.674528Z",
   "tags": [
     "Software Engineering",
     "Best Practices"
@@ -12,11 +11,14 @@
     "Software",
     "Development"
   ],
+  "publishedDate": "2025-06-23T22:06:02.0870055Z",
+  "lastModified": "2025-07-10T23:55:13.7597065Z",
   "slug": "core-principles-software-engineering",
   "isPublished": true,
   "scheduledDate": null,
   "images": [
-    "/assets/OIP.jpeg"
+    "/assets/OIP.jpeg",
+    "/assets/NewProfilePicture.jpeg"
   ],
   "likes": [
     "Salma"

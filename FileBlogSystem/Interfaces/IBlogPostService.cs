@@ -14,7 +14,7 @@ namespace FileBlogSystem.Interfaces
         Task<(bool Success, string Message)> PublishPostAsync(string slug, string currentUsername);
         Task<bool> DeletePostAsync(string slug);
         IEnumerable<Post> GetAllPostsIncludingDrafts();
-        IEnumerable<Post> GetPostsByUser(string username);
+        IEnumerable<Post> GetPostsByUser(string username, string? currentUsername = null);
         // Like methods
         IResult LikePost(string slug, string currentUsername);
         IResult UnlikePost(string slug, string currentUsername);

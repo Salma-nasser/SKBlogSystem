@@ -126,7 +126,7 @@ public class BlogPostService : IBlogPostService
     }
   }
 
-  public IEnumerable<Post> GetPostsByUser(string username)
+  public IEnumerable<Post> GetPostsByUser(string username, string? currentUsername = null)
   {
     if (!Directory.Exists(_rootPath)) yield break;
 
@@ -242,25 +242,11 @@ public class BlogPostService : IBlogPostService
 
       // Read the body content from content.md
       var body = File.ReadAllText(bodyPath);
-
-      // Enhanced debug logging
-      Console.WriteLine($"LoadPost - Reading post {slug}:");
-      Console.WriteLine($"  - Body file exists: {File.Exists(bodyPath)}");
-      Console.WriteLine($"  - Body content length: {body?.Length ?? 0}");
-      Console.WriteLine($"  - Body preview: {(string.IsNullOrEmpty(body) ? "EMPTY" : body.Substring(0, Math.Min(50, body.Length)))}...");
-
       var post = new Post(title, description, body ?? string.Empty, author, publishedDate, lastModified, tags, categories, slug, isPublished, scheduledDate);
-
-      // Verify the body was set correctly after construction
-      Console.WriteLine($"  - Post.Body after construction: {(string.IsNullOrEmpty(post.Body) ? "NULL/EMPTY" : $"Length {post.Body.Length}")}");
 
       post.Images = images;
       post.Likes = likes;
       post.CommentCount = commentCount;
-
-      // Final verification
-      Console.WriteLine($"  - Final Post.Body: {(string.IsNullOrEmpty(post.Body) ? "NULL/EMPTY" : $"Length {post.Body.Length}")}");
-
       return post;
     }
     catch (Exception ex)
@@ -328,13 +314,13 @@ public class BlogPostService : IBlogPostService
         request.Description,
         request.CustomUrl,
         AuthorUsername = authorUsername,
-        Tags = request.Tags,
-        Categories = request.Categories,
+        request.Tags,
+        request.Categories,
         PublishedDate = date,
         ModifiedDate = (DateTime?)null,
         Slug = slug,
-        IsPublished = request.IsPublished,
-        ScheduledDate = request.ScheduledDate,
+        request.IsPublished,
+        request.ScheduledDate,
         Images = savedImages
       };
 
@@ -347,15 +333,15 @@ public class BlogPostService : IBlogPostService
         Id = folder,
         Slug = slug,
         Date = date,
-        Title = request.Title,
-        Description = request.Description,
-        Body = request.Body,
+        request.Title,
+        request.Description,
+        request.Body,
         AuthorUsername = authorUsername,
-        Tags = request.Tags,
-        Categories = request.Categories,
+        request.Tags,
+        request.Categories,
         PublishedDate = date,
-        IsPublished = request.IsPublished,
-        ScheduledDate = request.ScheduledDate,
+        request.IsPublished,
+        request.ScheduledDate,
         Images = savedImages.Select(img => $"/{date:yyyy-MM-dd}-{slug}{img}")
       };
     }
@@ -386,21 +372,94 @@ public class BlogPostService : IBlogPostService
       using var doc = JsonDocument.Parse(metaJson);
       var root = doc.RootElement;
 
-      var authorUsername = root.GetProperty("AuthorUsername").GetString();
-      var publishedDate = root.GetProperty("PublishedDate").GetDateTime();
+      // Use the same safe property access pattern as in LoadPost
+      string GetSafeString(string propertyName)
+      {
+        if (root.TryGetProperty(propertyName, out var prop))
+          return prop.GetString() ?? "";
+        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
+          return upperProp.GetString() ?? "";
+        return "";
+      }
+
+      DateTime GetSafeDateTime(string propertyName, DateTime defaultValue = default)
+      {
+        if (root.TryGetProperty(propertyName, out var prop))
+          return prop.GetDateTime();
+        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
+          return upperProp.GetDateTime();
+        return defaultValue;
+      }
+
+      List<string> GetSafeStringArray(string propertyName)
+      {
+        if (root.TryGetProperty(propertyName, out var prop))
+          return prop.EnumerateArray().Select(t => t.GetString() ?? "").ToList();
+        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
+          return upperProp.EnumerateArray().Select(t => t.GetString() ?? "").ToList();
+        return new List<string>();
+      }
+
+      bool GetSafeBool(string propertyName, bool defaultValue = false)
+      {
+        if (root.TryGetProperty(propertyName, out var prop))
+          return prop.GetBoolean();
+        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
+          return upperProp.GetBoolean();
+        return defaultValue;
+      }
+
+      int GetSafeInt(string propertyName, int defaultValue = 0)
+      {
+        if (root.TryGetProperty(propertyName, out var prop))
+          return prop.GetInt32();
+        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
+          return upperProp.GetInt32();
+        return defaultValue;
+      }
+
+      // Now use the safe accessors
+      var authorUsername = GetSafeString("author");
+      if (string.IsNullOrEmpty(authorUsername))
+        authorUsername = GetSafeString("authorUsername");
+
+      var publishedDate = GetSafeDateTime("publishedDate", DateTime.UtcNow);
+      var existingLikes = GetSafeStringArray("likes");
+      var commentCount = GetSafeInt("commentCount");
 
       if (!string.Equals(authorUsername, currentUsername, StringComparison.OrdinalIgnoreCase))
         return (false, "Unauthorized: only the author can modify this post.");
 
-      var existingImages = root.TryGetProperty("Images", out var imagesArray)
-          ? imagesArray.EnumerateArray().Select(i => i.GetString() ?? "").Where(i => !string.IsNullOrEmpty(i)).ToList()
-          : new List<string>();
+      // Get existing images first
+      var existingImages = GetSafeStringArray("images");
 
+      // Clear existing images - we'll replace them completely
+      var newImages = new List<string>();
+
+      // Only process new images if they are provided
       if (updatedData.Images != null && updatedData.Images.Count > 0)
       {
         if (!Directory.Exists(assetsDirectory))
           Directory.CreateDirectory(assetsDirectory);
 
+        // Delete all existing image files in the assets directory
+        if (Directory.Exists(assetsDirectory))
+        {
+          var existingFiles = Directory.GetFiles(assetsDirectory);
+          foreach (var file in existingFiles)
+          {
+            try
+            {
+              File.Delete(file);
+            }
+            catch (Exception ex)
+            {
+              Console.WriteLine($"Warning: Could not delete existing image file {file}: {ex.Message}");
+            }
+          }
+        }
+
+        // Process and save new images
         foreach (var image in updatedData.Images)
         {
           if (image.Length > 0)
@@ -423,43 +482,48 @@ public class BlogPostService : IBlogPostService
               await image.CopyToAsync(stream);
             }
 
-            existingImages.Add($"/assets/{uniqueFileName}");
+            newImages.Add($"/assets/{uniqueFileName}");
           }
         }
       }
+      // If no new images are provided, keep existing images as they are
+      else
+      {
+        newImages = existingImages;
+      }
 
-      var title = string.IsNullOrWhiteSpace(updatedData.Title) ? root.GetProperty("Title").GetString() : updatedData.Title;
-      var description = string.IsNullOrWhiteSpace(updatedData.Description) ? root.GetProperty("Description").GetString() : updatedData.Description;
-      var customUrl = string.IsNullOrWhiteSpace(updatedData.CustomUrl) ? root.GetProperty("CustomUrl").GetString() : updatedData.CustomUrl;
+      // Use updated data or fall back to existing data using safe accessors
+      var title = string.IsNullOrWhiteSpace(updatedData.Title) ? GetSafeString("title") : updatedData.Title;
+      var description = string.IsNullOrWhiteSpace(updatedData.Description) ? GetSafeString("description") : updatedData.Description;
+      var customUrl = string.IsNullOrWhiteSpace(updatedData.CustomUrl) ? GetSafeString("customUrl") : updatedData.CustomUrl;
 
       var tags = (updatedData.Tags == null || updatedData.Tags.Count == 0)
-          ? root.GetProperty("Tags").EnumerateArray().Select(t => t.GetString() ?? "").ToList()
+          ? GetSafeStringArray("tags")
           : updatedData.Tags;
 
       var categories = (updatedData.Categories == null || updatedData.Categories.Count == 0)
-          ? root.GetProperty("Categories").EnumerateArray().Select(c => c.GetString() ?? "").ToList()
+          ? GetSafeStringArray("categories")
           : updatedData.Categories;
 
-      var isPublished = updatedData.IsPublished ?? (root.TryGetProperty("IsPublished", out var publishedProp) && publishedProp.GetBoolean());
+      var isPublished = updatedData.IsPublished ?? GetSafeBool("isPublished");
 
-      DateTime? scheduledDate = updatedData.ScheduledDate;
-      if (!scheduledDate.HasValue && root.TryGetProperty("ScheduledDate", out var schedProp) && schedProp.ValueKind != JsonValueKind.Null)
-        scheduledDate = schedProp.GetDateTime();
-
+      // Create the updated metadata - use the new images list
       var updatedMeta = new
       {
-        Title = title,
-        Description = description,
-        CustomUrl = customUrl,
-        AuthorUsername = authorUsername,
-        Tags = tags,
-        Categories = categories,
-        PublishedDate = publishedDate,
-        ModifiedDate = DateTime.UtcNow,
-        Slug = slug,
-        IsPublished = isPublished,
-        ScheduledDate = scheduledDate,
-        Images = existingImages
+        title = title,
+        description = description,
+        customUrl = customUrl,
+        author = authorUsername,
+        tags = tags,
+        categories = categories,
+        publishedDate = publishedDate,
+        lastModified = DateTime.UtcNow,
+        slug = slug,
+        isPublished = isPublished,
+        scheduledDate = (DateTime?)null,
+        images = newImages, // Use the new images list
+        likes = existingLikes,
+        commentCount = commentCount
       };
 
       var newMeta = JsonSerializer.Serialize(updatedMeta, new JsonSerializerOptions { WriteIndented = true });
@@ -473,7 +537,8 @@ public class BlogPostService : IBlogPostService
     catch (Exception ex)
     {
       Console.WriteLine($"Error modifying post {slug}: {ex.Message}");
-      return (false, "An error occurred while modifying the post.");
+      Console.WriteLine($"Stack trace: {ex.StackTrace}");
+      return (false, $"An error occurred while modifying the post: {ex.Message}");
     }
   }
 
@@ -517,12 +582,12 @@ public class BlogPostService : IBlogPostService
 
       var updatedMeta = new
       {
-        Title = root.GetProperty("Title").GetString(),
-        Description = root.GetProperty("Description").GetString(),
-        CustomUrl = root.GetProperty("CustomUrl").GetString(),
+        Title = root.GetProperty("title").GetString(),
+        Description = root.GetProperty("description").GetString(),
+        CustomUrl = root.GetProperty("customUrl").GetString(),
         AuthorUsername = authorUsername,
-        Tags = root.GetProperty("Tags").EnumerateArray().Select(t => t.GetString() ?? "").ToList(),
-        Categories = root.GetProperty("Categories").EnumerateArray().Select(c => c.GetString() ?? "").ToList(),
+        Tags = root.GetProperty("tags").EnumerateArray().Select(t => t.GetString() ?? "").ToList(),
+        Categories = root.GetProperty("categories").EnumerateArray().Select(c => c.GetString() ?? "").ToList(),
         PublishedDate = publishedDate,
         ModifiedDate = DateTime.UtcNow,
         Slug = slug,

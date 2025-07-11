@@ -49,7 +49,8 @@ export function initializeImageModal() {
 
   // Previous
   prevImageBtn.addEventListener("click", () => {
-    currentIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
+    currentIndex =
+      (currentIndex - 1 + currentImages.length) % currentImages.length;
     modalImage.src = currentImages[currentIndex];
     isZoomed = false;
     resetZoom();
@@ -73,6 +74,7 @@ export function openImageModal(images, clickedIndex) {
 
   const modal = document.getElementById("imageModal");
   const modalImage = document.getElementById("modalImage");
+  const modalContent = document.getElementById("modalContent");
   const prevImageBtn = document.getElementById("prevImageBtn");
   const nextImageBtn = document.getElementById("nextImageBtn");
 
@@ -82,11 +84,13 @@ export function openImageModal(images, clickedIndex) {
 
   // Hide navigation if only one image
   if (currentImages.length <= 1) {
+    modalContent.setAttribute("data-single-image", "true");
     prevImageBtn.style.display = "none";
     nextImageBtn.style.display = "none";
   } else {
-    prevImageBtn.style.display = "inline-block";
-    nextImageBtn.style.display = "inline-block";
+    modalContent.setAttribute("data-single-image", "false");
+    prevImageBtn.style.display = "block";
+    nextImageBtn.style.display = "block";
   }
 }
 
