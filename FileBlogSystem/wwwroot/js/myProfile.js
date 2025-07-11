@@ -3,6 +3,10 @@ import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
 import { showMessage, showConfirmation } from "./utils/notifications.js";
 
+// Global variables for modify functionality
+let currentPost = null;
+let imagesToKeep = [];
+
 window.addEventListener("DOMContentLoaded", () => {
   // Get username from URL parameters if viewing someone else's profile
   const urlParams = new URLSearchParams(window.location.search);
@@ -16,16 +20,16 @@ window.addEventListener("DOMContentLoaded", () => {
   const isOwnProfile = !profileUsername || profileUsername === currentUsername;
   const targetUsername = isOwnProfile ? currentUsername : profileUsername;
 
-  // Add these global variables for image tracking
-  let currentPost = null;
-  let imagesToKeep = [];
-
   // Update page title
   document.title = isOwnProfile ? "My Profile" : `${targetUsername}'s Profile`;
 
   // Initialize components
   initializeImageModal();
   initializeThemeToggle();
+
+  // Make functions globally accessible for onclick handlers
+  window.openModifyModal = openModifyModal;
+  window.deletePost = deletePost;
 
   // DOM elements
   const publishedSection = document.getElementById("publishedSection");
@@ -220,48 +224,6 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function displayCurrentImages(post) {
-    const container = document.getElementById("currentImagesContainer");
-
-    if (!container) {
-      console.warn("currentImagesContainer not found in HTML");
-      return;
-    }
-
-    container.innerHTML = "";
-
-    if (post.Images && post.Images.length > 0) {
-      const dateOnly = new Date(post.PublishedDate || post.CreatedDate)
-        .toISOString()
-        .split("T")[0];
-
-      post.Images.forEach((imagePath, index) => {
-        const imageWrapper = document.createElement("div");
-        imageWrapper.className = "current-image-wrapper";
-
-        const img = document.createElement("img");
-        img.src = `https://localhost:7189/Content/posts/${dateOnly}-${post.Slug}${imagePath}`;
-        img.alt = `Post Image ${index + 1}`;
-        img.className = "current-image";
-
-        const removeBtn = document.createElement("button");
-        removeBtn.type = "button";
-        removeBtn.className = "remove-image-btn";
-        removeBtn.innerHTML = "✖";
-        removeBtn.title = "Remove this image";
-        removeBtn.addEventListener("click", () =>
-          removeCurrentImage(imageWrapper, imagePath, post.Slug)
-        );
-
-        imageWrapper.appendChild(img);
-        imageWrapper.appendChild(removeBtn);
-        container.appendChild(imageWrapper);
-      });
-    } else {
-      container.innerHTML = '<p class="no-images">No images in this post</p>';
-    }
-  }
-
   function previewNewImages(files) {
     const container = document.getElementById("currentImagesContainer");
 
@@ -369,6 +331,9 @@ window.addEventListener("DOMContentLoaded", () => {
       const posts = await response.json();
       console.log(`Fetched ${posts.length} posts for user: ${username}`, posts);
 
+      // Store posts for modify functionality
+      allPublishedPosts = posts;
+
       renderPosts(posts, "publishedContainer", {
         showDelete: isOwnProfile,
         showModify: isOwnProfile,
@@ -388,6 +353,9 @@ window.addEventListener("DOMContentLoaded", () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const posts = await response.json();
+
+      // Store posts for modify functionality
+      allDraftPosts = posts;
 
       renderPosts(posts, "draftsContainer", {
         showDelete: true,
@@ -740,7 +708,454 @@ window.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Update the openModifyModal function
+  // Add event delegation for dynamically created buttons
+  document.addEventListener("click", (e) => {
+    // Handle modify button clicks
+    if (e.target.classList.contains("modifyBtn")) {
+      e.preventDefault();
+      const postCard = e.target.closest(".post-card");
+      const slug = postCard?.dataset.slug;
+
+      if (slug) {
+        // Find the post data
+        const post = findPostBySlug(slug);
+        if (post) {
+          openModifyModal(post);
+        } else {
+          showMessage("Post data not found", "error");
+        }
+      }
+    }
+
+    // Handle delete button clicks
+    if (e.target.classList.contains("deleteBtn")) {
+      e.preventDefault();
+      const postCard = e.target.closest(".post-card");
+      const slug = postCard?.dataset.slug;
+
+      if (slug) {
+        deletePost(slug);
+      }
+    }
+
+    // Handle image clicks for modal
+    if (e.target.classList.contains("post-image")) {
+      e.preventDefault();
+      const postCard = e.target.closest(".post-card");
+      const images = Array.from(postCard.querySelectorAll(".post-image")).map(
+        (img) => img.src
+      );
+      const clickedIndex = images.indexOf(e.target.src);
+      openImageModal(images, clickedIndex);
+    }
+  });
+
+  // Store posts data for modify functionality
+  let allPublishedPosts = [];
+  let allDraftPosts = [];
+
+  function findPostBySlug(slug) {
+    return [...allPublishedPosts, ...allDraftPosts].find(
+      (post) => post.Slug === slug
+    );
+  }
+
+  async function fetchPublishedPosts(username = currentUsername) {
+    try {
+      const endpoint = `https://localhost:7189/api/posts/user/${username}`;
+      console.log(`Fetching posts from: ${endpoint}`);
+
+      const response = await fetch(endpoint, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      console.log(`Response status: ${response.status}`);
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`Error response: ${errorText}`);
+        throw new Error(`Failed to fetch posts: ${response.status}`);
+      }
+
+      const posts = await response.json();
+      console.log(`Fetched ${posts.length} posts for user: ${username}`, posts);
+
+      // Store posts for modify functionality
+      allPublishedPosts = posts;
+
+      renderPosts(posts, "publishedContainer", {
+        showDelete: isOwnProfile,
+        showModify: isOwnProfile,
+        showActions: true,
+      });
+    } catch (error) {
+      console.error("Error fetching published posts:", error);
+      document.getElementById("publishedContainer").innerHTML =
+        '<p class="error-message">Failed to load posts</p>';
+      showMessage("Failed to load published posts", "error");
+    }
+  }
+
+  async function fetchDraftPosts() {
+    try {
+      const response = await fetch("https://localhost:7189/api/posts/drafts", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const posts = await response.json();
+
+      // Store posts for modify functionality
+      allDraftPosts = posts;
+
+      renderPosts(posts, "draftsContainer", {
+        showDelete: true,
+        showModify: true,
+        showActions: true,
+      });
+    } catch (error) {
+      console.error("Error fetching draft posts:", error);
+      showMessage("Failed to load draft posts", "error");
+    }
+  }
+
+  async function loadUserInfo(username = currentUsername) {
+    try {
+      const response = await fetch(
+        `https://localhost:7189/api/users/${username}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!response.ok) throw new Error("Failed to fetch user info");
+
+      const user = await response.json();
+
+      userUsername.textContent = user.Username || username;
+      userRole.textContent = user.Role || "Author";
+      userMemberSince.textContent = user.CreatedAt
+        ? new Date(user.CreatedAt).toLocaleDateString("en-GB", {
+            year: "numeric",
+            month: "long",
+            day: "2-digit",
+          })
+        : "";
+      userPostsCount.textContent = user.PostsCount || 0;
+
+      // Show email only for own profile
+      const emailParent = userEmail.closest("p");
+      if (isOwnProfile) {
+        userEmail.textContent = user.Email || "";
+        if (emailParent) emailParent.style.display = "block";
+        userEmail.style.display = "inline";
+      } else {
+        if (emailParent) emailParent.style.display = "none";
+        userEmail.style.display = "none";
+      }
+
+      // Handle profile picture with error handling
+      if (user.ProfilePictureUrl && user.ProfilePictureUrl.trim()) {
+        userProfilePic.src = `https://localhost:7189${user.ProfilePictureUrl}`;
+        userProfilePic.onerror = function () {
+          this.src = "placeholders/profile.png";
+          this.onerror = null;
+        };
+        userProfilePic.classList.remove("hidden");
+      } else {
+        userProfilePic.src = "placeholders/profile.png";
+        userProfilePic.classList.remove("hidden");
+      }
+    } catch (err) {
+      console.error("Error loading user info:", err);
+      userUsername.textContent = username;
+      userRole.textContent = "User";
+      userMemberSince.textContent = "";
+      userPostsCount.textContent = "0";
+      userProfilePic.src = "placeholders/profile.png";
+      showMessage("Failed to load user information", "error");
+    }
+  }
+
+  async function updateEmail() {
+    const newEmail = newEmailInput.value.trim();
+    const currentPassword = emailPasswordInput.value;
+
+    clearErrors("newEmail", "emailPassword");
+
+    if (!newEmail) {
+      showError("newEmail", "New email is required.");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (newEmail && !emailRegex.test(newEmail)) {
+      showError("newEmail", "Please enter a valid email.");
+      return;
+    }
+
+    if (!currentPassword) {
+      showError("emailPassword", "Password is required.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://localhost:7189/api/users/${currentUsername}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            Email: newEmail,
+            ConfirmPassword: currentPassword,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        showMessage("Email updated successfully!", "success");
+        toggleEditSection("email", false);
+        loadUserInfo(targetUsername);
+      } else {
+        const error = await response.json();
+        showError("newEmail", error.message || "Failed to update email.");
+      }
+    } catch (err) {
+      showError("newEmail", "Network error. Please try again.");
+      showMessage("Network error occurred while updating email", "error");
+    }
+  }
+
+  async function updatePassword() {
+    const current = currentPasswordInput.value;
+    const newPass = newPasswordInput.value;
+    const confirm = confirmPasswordInput.value;
+
+    clearErrors("currentPassword", "newPassword", "confirmPassword");
+
+    if (!current) {
+      showError("currentPassword", "Current password is required.");
+      return;
+    }
+    if (!newPass) {
+      showError("newPassword", "New password is required.");
+      return;
+    }
+    if (newPass.length > 0 && newPass.length < 6) {
+      showError("newPassword", "Must be at least 6 characters.");
+      return;
+    }
+    if (!confirm) {
+      showError("confirmPassword", "Please confirm password.");
+      return;
+    }
+    if (newPass && confirm && newPass !== confirm) {
+      showError("confirmPassword", "Passwords do not match.");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://localhost:7189/api/users/${currentUsername}/password`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            CurrentPassword: current,
+            NewPassword: newPass,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        showMessage("Password updated successfully!", "success");
+        toggleEditSection("password", false);
+        currentPasswordInput.value = "";
+        newPasswordInput.value = "";
+        confirmPasswordInput.value = "";
+      } else {
+        const error = await response.json();
+        showError("currentPassword", error.message || "Update failed.");
+      }
+    } catch (err) {
+      showError("currentPassword", "Network error. Please try again.");
+      showMessage("Network error occurred while updating password", "error");
+    }
+  }
+
+  async function updateProfilePicture() {
+    const file = newProfilePictureInput.files[0];
+    const errorEl = document.getElementById("pictureError");
+    errorEl.textContent = "";
+
+    if (!file) {
+      errorEl.textContent = "Please select a file.";
+      return;
+    }
+
+    const validTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!validTypes.includes(file.type)) {
+      errorEl.textContent = "Invalid file type.";
+      return;
+    }
+
+    if (file.size > 2 * 1024 * 1024) {
+      errorEl.textContent = "File must be smaller than 2MB.";
+      return;
+    }
+
+    try {
+      const base64Image = await convertFileToBase64(file);
+
+      const response = await fetch(
+        `https://localhost:7189/api/users/${currentUsername}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            ProfilePictureBase64: base64Image.split(",")[1],
+            ProfilePictureFileName: file.name,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        showMessage("Profile picture updated successfully!", "success");
+        toggleEditSection("picture", false);
+        loadUserInfo(targetUsername);
+      } else {
+        const error = await response.json();
+        errorEl.textContent = error.message || "Failed to update.";
+      }
+    } catch (err) {
+      errorEl.textContent = "Network error. Please try again.";
+      showMessage(
+        "Network error occurred while updating profile picture",
+        "error"
+      );
+      console.error(err);
+    }
+  }
+
+  // Helper function to convert File to base64
+  function convertFileToBase64(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  }
+
+  async function submitModification() {
+    const form = document.getElementById("modifyPostForm");
+    const formData = new FormData();
+    const slug = document.getElementById("postSlug").value;
+
+    // Get form values manually to ensure correct naming
+    const title = document.getElementById("modifyTitle").value.trim();
+    const description = document
+      .getElementById("modifyDescription")
+      .value.trim();
+    const body = document.getElementById("modifyBody").value.trim();
+    const tags = document.getElementById("modifyTags").value.trim();
+    const categories = document.getElementById("modifyCategories").value.trim();
+
+    // Validate required fields
+    if (!title) {
+      showMessage("Title is required", "warning");
+      return;
+    }
+    if (!description) {
+      showMessage("Description is required", "warning");
+      return;
+    }
+    if (!body) {
+      showMessage("Body content is required", "warning");
+      return;
+    }
+
+    // Add all fields to formData
+    formData.append("Title", title);
+    formData.append("Description", description);
+    formData.append("Body", body);
+    formData.append("Tags", tags);
+    formData.append("Categories", categories);
+    formData.append("IsPublished", "true");
+
+    // Add kept images (images that weren't removed)
+    if (imagesToKeep && imagesToKeep.length > 0) {
+      imagesToKeep.forEach((imagePath) => {
+        formData.append("KeptImages", imagePath);
+      });
+    }
+
+    // Add any new images from file input
+    const imageFiles = document.getElementById("modifyImages").files;
+    if (imageFiles.length > 0) {
+      for (let i = 0; i < imageFiles.length; i++) {
+        formData.append("Images", imageFiles[i]);
+      }
+    }
+
+    try {
+      showMessage("Updating post...", "info");
+
+      const response = await fetch(
+        `https://localhost:7189/api/posts/modify/${slug}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          body: formData,
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        showMessage("Post updated successfully!", "success");
+        modifyPostModal.classList.add("hidden");
+
+        // Reset the tracking variables
+        currentPost = null;
+        imagesToKeep = [];
+
+        // Refresh the post lists
+        if (isOwnProfile) {
+          fetchDraftPosts();
+        }
+        fetchPublishedPosts(targetUsername);
+      } else {
+        const errorText = await response.text();
+        console.error("Server response:", errorText);
+
+        try {
+          const errorJson = JSON.parse(errorText);
+          showMessage(
+            "Error: " +
+              (errorJson.message || errorJson.title || "Unknown error"),
+            "error"
+          );
+        } catch {
+          showMessage(
+            `Error updating post (${response.status}): ${errorText}`,
+            "error"
+          );
+        }
+      }
+    } catch (error) {
+      console.error("Network error:", error);
+      showMessage("Network error occurred while updating the post", "error");
+    }
+  }
+
   function openModifyModal(post) {
     console.log("Opening modify modal with post:", post);
 
@@ -749,6 +1164,7 @@ window.addEventListener("DOMContentLoaded", () => {
     // Initialize with all current images
     imagesToKeep = [...(post.Images || [])];
 
+    // Populate form fields
     document.getElementById("modifyTitle").value = post.Title || "";
     document.getElementById("modifyDescription").value = post.Description || "";
     document.getElementById("modifyBody").value = post.Body || "";
@@ -760,12 +1176,17 @@ window.addEventListener("DOMContentLoaded", () => {
     // Display current images
     displayCurrentImages(post);
 
-    modifyPostModal.classList.remove("hidden");
+    // Show the modal
+    const modal = document.getElementById("modifyPostModal");
+    if (modal) {
+      modal.classList.remove("hidden");
+    } else {
+      console.error("Modify modal not found!");
+    }
   }
 
-  // Update the removeCurrentImage function
-  function removeCurrentImage(wrapper, imagePath, postSlug) {
-    // Create a custom confirmation dialog
+  async function deletePost(slug) {
+    // Create custom confirmation dialog
     const confirmDialog = document.createElement("div");
     confirmDialog.style.cssText = `
       position: fixed;
@@ -789,18 +1210,18 @@ window.addEventListener("DOMContentLoaded", () => {
         max-width: 400px;
         color: var(--text-color, #333);
       ">
-        <h3 style="margin: 0 0 15px 0;">Remove Image</h3>
-        <p style="margin: 0 0 20px 0;">Are you sure you want to remove this image?</p>
+        <h3 style="margin: 0 0 15px 0;">Delete Post</h3>
+        <p style="margin: 0 0 20px 0;">Are you sure you want to delete this post? This action cannot be undone.</p>
         <div style="display: flex; gap: 10px; justify-content: center;">
-          <button id="confirmRemove" style="
+          <button id="confirmDelete" style="
             background: #dc3545;
             color: white;
             border: none;
             padding: 10px 20px;
             border-radius: 6px;
             cursor: pointer;
-          ">Remove</button>
-          <button id="cancelRemove" style="
+          ">Delete</button>
+          <button id="cancelDelete" style="
             background: var(--button-bg, #8c6e63);
             color: white;
             border: none;
@@ -814,57 +1235,93 @@ window.addEventListener("DOMContentLoaded", () => {
 
     document.body.appendChild(confirmDialog);
 
-    document.getElementById("confirmRemove").onclick = () => {
-      // Remove from the images to keep list
-      imagesToKeep = imagesToKeep.filter((img) => img !== imagePath);
+    document.getElementById("confirmDelete").onclick = async () => {
+      try {
+        const response = await fetch(
+          `https://localhost:7189/api/posts/${slug}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
 
-      // Remove the wrapper from DOM
-      wrapper.remove();
-
-      // Check if no images left
-      const container = document.getElementById("currentImagesContainer");
-      if (container.children.length === 0) {
-        container.innerHTML = '<p class="no-images">No images in this post</p>';
+        if (response.ok) {
+          showMessage("Post deleted successfully", "success");
+          // Refresh both lists
+          fetchPublishedPosts(targetUsername);
+          if (isOwnProfile) {
+            fetchDraftPosts();
+          }
+        } else {
+          showMessage("Failed to delete post", "error");
+        }
+      } catch (error) {
+        console.error("Error deleting post:", error);
+        showMessage("Error occurred while deleting post", "error");
       }
-
-      showMessage("Image marked for removal", "info");
       confirmDialog.remove();
     };
 
-    document.getElementById("cancelRemove").onclick = () => {
+    document.getElementById("cancelDelete").onclick = () => {
       confirmDialog.remove();
     };
   }
 
-  // Make sure these functions are accessible globally within this scope
-  window.openModifyModal = openModifyModal;
-  window.removeCurrentImage = removeCurrentImage;
-  window.submitModification = submitModification;
-
-  // ...rest of the existing code...
+  // Initial data fetch
+  fetchPublishedPosts(targetUsername);
+  if (isOwnProfile) {
+    fetchDraftPosts();
+  }
+  loadUserInfo(targetUsername);
 });
 
-// These functions need to be outside the DOMContentLoaded for global access
-function openModifyModal(post) {
-  console.log("Opening modify modal with post:", post);
+// Make sure these functions are accessible globally
+window.openModifyModal = function (post) {
+  console.log("Global openModifyModal called with:", post);
 
-  document.getElementById("modifyTitle").value = post.Title || "";
-  document.getElementById("modifyDescription").value = post.Description || "";
-  document.getElementById("modifyBody").value = post.Body || "";
-  document.getElementById("modifyTags").value = post.Tags?.join(", ") || "";
-  document.getElementById("modifyCategories").value =
-    post.Categories?.join(", ") || "";
-  document.getElementById("postSlug").value = post.Slug || "";
+  if (!post) {
+    console.error("No post data provided to openModifyModal");
+    return;
+  }
 
-  // Initialize tracking variables
+  // Store the current post for reference
   window.currentPost = post;
+  // Initialize with all current images
   window.imagesToKeep = [...(post.Images || [])];
+
+  // Populate form fields
+  const titleEl = document.getElementById("modifyTitle");
+  const descEl = document.getElementById("modifyDescription");
+  const bodyEl = document.getElementById("modifyBody");
+  const tagsEl = document.getElementById("modifyTags");
+  const categoriesEl = document.getElementById("modifyCategories");
+  const slugEl = document.getElementById("postSlug");
+
+  if (titleEl) titleEl.value = post.Title || "";
+  if (descEl) descEl.value = post.Description || "";
+  if (bodyEl) bodyEl.value = post.Body || "";
+  if (tagsEl) tagsEl.value = post.Tags?.join(", ") || "";
+  if (categoriesEl) categoriesEl.value = post.Categories?.join(", ") || "";
+  if (slugEl) slugEl.value = post.Slug || "";
 
   // Display current images
   displayCurrentImages(post);
 
-  document.getElementById("modifyPostModal").classList.remove("hidden");
-}
+  // Show the modal
+  const modal = document.getElementById("modifyPostModal");
+  if (modal) {
+    modal.classList.remove("hidden");
+    console.log("Modal should now be visible");
+  } else {
+    console.error("Modify modal element not found!");
+  }
+};
+
+window.deletePost = async function (slug) {
+  // Implementation same as above
+  console.log("Global deletePost called with slug:", slug);
+  // ... same implementation as the deletePost function above
+};
 
 function displayCurrentImages(post) {
   const container = document.getElementById("currentImagesContainer");
@@ -909,79 +1366,109 @@ function displayCurrentImages(post) {
 }
 
 function removeCurrentImage(wrapper, imagePath, postSlug) {
-  // Create a custom confirmation dialog
-  const confirmDialog = document.createElement("div");
-  confirmDialog.style.cssText = `
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 10001;
-  `;
+  showConfirmation(
+    "Remove Image",
+    "Are you sure you want to remove this image?",
+    () => {
+      // Remove from the images to keep list
+      imagesToKeep = imagesToKeep.filter((img) => img !== imagePath);
 
-  confirmDialog.innerHTML = `
-    <div style="
-      background: var(--post-bg, white);
-      padding: 30px;
-      border-radius: 12px;
-      text-align: center;
-      max-width: 400px;
-      color: var(--text-color, #333);
-    ">
-      <h3 style="margin: 0 0 15px 0;">Remove Image</h3>
-      <p style="margin: 0 0 20px 0;">Are you sure you want to remove this image?</p>
-      <div style="display: flex; gap: 10px; justify-content: center;">
-        <button id="confirmRemove" style="
-          background: #dc3545;
-          color: white;
-          border: none;
-          padding: 10px 20px;
-          border-radius: 6px;
-          cursor: pointer;
-        ">Remove</button>
-        <button id="cancelRemove" style="
-          background: var(--button-bg, #8c6e63);
-          color: white;
-          border: none;
-          padding: 10px 20px;
-          border-radius: 6px;
-          cursor: pointer;
-        ">Cancel</button>
-      </div>
-    </div>
-  `;
+      // Remove the wrapper from DOM
+      wrapper.remove();
 
-  document.body.appendChild(confirmDialog);
+      // Check if no images left
+      const container = document.getElementById("currentImagesContainer");
+      if (container.children.length === 0) {
+        container.innerHTML = '<p class="no-images">No images in this post</p>';
+      }
 
-  document.getElementById("confirmRemove").onclick = () => {
-    // Remove from the images to keep list
-    if (window.imagesToKeep) {
-      window.imagesToKeep = window.imagesToKeep.filter(
-        (img) => img !== imagePath
-      );
+      showMessage("Image marked for removal", "info");
     }
-
-    // Remove the wrapper from DOM
-    wrapper.remove();
-
-    // Check if no images left
-    const container = document.getElementById("currentImagesContainer");
-    if (container.children.length === 0) {
-      container.innerHTML = '<p class="no-images">No images in this post</p>';
-    }
-
-    showMessage("Image marked for removal", "info");
-    confirmDialog.remove();
-  };
-
-  document.getElementById("cancelRemove").onclick = () => {
-    confirmDialog.remove();
-  };
+  );
 }
 
-// ...rest of the existing code...
+// Image click handler for modal
+document.body.addEventListener("click", (e) => {
+  if (e.target.classList.contains("post-image")) {
+    const postCard = e.target.closest(".post-card");
+    const images = Array.from(postCard.querySelectorAll(".post-image")).map(
+      (img) => img.src
+    );
+    const clickedIndex = images.indexOf(e.target.src);
+    openImageModal(images, clickedIndex);
+  }
+});
+
+// Handle modify and delete button clicks
+document.addEventListener("click", function (e) {
+  if (e.target && e.target.classList.contains("modifyBtn")) {
+    e.preventDefault();
+
+    const encodedData = e.target.getAttribute("data-post-encoded");
+    if (encodedData) {
+      try {
+        const postDataString = atob(encodedData);
+        const postData = JSON.parse(postDataString);
+        openModifyModal(postData);
+      } catch (error) {
+        console.error("Error parsing encoded post data:", error);
+        showMessage("Error loading post data", "error");
+      }
+    } else {
+      const postDataString = e.target.getAttribute("data-post");
+      try {
+        const postData = JSON.parse(postDataString);
+        openModifyModal(postData);
+      } catch (error) {
+        console.error("Error parsing post data:", error);
+        showMessage("Error loading post data", "error");
+      }
+    }
+  }
+
+  if (e.target && e.target.classList.contains("deleteBtn")) {
+    e.preventDefault();
+    const slug = e.target.getAttribute("data-slug");
+    const isDraft = e.target.closest("#draftsContainer") !== null;
+    deletePost(slug, isDraft);
+  }
+});
+
+async function deletePost(slug, isDraft) {
+  const token = localStorage.getItem("jwtToken");
+
+  showConfirmation(
+    "Delete Post",
+    "Are you sure you want to delete this post? This action cannot be undone.",
+    async () => {
+      try {
+        showMessage("Deleting post...", "info");
+
+        const response = await fetch(
+          `https://localhost:7189/api/posts/delete/${slug}`,
+          {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        if (response.ok) {
+          showMessage("Post deleted successfully!", "success");
+          if (isDraft) {
+            document.querySelector("#draftsContainer").innerHTML = "";
+            fetchDraftPosts();
+          } else {
+            document.querySelector("#publishedContainer").innerHTML = "";
+            fetchPublishedPosts();
+          }
+        } else {
+          const errorText = await response.text();
+          showMessage(`Error deleting post: ${errorText}`, "error");
+        }
+      } catch (error) {
+        console.error("Network error:", error);
+        showMessage("Network error occurred while deleting the post", "error");
+      }
+    }
+  );
+}
