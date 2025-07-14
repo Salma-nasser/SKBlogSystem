@@ -63,7 +63,8 @@ var rewriteOptions = new RewriteOptions()
     .AddRewrite("^blog/?$", "blog.html", skipRemainingRules: true)
     .AddRewrite("^my-profile/?$", "myProfile.html", skipRemainingRules: true)
     .AddRewrite("^admin/?$", "admin.html", skipRemainingRules: true)
-    .AddRewrite("^post/?(.*)$", "post.html?$1", skipRemainingRules: true)
+    .AddRewrite("^create-post/?$", "createPost.html", skipRemainingRules: true)
+    .AddRewrite("^post/([^/?]+)/?$", "post.html?slug=$1", skipRemainingRules: true)
     .AddRewrite("^welcome/?$", "welcome.html", skipRemainingRules: true);
 
 app.UseRewriter(rewriteOptions);

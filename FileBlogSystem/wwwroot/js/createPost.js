@@ -1,0 +1,534 @@
+import { initializeThemeToggle } from "./utils/themeToggle.js";
+import { showMessage } from "./utils/notifications.js";
+
+let easyMDE;
+let selectedFiles = [];
+
+window.addEventListener("DOMContentLoaded", () => {
+  const token = localStorage.getItem("jwtToken");
+  if (!token) {
+    window.location.href = "/login";
+    return;
+  }
+
+  initializeThemeToggle();
+  initializeMarkdownEditor();
+  setupEventListeners();
+  setupImagePreview();
+  initializeSlugPreview();
+});
+
+function initializeSlugPreview() {
+  const titleInput = document.getElementById("title");
+  const customUrlInput = document.getElementById("customUrl");
+  const slugPreview = document.getElementById("slugPreview");
+
+  if (!titleInput || !slugPreview) return;
+
+  function updateSlugPreview() {
+    // Check if custom URL is provided first
+    const customUrl = customUrlInput?.value.trim();
+    if (customUrl) {
+      // Clean the custom URL to ensure it's URL-safe
+      const cleanedCustomUrl = customUrl
+        .replace(/[^\w\s-]/g, "") // Remove special characters except word chars, spaces, and hyphens
+        .replace(/\s+/g, "-") // Replace spaces with hyphens
+        .toLowerCase() // Convert to lowercase
+        .replace(/--+/g, "-") // Replace multiple hyphens with single hyphen
+        .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
+
+      slugPreview.textContent = `/post/${cleanedCustomUrl}`;
+      return;
+    }
+
+    // Fallback to title-based slug
+    const title = titleInput.value.trim();
+    if (title) {
+      const slug = title
+        .replace(/[^\w\s-]/g, "") // Remove special characters except word chars, spaces, and hyphens
+        .replace(/\s+/g, "-") // Replace spaces with hyphens
+        .toLowerCase() // Convert to lowercase
+        .replace(/--+/g, "-") // Replace multiple hyphens with single hyphen
+        .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
+      slugPreview.textContent = `/post/${slug}`;
+    } else {
+      slugPreview.textContent = "/post/your-post-title";
+    }
+  }
+
+  titleInput.addEventListener("input", updateSlugPreview);
+  if (customUrlInput) {
+    customUrlInput.addEventListener("input", updateSlugPreview);
+  }
+  updateSlugPreview();
+}
+
+function initializeMarkdownEditor() {
+  const textarea = document.getElementById("body");
+  if (!textarea) return;
+
+  easyMDE = new EasyMDE({
+    element: textarea,
+    placeholder: "Write your post content here using Markdown...",
+    spellChecker: false,
+    autofocus: false,
+    minHeight: "300px",
+    maxHeight: "600px",
+    toolbar: [
+      "bold",
+      "italic",
+      "heading",
+      "|",
+      "quote",
+      "code",
+      "unordered-list",
+      "ordered-list",
+      "|",
+      "link",
+      "image",
+      "table",
+      "|",
+      "preview",
+      "side-by-side",
+      "fullscreen",
+      "|",
+      "guide",
+    ],
+    status: ["lines", "words", "cursor"],
+    renderingConfig: {
+      singleLineBreaks: false,
+      codeSyntaxHighlighting: true,
+    },
+  });
+}
+
+function setupEventListeners() {
+  document.getElementById("backToBlogBtn")?.addEventListener("click", () => {
+    if (hasUnsavedChanges()) {
+      if (
+        confirm("You have unsaved changes. Are you sure you want to leave?")
+      ) {
+        window.location.href = "/blog";
+      }
+    } else {
+      window.location.href = "/blog";
+    }
+  });
+
+  document.getElementById("logoutBtn")?.addEventListener("click", () => {
+    if (hasUnsavedChanges()) {
+      if (
+        confirm("You have unsaved changes. Are you sure you want to logout?")
+      ) {
+        logout();
+      }
+    } else {
+      logout();
+    }
+  });
+
+  document
+    .getElementById("createPostForm")
+    ?.addEventListener("submit", handlePublish);
+  document
+    .getElementById("saveDraftBtn")
+    ?.addEventListener("click", handleSaveDraft);
+
+  document.getElementById("schedulePost")?.addEventListener("change", (e) => {
+    const scheduleDiv = document.getElementById("scheduleDateTime");
+    if (e.target.checked) {
+      scheduleDiv.style.display = "block";
+      const now = new Date();
+      now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+      document.getElementById("scheduledDate").min = now
+        .toISOString()
+        .slice(0, 16);
+    } else {
+      scheduleDiv.style.display = "none";
+    }
+  });
+
+  window.addEventListener("beforeunload", (e) => {
+    if (hasUnsavedChanges()) {
+      e.preventDefault();
+      e.returnValue =
+        "You have unsaved changes. Are you sure you want to leave?";
+    }
+  });
+}
+
+function setupImagePreview() {
+  const imageInput = document.getElementById("images");
+  const previewContainer = document.getElementById("imagePreview");
+
+  imageInput?.addEventListener("change", (e) => {
+    selectedFiles = Array.from(e.target.files);
+    displayImagePreviews();
+  });
+
+  function displayImagePreviews() {
+    previewContainer.innerHTML = "";
+
+    selectedFiles.forEach((file, index) => {
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const previewItem = document.createElement("div");
+          previewItem.className = "image-preview-item";
+
+          // Generate the future URL path (this will be the actual URL once the post is created)
+          const fileName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+          const futureImageUrl = `![${file.name}](PLACEHOLDER_URL/assets/${fileName})`;
+
+          previewItem.innerHTML = `
+            <div class="image-preview-content">
+              <img src="${e.target.result}" alt="Preview ${index + 1}">
+              <div class="image-preview-actions">
+                <span class="image-name">${file.name}</span>
+                <button type="button" class="btn btn-sm btn-secondary copy-url-btn" 
+                        data-filename="${fileName}" data-alt="${file.name}">
+                  📋 Copy Markdown
+                </button>
+                <button type="button" class="btn btn-sm btn-primary insert-btn" 
+                        data-filename="${fileName}" data-alt="${file.name}">
+                  ➕ Insert in Post
+                </button>
+                <button type="button" class="btn btn-sm btn-danger remove-image" 
+                        onclick="removeImage(${index})">
+                  ❌ Remove
+                </button>
+              </div>
+            </div>
+          `;
+          previewContainer.appendChild(previewItem);
+
+          previewItem
+            .querySelector(".copy-url-btn")
+            .addEventListener("click", () => {
+              copyImageMarkdown(fileName, file.name);
+            });
+
+          previewItem
+            .querySelector(".insert-btn")
+            .addEventListener("click", () => {
+              insertImageIntoPost(fileName, file.name);
+            });
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+
+  window.removeImage = (index) => {
+    selectedFiles.splice(index, 1);
+    displayImagePreviews();
+
+    const dt = new DataTransfer();
+    selectedFiles.forEach((file) => dt.items.add(file));
+    imageInput.files = dt.files;
+  };
+}
+
+// Helper function to generate slug from title or custom URL
+function generateSlugForImages() {
+  const customUrl = document.getElementById("customUrl")?.value.trim();
+  if (customUrl) {
+    return customUrl
+      .replace(/[^\w\s-]/g, "") // Remove special characters except word chars, spaces, and hyphens
+      .replace(/\s+/g, "-") // Replace spaces with hyphens
+      .toLowerCase() // Convert to lowercase
+      .replace(/--+/g, "-") // Replace multiple hyphens with single hyphen
+      .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
+  }
+
+  const title = document.getElementById("title").value.trim();
+  return title
+    ? title
+        .replace(/[^\w\s-]/g, "") // Remove special characters except word chars, spaces, and hyphens
+        .replace(/\s+/g, "-") // Replace spaces with hyphens
+        .toLowerCase() // Convert to lowercase
+        .replace(/--+/g, "-") // Replace multiple hyphens with single hyphen
+        .replace(/^-+|-+$/g, "") // Remove leading/trailing hyphens
+    : "your-post-slug";
+}
+
+function copyImageMarkdown(fileName, altText) {
+  const slug = generateSlugForImages();
+  const today = new Date().toISOString().split("T")[0];
+
+  const imageUrl = `/Content/posts/${today}-${slug}/assets/${fileName}`;
+  const markdown = `![${altText}](${imageUrl})`;
+
+  navigator.clipboard
+    .writeText(markdown)
+    .then(() => {
+      showMessage(`Image markdown copied to clipboard!`, "success");
+    })
+    .catch((err) => {
+      console.error("Failed to copy: ", err);
+      showMessage("Failed to copy to clipboard", "error");
+    });
+}
+
+function insertImageIntoPost(fileName, altText) {
+  if (!easyMDE) {
+    showMessage("Markdown editor not ready", "error");
+    return;
+  }
+
+  const slug = generateSlugForImages();
+  const today = new Date().toISOString().split("T")[0];
+
+  const imageUrl = `/Content/posts/${today}-${slug}/assets/${fileName}`;
+  const markdown = `![${altText}](${imageUrl})`;
+
+  // Insert at cursor position
+  const cm = easyMDE.codemirror;
+  const cursor = cm.getCursor();
+  cm.replaceRange(markdown, cursor);
+
+  showMessage(`Image inserted into post!`, "success");
+}
+
+function updateImagePreviewsWithActualUrls(postResult) {
+  const previewContainer = document.getElementById("imagePreview");
+  const copyButtons = previewContainer.querySelectorAll(".copy-url-btn");
+  const insertButtons = previewContainer.querySelectorAll(".insert-btn");
+
+  copyButtons.forEach((button, index) => {
+    if (postResult.Images[index]) {
+      const actualUrl = `/Content/posts/${postResult.Date.split("T")[0]}-${
+        postResult.Slug
+      }${postResult.Images[index]}`;
+      const altText = button.dataset.alt;
+
+      button.onclick = () => {
+        const markdown = `![${altText}](${actualUrl})`;
+        navigator.clipboard
+          .writeText(markdown)
+          .then(() => {
+            showMessage(`Actual image URL copied to clipboard!`, "success");
+          })
+          .catch((err) => {
+            console.error("Failed to copy: ", err);
+            showMessage("Failed to copy to clipboard", "error");
+          });
+      };
+
+      button.textContent = "📋 Copy Final URL";
+      button.classList.add("btn-success");
+      button.classList.remove("btn-secondary");
+    }
+  });
+
+  insertButtons.forEach((button, index) => {
+    if (postResult.Images[index]) {
+      const actualUrl = `/Content/posts/${postResult.Date.split("T")[0]}-${
+        postResult.Slug
+      }${postResult.Images[index]}`;
+      const altText = button.dataset.alt;
+
+      button.onclick = () => {
+        if (!easyMDE) {
+          showMessage("Markdown editor not ready", "error");
+          return;
+        }
+
+        const markdown = `![${altText}](${actualUrl})`;
+        const cm = easyMDE.codemirror;
+        const cursor = cm.getCursor();
+        cm.replaceRange(markdown, cursor);
+
+        showMessage(`Final image URL inserted!`, "success");
+      };
+
+      button.textContent = "➕ Insert Final URL";
+      button.classList.add("btn-success");
+      button.classList.remove("btn-primary");
+    }
+  });
+}
+
+async function handlePublish(e) {
+  e.preventDefault();
+  await submitPost(true);
+}
+
+async function handleSaveDraft() {
+  await submitPost(false);
+}
+
+async function submitPost(isPublished) {
+  const form = document.getElementById("createPostForm");
+  const publishBtn = document.getElementById("publishBtn");
+  const draftBtn = document.getElementById("saveDraftBtn");
+
+  // Disable buttons and show loading
+  publishBtn.disabled = true;
+  draftBtn.disabled = true;
+  publishBtn.classList.add("loading");
+  draftBtn.classList.add("loading");
+
+  try {
+    const formData = new FormData();
+
+    // Get form values
+    const title = document.getElementById("title").value.trim();
+    const description = document.getElementById("description").value.trim();
+    const customUrl = document.getElementById("customUrl").value.trim();
+    const tags = document.getElementById("tags").value.trim();
+    const categories = document.getElementById("categories").value.trim();
+    const schedulePost = document.getElementById("schedulePost").checked;
+    const scheduledDate = document.getElementById("scheduledDate").value;
+
+    // Get markdown content
+    const body = easyMDE.value().trim();
+
+    // Validation
+    if (!title) {
+      throw new Error("Title is required");
+    }
+    if (!description) {
+      throw new Error("Description is required");
+    }
+    if (!body) {
+      throw new Error("Content is required");
+    }
+
+    // Add form data (using proper case to match backend expectations)
+    formData.append("Title", title);
+    formData.append("Description", description);
+    formData.append("Body", body);
+    formData.append("CustomUrl", customUrl);
+    formData.append("Tags", tags);
+    formData.append("Categories", categories);
+    formData.append("IsPublished", isPublished.toString());
+
+    // Add scheduled date if applicable
+    if (schedulePost && scheduledDate && isPublished) {
+      formData.append("ScheduledDate", scheduledDate);
+    }
+
+    // Add images
+    selectedFiles.forEach((file) => {
+      formData.append("Images", file);
+    });
+
+    const token = localStorage.getItem("jwtToken");
+    const response = await fetch("https://localhost:7189/api/posts/create", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      let errorMessage;
+      try {
+        const errorData = await response.json();
+        errorMessage =
+          errorData.message ||
+          errorData.title ||
+          `HTTP error! status: ${response.status}`;
+      } catch {
+        const errorText = await response.text();
+        errorMessage = errorText || `HTTP error! status: ${response.status}`;
+      }
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+
+    let message = isPublished
+      ? schedulePost && scheduledDate
+        ? "Post scheduled successfully!"
+        : "Post published successfully!"
+      : "Draft saved successfully!";
+
+    if (selectedFiles.length > 0 && result.Images && result.Images.length > 0) {
+      message += "\n\nYour images are available at:";
+      result.Images.forEach((imageUrl, index) => {
+        const fileName = selectedFiles[index]?.name || `Image ${index + 1}`;
+        message += `\n• ${fileName}: /Content/posts/${
+          result.Date.split("T")[0]
+        }-${result.Slug}${imageUrl}`;
+      });
+    }
+
+    showMessage(message, "success");
+
+    // Also update the image previews with the actual URLs
+    if (result.Images && result.Images.length > 0) {
+      updateImagePreviewsWithActualUrls(result);
+    }
+
+    // Reset form or redirect
+    if (isPublished) {
+      setTimeout(() => {
+        window.location.href = "/blog";
+      }, 2000);
+    } else {
+      // For drafts, just show success and keep editing
+      markAsSaved();
+    }
+  } catch (error) {
+    console.error("Error submitting post:", error);
+    showMessage(
+      error.message || "Failed to submit post. Please try again.",
+      "error"
+    );
+  } finally {
+    // Re-enable buttons
+    publishBtn.disabled = false;
+    draftBtn.disabled = false;
+    publishBtn.classList.remove("loading");
+    draftBtn.classList.remove("loading");
+  }
+}
+
+function hasContent() {
+  const title = document.getElementById("title").value.trim();
+  const description = document.getElementById("description").value.trim();
+  const body = easyMDE ? easyMDE.value().trim() : "";
+
+  return title || description || body || selectedFiles.length > 0;
+}
+
+function hasUnsavedChanges() {
+  // Simple implementation - you could make this more sophisticated
+  return hasContent() && !isMarkedAsSaved();
+}
+
+function markAsSaved() {
+  document.body.dataset.saved = "true";
+}
+
+function isMarkedAsSaved() {
+  return document.body.dataset.saved === "true";
+}
+
+function logout() {
+  localStorage.removeItem("jwtToken");
+  localStorage.removeItem("username");
+  showMessage("Logged out successfully", "info");
+  setTimeout(() => {
+    window.location.href = "/login";
+  }, 1000);
+}
+
+// Track changes to mark as unsaved
+document.addEventListener("input", () => {
+  delete document.body.dataset.saved;
+});
+
+// Also track EasyMDE changes
+if (typeof EasyMDE !== "undefined") {
+  document.addEventListener("DOMContentLoaded", () => {
+    if (easyMDE) {
+      easyMDE.codemirror.on("change", () => {
+        delete document.body.dataset.saved;
+      });
+    }
+  });
+}

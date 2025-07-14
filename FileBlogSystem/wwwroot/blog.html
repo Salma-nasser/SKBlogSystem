@@ -6,6 +6,7 @@
   <title>Aether & Ink</title>
   <link rel="stylesheet" href="css/blog.css" />
   <link rel="alternate" type="application/rss+xml" title="RSS" href="https://localhost:7189/feed.xml" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
   <header>
@@ -37,64 +38,6 @@
   <main id="postsContainer">
     <!-- Posts will be rendered here -->
   </main>
-
-  <!-- Modal for New Post -->
-  <div id="postModal" class="modal hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Create a New Post</h2>
-        <button type="button" class="close" id="closeModal">✖</button>
-      </div>
-      <form id="createPostForm">
-        <div class="form-group">
-          <label for="postTitle">Title</label>
-          <input type="text" id="postTitle" name="title" placeholder="Enter your post title" required />
-        </div>
-
-        <div class="form-group">
-          <label for="postDescription">Description</label>
-          <input type="text" id="postDescription" name="description" placeholder="Brief description of your post" required />
-        </div>
-
-        <div class="form-group">
-          <label for="postBody">Content</label>
-          <textarea id="postBody" name="body" placeholder="Write your Markdown content here..." required></textarea>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="customUrl">Custom URL (optional)</label>
-            <input type="text" id="customUrl" name="customUrl" placeholder="custom-url-slug" />
-          </div>
-          <div class="form-group">
-            <label for="scheduledDate">Scheduled Date (optional)</label>
-            <input type="datetime-local" id="scheduledDate" name="scheduledDate" />
-          </div>
-        </div>
-
-        <div class="form-row">
-          <div class="form-group">
-            <label for="postTags">Tags (comma separated)</label>
-            <input type="text" id="postTags" name="tags" placeholder="e.g. technology, coding" />
-          </div>
-          <div class="form-group">
-            <label for="postCategories">Categories (comma separated)</label>
-            <input type="text" id="postCategories" name="categories" placeholder="e.g. Blog, Tutorial" />
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label for="postImages">Upload Images</label>
-          <input type="file" id="postImages" name="Images" multiple accept="image/*" />
-        </div>
-
-        <div class="form-actions">
-          <button type="button" class="btn-secondary" id="saveDraftBtn">Save as Draft</button>
-          <button type="submit" class="btn-primary">Publish Post</button>
-        </div>
-      </form>
-    </div>
-  </div>
 
   <div id="paginationControls" style="margin-top: 20px; text-align: center;">
     <button id="prevPage">Previous</button>

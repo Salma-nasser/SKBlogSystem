@@ -1,15 +1,16 @@
 {
   "title": "Palestine",
-  "description": "Discussing the issue in palestine",
+  "description": "Discussing the issues in Palestine",
+  "customUrl": "",
   "author": "Salma",
-  "publishedDate": "2025-06-23T22:21:09.7121984Z",
-  "lastModified": "2025-06-23T22:22:08.890753Z",
   "tags": [
     ""
   ],
   "categories": [
     ""
   ],
+  "publishedDate": "2025-06-23T22:21:09.7121984Z",
+  "lastModified": "2025-07-14T11:14:20.9442674Z",
   "slug": "Palestine",
   "isPublished": true,
   "scheduledDate": null,

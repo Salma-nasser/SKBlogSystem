@@ -260,11 +260,12 @@ public class BlogPostService : IBlogPostService
   {
     try
     {
-      if (SlugExists(request.CustomUrl ?? request.Title.Replace(" ", "-").ToLowerInvariant()))
-        throw new Exception("A post with the same slug already exists.");
-
       var date = DateTime.UtcNow;
-      var slug = request.CustomUrl ?? request.Title.Replace(" ", "-").ToLowerInvariant();
+      var baseSlug = request.CustomUrl ?? GenerateSlugFromTitle(request.Title);
+
+      // Generate a unique slug to avoid collisions
+      var slug = GenerateUniqueSlug(baseSlug);
+
       var folder = Path.Combine(_rootPath, $"{date:yyyy-MM-dd}-{slug}");
 
       Directory.CreateDirectory(folder);
@@ -368,9 +369,33 @@ public class BlogPostService : IBlogPostService
       if (!File.Exists(metaPath) || !File.Exists(bodyPath))
         return (false, "Post files are missing or corrupted.");
 
-      var metaJson = await File.ReadAllTextAsync(metaPath);
-      using var doc = JsonDocument.Parse(metaJson);
-      var root = doc.RootElement;
+      JsonElement root = default;
+      bool rootAssigned = false;
+
+      // Use retry logic for file access to handle temporary locks
+      for (int attempt = 0; attempt < 3; attempt++)
+      {
+        try
+        {
+          var metaJson = await File.ReadAllTextAsync(metaPath);
+          using var doc = JsonDocument.Parse(metaJson);
+          root = doc.RootElement.Clone(); // Clone to avoid disposal issues
+          rootAssigned = true;
+          break;
+        }
+        catch (IOException ex) when (attempt < 2)
+        {
+          Console.WriteLine($"File access attempt {attempt + 1} failed: {ex.Message}. Retrying...");
+          await Task.Delay(100); // Wait 100ms before retry
+        }
+        catch (IOException ex) when (attempt == 2)
+        {
+          throw new IOException($"Failed to access file after 3 attempts: {ex.Message}", ex);
+        }
+      }
+
+      if (!rootAssigned)
+        return (false, "Failed to read post metadata after multiple attempts.");
 
       // Use the same safe property access pattern as in LoadPost
       string GetSafeString(string propertyName)
@@ -527,10 +552,39 @@ public class BlogPostService : IBlogPostService
       };
 
       var newMeta = JsonSerializer.Serialize(updatedMeta, new JsonSerializerOptions { WriteIndented = true });
-      await File.WriteAllTextAsync(metaPath, newMeta);
+
+      // Use retry logic for file writing to handle temporary locks
+      for (int attempt = 0; attempt < 3; attempt++)
+      {
+        try
+        {
+          await File.WriteAllTextAsync(metaPath, newMeta);
+          break;
+        }
+        catch (IOException ex) when (attempt < 2)
+        {
+          Console.WriteLine($"File write attempt {attempt + 1} failed: {ex.Message}. Retrying...");
+          await Task.Delay(100); // Wait 100ms before retry
+        }
+      }
 
       if (!string.IsNullOrWhiteSpace(updatedData.Body))
-        await File.WriteAllTextAsync(bodyPath, updatedData.Body);
+      {
+        // Use retry logic for content file writing as well
+        for (int attempt = 0; attempt < 3; attempt++)
+        {
+          try
+          {
+            await File.WriteAllTextAsync(bodyPath, updatedData.Body);
+            break;
+          }
+          catch (IOException ex) when (attempt < 2)
+          {
+            Console.WriteLine($"Content file write attempt {attempt + 1} failed: {ex.Message}. Retrying...");
+            await Task.Delay(100); // Wait 100ms before retry
+          }
+        }
+      }
 
       return (true, "Post updated successfully.");
     }
@@ -666,6 +720,50 @@ public class BlogPostService : IBlogPostService
     return false;
   }
 
+  private string GenerateUniqueSlug(string baseSlug)
+  {
+    if (!SlugExists(baseSlug))
+      return baseSlug;
+
+    int counter = 1;
+    string uniqueSlug;
+    do
+    {
+      uniqueSlug = $"{baseSlug}-{counter}";
+      counter++;
+    } while (SlugExists(uniqueSlug));
+
+    return uniqueSlug;
+  }
+
+  private string GenerateSlugFromTitle(string title)
+  {
+    if (string.IsNullOrWhiteSpace(title))
+      return "untitled";
+
+    // Remove special characters except word characters, spaces, and hyphens
+    var slug = System.Text.RegularExpressions.Regex.Replace(title, @"[^\w\s-]", "");
+
+    // Replace spaces with hyphens
+    slug = System.Text.RegularExpressions.Regex.Replace(slug, @"\s+", "-");
+
+    // Convert to lowercase
+    slug = slug.ToLowerInvariant();
+
+    // Replace multiple hyphens with single hyphen
+    slug = System.Text.RegularExpressions.Regex.Replace(slug, @"-+", "-");
+
+    // Remove leading/trailing hyphens
+    slug = slug.Trim('-');
+
+    // Ensure we have something
+    if (string.IsNullOrEmpty(slug))
+      return "untitled";
+
+    return slug;
+  }
+
+  // ...existing code...
   public IResult LikePost(string slug, string username)
   {
     var postDir = GetPostDirectoryBySlug(slug);

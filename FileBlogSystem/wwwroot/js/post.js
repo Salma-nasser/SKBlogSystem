@@ -3,19 +3,25 @@ import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
 import { showMessage } from "./utils/notifications.js";
 
+// Extract slug from URL path (e.g., /post/Palestine -> Palestine)
+function getSlugFromPath() {
+  const path = window.location.pathname;
+  const match = path.match(/\/post\/([^\/]+)/);
+  return match ? decodeURIComponent(match[1]) : null;
+}
+
 window.addEventListener("DOMContentLoaded", () => {
   // Initialize components
   initializeImageModal();
   initializeThemeToggle();
 
-  // Get the post slug from URL
-  const urlParams = new URLSearchParams(window.location.search);
-  const slug = urlParams.get("slug");
+  // Get the post slug from URL path
+  const slug = getSlugFromPath();
 
   if (!slug) {
     showMessage("Post not found", "error");
     setTimeout(() => {
-      window.location.href = "blog.html";
+      window.location.href = "/blog";
     }, 2000);
     return;
   }
@@ -28,14 +34,14 @@ window.addEventListener("DOMContentLoaded", () => {
   const logoutBtn = document.getElementById("logoutBtn");
 
   backToBlogBtn?.addEventListener("click", () => {
-    window.location.href = "blog.html";
+    window.location.href = "/blog";
   });
 
   logoutBtn?.addEventListener("click", () => {
     localStorage.removeItem("jwtToken");
     showMessage("Logged out successfully", "info");
     setTimeout(() => {
-      window.location.href = "login.html";
+      window.location.href = "/login";
     }, 1000);
   });
 });
@@ -82,7 +88,7 @@ async function loadPost(slug) {
         <div class="error-container">
           <h2>Post Not Found</h2>
           <p>${error.message}</p>
-          <button onclick="window.location.href='blog.html'" class="btn btn-primary">
+          <button onclick="window.location.href='/blog'" class="btn btn-primary">
             Back to Blog
           </button>
         </div>
@@ -196,7 +202,7 @@ function renderSinglePost(post) {
       ${imagesHtml}
       
       <div class="post-content">
-        ${post.Body || ""}
+        ${renderMarkdownContent(post.Body || "")}
       </div>
       
       <div class="post-metadata">
@@ -210,6 +216,28 @@ function renderSinglePost(post) {
 
   // Add event listeners for likes functionality
   setupLikesInteraction(post.Slug);
+}
+
+function renderMarkdownContent(markdownText) {
+  if (!markdownText) return "";
+
+  try {
+    // Configure marked options for better security and features
+    marked.setOptions({
+      breaks: true,
+      gfm: true,
+      sanitize: false, // We'll handle image URLs manually
+      smartLists: true,
+      smartypants: true,
+    });
+
+    // Render the markdown to HTML
+    return marked.parse(markdownText);
+  } catch (error) {
+    console.error("Error rendering markdown:", error);
+    // Fallback to plain text with line breaks
+    return markdownText.replace(/\n/g, "<br>");
+  }
 }
 
 function setupLikesInteraction(slug) {

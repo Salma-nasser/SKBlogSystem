@@ -105,10 +105,12 @@ main {
   border-radius: 16px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
+  justify-content: space-between;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   max-width: 800px;
   width: 100%;
+  min-height: 400px; /* Fixed minimum height for consistency */
+  height: auto;
   background-color: var(--post-bg, #fff);
   border: 1px solid rgba(255, 255, 255, 0.1); /* subtle border for dark mode */
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); /* soft shadow to lift the card */
@@ -175,6 +177,25 @@ main {
   overflow: visible;
   text-overflow: unset;
   max-height: none;
+  flex-grow: 1;
+  position: relative;
+}
+
+.post-body.truncated {
+  max-height: 100px; /* Limit height for truncated content */
+  overflow: hidden;
+  position: relative;
+}
+
+.post-body.truncated::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 30px;
+  background: linear-gradient(transparent, var(--post-bg));
+  pointer-events: none;
 }
 
 .post-body p {
@@ -182,8 +203,79 @@ main {
   color: var(--text-color); /* Ensure paragraphs also use the theme color */
 }
 
-.post-body:last-child {
-  margin-bottom: 0;
+/* Markdown content styling within post cards */
+.post-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 10px 0;
+  display: block;
+}
+
+.post-body p {
+  margin: 0 0 15px 0;
+  line-height: 1.6;
+}
+
+.post-body h1,
+.post-body h2,
+.post-body h3,
+.post-body h4,
+.post-body h5,
+.post-body h6 {
+  margin: 20px 0 10px 0;
+  color: var(--text-color);
+}
+
+.post-body h1 {
+  font-size: 1.5em;
+}
+.post-body h2 {
+  font-size: 1.3em;
+}
+.post-body h3 {
+  font-size: 1.2em;
+}
+
+.post-body blockquote {
+  border-left: 4px solid var(--accent-color);
+  padding-left: 16px;
+  margin: 15px 0;
+  font-style: italic;
+  background: rgba(0, 0, 0, 0.05);
+  padding: 15px;
+  border-radius: 4px;
+}
+
+.post-body code {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: "Courier New", monospace;
+  font-size: 0.9em;
+}
+
+.post-body pre {
+  background: rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 15px 0;
+}
+
+.post-body pre code {
+  background: none;
+  padding: 0;
+}
+
+.post-body ul,
+.post-body ol {
+  padding-left: 20px;
+  margin: 15px 0;
+}
+
+.post-body li {
+  margin: 5px 0;
 }
 
 .post-description {
@@ -842,4 +934,133 @@ header h1 a:hover {
 
 .read-more-link:hover {
   text-decoration: underline;
+}
+
+/* Read More Functionality */
+.post-body {
+  flex-grow: 1;
+  margin: 15px 0;
+  line-height: 1.6;
+  position: relative;
+}
+
+.post-body.truncated {
+  max-height: 100px; /* Limit height for truncated content */
+  overflow: hidden;
+  position: relative;
+}
+
+.post-body.truncated::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 30px;
+  background: linear-gradient(transparent, var(--post-bg));
+  pointer-events: none;
+}
+
+.read-more-btn {
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 14px;
+  margin-top: 10px;
+  transition: background-color 0.2s ease;
+}
+
+.read-more-btn:hover {
+  background: var(--accent-hover);
+}
+
+.post-content-wrapper {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.post-footer {
+  margin-top: auto;
+  padding-top: 15px;
+}
+
+/* Markdown images styling in post cards */
+.markdown-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 10px auto;
+  display: block;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.markdown-image:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Image modal styling */
+.image-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+
+.image-modal img {
+  max-width: 90%;
+  max-height: 90%;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.image-modal button {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.image-modal button:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+/* Responsive image handling */
+@media (max-width: 768px) {
+  .image-modal img {
+    max-width: 95%;
+    max-height: 95%;
+  }
+
+  .image-modal button {
+    top: 10px;
+    right: 10px;
+    width: 35px;
+    height: 35px;
+    font-size: 18px;
+  }
 }

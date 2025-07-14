@@ -29,6 +29,185 @@ export function safeBase64Decode(encodedStr) {
   }
 }
 
+// Helper function to check if text needs read more functionality
+function needsReadMore(text) {
+  if (!text) return false;
+
+  // First render the markdown to get the actual content
+  const renderedHtml = renderMarkdown(text);
+  const plainText = stripHtml(renderedHtml);
+
+  // Count paragraphs by splitting on double newlines in the original markdown
+  const paragraphs = text.split(/\n\s*\n/).filter((p) => p.trim().length > 0);
+
+  // Also check for length - if more than 300 characters of plain text, show read more
+  return paragraphs.length > 1 || plainText.length > 300;
+}
+
+// Helper function to create truncated version of rendered HTML
+function getTruncatedContent(
+  text,
+  maxLength = 300,
+  postSlug = "",
+  publishedDate = ""
+) {
+  if (!text) return "";
+
+  // First render the markdown with enhanced image handling
+  const renderedHtml = renderMarkdownWithImageHandling(
+    text,
+    postSlug,
+    publishedDate
+  );
+  const plainText = stripHtml(renderedHtml);
+
+  // If the plain text is short enough, return the full rendered HTML
+  if (plainText.length <= maxLength) return renderedHtml;
+
+  // Simple approach: if the content is mostly text, use first paragraph
+  const firstParagraph = text.split(/\n\s*\n/)[0];
+  if (
+    firstParagraph &&
+    stripHtml(
+      renderMarkdownWithImageHandling(firstParagraph, postSlug, publishedDate)
+    ).length <= maxLength
+  ) {
+    return renderMarkdownWithImageHandling(
+      firstParagraph,
+      postSlug,
+      publishedDate
+    );
+  }
+
+  // Fallback: render truncated plain text as simple HTML
+  const truncated = plainText.substring(0, maxLength);
+  const lastSpace = truncated.lastIndexOf(" ");
+  const truncateAt = lastSpace > 0 ? lastSpace : maxLength;
+  const truncatedText = plainText.substring(0, truncateAt) + "...";
+  return `<p>${truncatedText}</p>`;
+}
+
+// Helper function to render markdown content
+function renderMarkdown(content) {
+  if (!content) return "";
+
+  // Check if marked library is available
+  if (typeof marked !== "undefined") {
+    try {
+      return marked.parse(content);
+    } catch (error) {
+      console.error("Error parsing markdown:", error);
+      return content; // Fallback to raw content
+    }
+  }
+
+  // Fallback: simple line break conversion if marked is not available
+  return content.replace(/\n/g, "<br>");
+}
+
+// Enhanced markdown renderer with image processing
+function renderMarkdownWithImageHandling(
+  content,
+  postSlug = "",
+  publishedDate = ""
+) {
+  if (!content) return "";
+
+  let renderedHtml = "";
+
+  // Check if marked library is available
+  if (typeof marked !== "undefined") {
+    try {
+      // Configure marked with custom renderer for images
+      const renderer = new marked.Renderer();
+
+      // Custom image renderer to handle both markdown images and existing post images
+      renderer.image = function (href, title, text) {
+        // Handle relative paths for post images
+        let imageSrc = href;
+
+        // If it's a relative path starting with /assets/, convert to full post path
+        if (href.startsWith("/assets/") && postSlug && publishedDate) {
+          const dateOnly = new Date(publishedDate).toISOString().split("T")[0];
+          imageSrc = `https://localhost:7189/Content/posts/${dateOnly}-${postSlug}${href}`;
+        }
+        // If it's already a full URL or absolute path, use as-is
+        else if (
+          href.startsWith("http://") ||
+          href.startsWith("https://") ||
+          href.startsWith("/Content/")
+        ) {
+          imageSrc = href;
+        }
+
+        return `<img src="${imageSrc}" alt="${text || ""}" title="${
+          title || ""
+        }" class="markdown-image" style="max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0; cursor: pointer;" onclick="openImageModal('${imageSrc}', '${
+          text || ""
+        }')">`;
+      };
+
+      renderedHtml = marked.parse(content, { renderer: renderer });
+    } catch (error) {
+      console.error("Error parsing markdown:", error);
+      renderedHtml = content; // Fallback to raw content
+    }
+  } else {
+    // Fallback: simple line break conversion if marked is not available
+    renderedHtml = content.replace(/\n/g, "<br>");
+  }
+
+  return renderedHtml;
+}
+
+// Function to open image in modal (will be defined globally)
+function openImageModal(src, alt) {
+  // Create modal HTML
+  const modal = document.createElement("div");
+  modal.className = "image-modal";
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000;
+    cursor: pointer;
+  `;
+
+  modal.innerHTML = `
+    <div style="position: relative; max-width: 90%; max-height: 90%;">
+      <img src="${src}" alt="${alt}" style="max-width: 100%; max-height: 100%; border-radius: 8px;">
+      <button onclick="this.closest('.image-modal').remove()" style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-size: 18px;">×</button>
+    </div>
+  `;
+
+  // Close modal when clicking outside the image
+  modal.addEventListener("click", function (e) {
+    if (e.target === modal) {
+      modal.remove();
+    }
+  });
+
+  document.body.appendChild(modal);
+}
+
+// Make openImageModal globally available
+if (typeof window !== "undefined") {
+  window.openImageModal = openImageModal;
+}
+
+// Helper function to strip HTML tags for plain text extraction
+function stripHtml(html) {
+  const tmp = document.createElement("div");
+  tmp.innerHTML = html;
+  return tmp.textContent || tmp.innerText || "";
+}
+
 export function renderPosts(posts, containerId, options = {}) {
   const {
     showDelete = false,
@@ -127,20 +306,60 @@ export function renderPosts(posts, containerId, options = {}) {
       </div>
     `;
 
-    card.innerHTML = `
-      <h3><a href="post?slug=${post.Slug}">${post.Title}</a></h3>
-      <p class="post-description">${post.Description}</p>
+    // Handle body content with read more functionality
+    let bodyHtml = "";
+    if (post.Body) {
+      const needsExpansion = needsReadMore(post.Body);
 
-      ${post.Body ? `<div class="post-body">${post.Body}</div>` : ""}
-      
-      ${imgHtml}
-      ${authorHtml}
-      <div class="meta-info">
-        <div><strong>Tags:</strong> ${tagsHtml || "—"}</div>
-        <div><strong>Categories:</strong> ${catsHtml || "—"}</div>
+      if (needsExpansion) {
+        const truncatedContent = getTruncatedContent(
+          post.Body,
+          300,
+          post.Slug,
+          post.PublishedDate
+        );
+        const fullRenderedContent = renderMarkdownWithImageHandling(
+          post.Body,
+          post.Slug,
+          post.PublishedDate
+        );
+        bodyHtml = `
+          <div class="post-body truncated" data-full-content="${fullRenderedContent.replace(
+            /"/g,
+            "&quot;"
+          )}" data-truncated-content="${truncatedContent.replace(
+          /"/g,
+          "&quot;"
+        )}">${truncatedContent}</div>
+          <button class="read-more-btn" data-action="expand">Read More</button>
+        `;
+      } else {
+        const renderedContent = renderMarkdownWithImageHandling(
+          post.Body,
+          post.Slug,
+          post.PublishedDate
+        );
+        bodyHtml = `<div class="post-body">${renderedContent}</div>`;
+      }
+    }
+
+    card.innerHTML = `
+      <div class="post-content-wrapper">
+        <h3><a href="post/${post.Slug}">${post.Title}</a></h3>
+        <p class="post-description">${post.Description}</p>
+        ${bodyHtml}
+        ${imgHtml}
       </div>
-      ${interactionBarHtml}
-      <div class="post-actions">${actionsHtml}</div>
+      
+      <div class="post-footer">
+        ${authorHtml}
+        <div class="meta-info">
+          <div><strong>Tags:</strong> ${tagsHtml || "—"}</div>
+          <div><strong>Categories:</strong> ${catsHtml || "—"}</div>
+        </div>
+        ${interactionBarHtml}
+        <div class="post-actions">${actionsHtml}</div>
+      </div>
     `;
 
     postsContainer.appendChild(card);
@@ -403,6 +622,31 @@ export function renderPosts(posts, containerId, options = {}) {
       } catch (error) {
         console.error("Error fetching likes:", error);
         showMessage("Failed to load likes. Please try again.", "error");
+      }
+    });
+  });
+
+  // Add event listeners for read more buttons
+  postsContainer.querySelectorAll(".read-more-btn").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      const postBody = btn.parentElement.querySelector(".post-body");
+      const action = btn.dataset.action;
+
+      if (action === "expand") {
+        // Show full content
+        const fullContent = postBody.dataset.fullContent;
+        postBody.innerHTML = fullContent;
+        postBody.classList.remove("truncated");
+        btn.textContent = "Read Less";
+        btn.dataset.action = "collapse";
+      } else {
+        // Show truncated content
+        const truncatedContent = postBody.dataset.truncatedContent;
+        postBody.innerHTML = truncatedContent;
+        postBody.classList.add("truncated");
+        btn.textContent = "Read More";
+        btn.dataset.action = "expand";
       }
     });
   });

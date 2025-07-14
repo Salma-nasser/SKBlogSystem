@@ -81,7 +81,29 @@ export function showMessage(message, type = "info") {
 }
 
 // Custom confirmation dialog
-export function showConfirmation(message, onConfirm, onCancel = null) {
+export function showConfirmation(
+  titleOrMessage,
+  messageOrOnConfirm,
+  onConfirmOrOnCancel = null,
+  onCancel = null
+) {
+  let title, message, onConfirm, onCancelCallback;
+
+  // Handle different parameter patterns
+  if (typeof messageOrOnConfirm === "string") {
+    // Pattern: showConfirmation(title, message, onConfirm, onCancel)
+    title = titleOrMessage;
+    message = messageOrOnConfirm;
+    onConfirm = onConfirmOrOnCancel;
+    onCancelCallback = onCancel;
+  } else {
+    // Pattern: showConfirmation(message, onConfirm, onCancel)
+    title = null;
+    message = titleOrMessage;
+    onConfirm = messageOrOnConfirm;
+    onCancelCallback = onConfirmOrOnCancel;
+  }
+
   // Create overlay
   const overlay = document.createElement("div");
   overlay.style.cssText = `
@@ -112,6 +134,11 @@ export function showConfirmation(message, onConfirm, onCancel = null) {
   `;
 
   dialog.innerHTML = `
+    ${
+      title
+        ? `<div style="margin-bottom: 12px; font-size: 18px; font-weight: 600; color: var(--accent-color, #c89b7b);">${title}</div>`
+        : ""
+    }
     <div style="margin-bottom: 20px; font-size: 16px; line-height: 1.5;">${message}</div>
     <div style="display: flex; gap: 12px; justify-content: center;">
       <button id="confirm-yes" style="
@@ -143,19 +170,25 @@ export function showConfirmation(message, onConfirm, onCancel = null) {
   // Handle clicks
   dialog.querySelector("#confirm-yes").onclick = () => {
     overlay.remove();
-    if (onConfirm) onConfirm();
+    if (typeof onConfirm === "function") {
+      onConfirm();
+    }
   };
 
   dialog.querySelector("#confirm-no").onclick = () => {
     overlay.remove();
-    if (onCancel) onCancel();
+    if (typeof onCancelCallback === "function") {
+      onCancelCallback();
+    }
   };
 
   // Handle overlay click to close
   overlay.onclick = (e) => {
     if (e.target === overlay) {
       overlay.remove();
-      if (onCancel) onCancel();
+      if (typeof onCancelCallback === "function") {
+        onCancelCallback();
+      }
     }
   };
 }

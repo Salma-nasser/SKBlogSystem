@@ -46,74 +46,16 @@ window.addEventListener("DOMContentLoaded", () => {
     reloadPosts();
   });
 
-  // Show the “New Post” modal
+  // Navigate to the create post page
   document.getElementById("newPostBtn")?.addEventListener("click", () => {
-    document.getElementById("postModal")?.classList.remove("hidden");
+    window.location.href = "/create-post";
   });
 
-  // Close the modal
-  document.getElementById("closeModal")?.addEventListener("click", () => {
-    document.getElementById("postModal")?.classList.add("hidden");
-  });
-
-  // Handle Publish
-  document
-    .getElementById("createPostForm")
-    ?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const token = localStorage.getItem("jwtToken");
-      if (!token) return showMessage("Please log in first.", "warning");
-
-      const form = e.target;
-      const fd = new FormData(form);
-      fd.set("IsPublished", "true");
-
-      try {
-        const res = await fetch("https://localhost:7189/api/posts/create", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: fd,
-        });
-        if (!res.ok) throw new Error(res.status);
-        showMessage("Post published!", "success");
-        reloadPosts();
-        form.reset();
-        document.getElementById("postModal")?.classList.add("hidden");
-      } catch {
-        showMessage("Publish failed", "error");
-      }
-    });
-
-  // Handle Save Draft
-  document
-    .getElementById("saveDraftBtn")
-    ?.addEventListener("click", async () => {
-      const token = localStorage.getItem("jwtToken");
-      if (!token) return showMessage("Please log in first.", "warning");
-
-      const form = document.getElementById("createPostForm");
-      const fd = new FormData(form);
-      fd.set("IsPublished", "false");
-
-      try {
-        const res = await fetch("https://localhost:7189/api/posts/create", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-          body: fd,
-        });
-        if (!res.ok) throw new Error(res.status);
-        showMessage("Draft saved!", "success");
-        reloadPosts();
-        form.reset();
-        document.getElementById("postModal")?.classList.add("hidden");
-      } catch {
-        showMessage("Save draft failed", "error");
-      }
-    });
   // ---------- VIEW PROFILE ----------
   document.getElementById("profileBtn")?.addEventListener("click", () => {
     window.location.href = "my-profile";
   });
+
   // ---------- USER INFO & LOGOUT ----------
   const username = localStorage.getItem("username");
   const usernameSpan = document.getElementById("username");
