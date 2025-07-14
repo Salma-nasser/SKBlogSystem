@@ -7,6 +7,27 @@ const pageSize = 5;
 let allPosts = [];
 let activeFilter = null; // { type: "tag"|"category", value: "..." }
 
+// URL Pagination utilities
+function getPageFromURL() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const page = parseInt(urlParams.get("page")) || 1;
+  return Math.max(1, page);
+}
+
+function updateURL(page) {
+  const url = new URL(window.location);
+  if (page === 1) {
+    url.searchParams.delete("page");
+  } else {
+    url.searchParams.set("page", page);
+  }
+  window.history.pushState({}, "", url);
+}
+
+function initializePageFromURL() {
+  currentPage = getPageFromURL();
+}
+
 const clearFilterBtn = document.getElementById("clearFilterBtn");
 initializeImageModal();
 initializeThemeToggle();
@@ -15,6 +36,15 @@ window.addEventListener("DOMContentLoaded", () => {
   if (!token) {
     return (window.location.href = "login");
   }
+
+  // Initialize page from URL
+  initializePageFromURL();
+
+  // Handle browser back/forward navigation
+  window.addEventListener("popstate", () => {
+    currentPage = getPageFromURL();
+    reloadPosts();
+  });
 
   // Show the “New Post” modal
   document.getElementById("newPostBtn")?.addEventListener("click", () => {
@@ -156,16 +186,19 @@ window.addEventListener("DOMContentLoaded", () => {
   // ---------- SEARCH & PAGINATION ----------
   document.getElementById("searchInput")?.addEventListener("input", () => {
     currentPage = 1;
+    updateURL(currentPage);
     reloadPosts();
   });
   document.getElementById("prevPage")?.addEventListener("click", () => {
     if (currentPage > 1) {
       currentPage--;
+      updateURL(currentPage);
       reloadPosts();
     }
   });
   document.getElementById("nextPage")?.addEventListener("click", () => {
     currentPage++;
+    updateURL(currentPage);
     reloadPosts();
   });
 
@@ -173,6 +206,7 @@ window.addEventListener("DOMContentLoaded", () => {
   clearFilterBtn?.addEventListener("click", () => {
     activeFilter = null;
     currentPage = 1;
+    updateURL(currentPage);
     document
       .querySelectorAll(".clickable-tag")
       .forEach((el) => el.classList.remove("active-filter"));
@@ -197,6 +231,7 @@ window.addEventListener("DOMContentLoaded", () => {
         value: el.dataset.value,
       };
       currentPage = 1;
+      updateURL(currentPage);
       await reloadPosts();
     }
   });
@@ -260,6 +295,13 @@ function paginate(items, page, size) {
 
 function updatePagination(totalItems) {
   const totalPages = Math.max(Math.ceil(totalItems / pageSize), 1);
+
+  // Ensure currentPage is within valid range
+  if (currentPage > totalPages) {
+    currentPage = totalPages;
+    updateURL(currentPage);
+  }
+
   const info = document.getElementById("pageInfo");
   const prevButton = document.getElementById("prevPage");
   const nextButton = document.getElementById("nextPage");

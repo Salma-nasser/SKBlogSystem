@@ -1,16 +1,17 @@
 {
-  "title": "test",
-  "description": "testing images",
+  "title": "the Nile River",
+  "description": "exploring the fascinating history of the Nile river",
+  "customUrl": "",
   "author": "Salma",
-  "publishedDate": "2025-06-25T22:41:17.917373Z",
-  "lastModified": "2025-06-25T22:41:17.917373Z",
   "tags": [],
   "categories": [],
+  "publishedDate": "2025-06-25T22:41:17.917373Z",
+  "lastModified": "2025-07-14T08:32:43.3993097Z",
   "slug": "testttting",
   "isPublished": true,
   "scheduledDate": null,
   "images": [
-    "/assets/WhatsApp Image 2024-11-24 at 08.36.22_43d3c791.jpg"
+    "/assets/nile.jpeg"
   ],
   "likes": [
     "Salma",

@@ -1,5 +1,34 @@
 import { showMessage } from "./notifications.js";
 
+// Helper function to safely encode UTF-8 strings to base64
+function safeBase64Encode(str) {
+  try {
+    // Convert string to UTF-8 bytes, then to base64
+    return btoa(unescape(encodeURIComponent(str)));
+  } catch (error) {
+    console.error("Error encoding to base64:", error);
+    // Fallback: just return the original string
+    return str;
+  }
+}
+
+// Helper function to safely decode base64 to UTF-8 strings
+export function safeBase64Decode(encodedStr) {
+  try {
+    // Decode base64 to UTF-8 bytes, then to string
+    return decodeURIComponent(escape(atob(encodedStr)));
+  } catch (error) {
+    console.error("Error decoding from base64:", error);
+    // Fallback: try regular atob
+    try {
+      return atob(encodedStr);
+    } catch (fallbackError) {
+      console.error("Fallback decode also failed:", fallbackError);
+      return encodedStr;
+    }
+  }
+}
+
 export function renderPosts(posts, containerId, options = {}) {
   const {
     showDelete = false,
@@ -70,7 +99,7 @@ export function renderPosts(posts, containerId, options = {}) {
 
       if (showModify) {
         // Encode the post data as base64 to avoid JSON parsing issues
-        const encodedPost = btoa(JSON.stringify(post));
+        const encodedPost = safeBase64Encode(JSON.stringify(post));
         buttons.push(
           `<button class="modifyBtn" data-slug="${post.Slug}" data-post-encoded="${encodedPost}">Modify</button>`
         );

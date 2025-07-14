@@ -1,4 +1,4 @@
-import { renderPosts } from "./utils/renderPost.js";
+import { renderPosts, safeBase64Decode } from "./utils/renderPost.js";
 import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
 import { showMessage, showConfirmation } from "./utils/notifications.js";
@@ -2134,7 +2134,7 @@ document.addEventListener("click", function (e) {
     const encodedData = e.target.getAttribute("data-post-encoded");
     if (encodedData) {
       try {
-        const postDataString = atob(encodedData);
+        const postDataString = safeBase64Decode(encodedData);
         const postData = JSON.parse(postDataString);
         openModifyModal(postData);
       } catch (error) {
