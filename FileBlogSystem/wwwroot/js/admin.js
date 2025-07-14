@@ -12,7 +12,7 @@ class AdminDashboard {
   async init() {
     // Initialize theme toggle
     initializeThemeToggle();
-    
+
     // Check if user is admin
     await this.checkAdminAccess();
 
