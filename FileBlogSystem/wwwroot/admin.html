@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Blog System</title>
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <h1>Blog System Admin</h1>
+            </div>
+            <div class="nav-menu">
+                <a href="/blog" class="nav-link">Blog</a>
+                <a href="/my-profile" class="nav-link">My Profile</a>
+                <button id="logoutBtn" class="logout-btn">Logout</button>
+            </div>
+        </div>
+    </nav>
+
+    <div id="modeToggle" data-theme="light">☀️</div>
+
+    <div class="container">
+        <div class="admin-header">
+            <h2>User Management</h2>
+            <p>Manage users and their permissions</p>
+        </div>
+
+        <div class="loading-spinner" id="loadingSpinner">
+            <div class="spinner"></div>
+            <p>Loading users...</p>
+        </div>
+
+        <div class="error-message" id="errorMessage" style="display: none;">
+            <p></p>
+        </div>
+
+        <div class="users-container" id="usersContainer" style="display: none;">
+            <div class="users-stats">
+                <div class="stat-card">
+                    <h3 id="totalUsers">0</h3>
+                    <p>Total Users</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="totalAdmins">0</h3>
+                    <p>Admins</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="totalAuthors">0</h3>
+                    <p>Authors</p>
+                </div>
+            </div>
+
+            <div class="users-table-container">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Role</th>
+                            <th>Created</th>
+                            <th>Last Login</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <!-- Users will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div class="modal" id="confirmModal">
+        <div class="modal-content">
+            <h3>Confirm Action</h3>
+            <p id="confirmMessage">Are you sure you want to promote this user to admin?</p>
+            <div class="modal-actions">
+                <button id="confirmYes" class="btn btn-danger">Yes, Promote</button>
+                <button id="confirmNo" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/utils/auth.js"></script>
+    <script type="module" src="/js/admin.js"></script>
+</body>
+</html>

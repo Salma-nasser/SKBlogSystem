@@ -77,4 +77,49 @@ public class AdminService : IAdminService
       return Results.Problem($"An error occurred: {ex.Message}", statusCode: StatusCodes.Status500InternalServerError);
     }
   }
+
+  public async Task<IResult> GetAllUsers()
+  {
+    try
+    {
+      var users = new List<object>();
+
+      if (!_usersDirectory.Exists)
+      {
+        return Results.Ok(users);
+      }
+
+      foreach (var userDir in _usersDirectory.GetDirectories())
+      {
+        string profilePath = Path.Combine(userDir.FullName, "profile.json");
+
+        if (File.Exists(profilePath))
+        {
+          string profileJson = await File.ReadAllTextAsync(profilePath);
+          var user = JsonSerializer.Deserialize<User>(profileJson);
+
+          if (user != null)
+          {
+            // Return only safe user information for admin view
+            users.Add(new
+            {
+              Username = user.Username,
+              Email = user.Email,
+              Role = user.Role,
+              CreatedAt = user.CreatedAt,
+              LastLoginDate = user.LastLoginDate,
+              IsActive = user.IsActive,
+              Bio = user.Bio
+            });
+          }
+        }
+      }
+
+      return Results.Ok(users);
+    }
+    catch (Exception ex)
+    {
+      return Results.Problem($"An error occurred: {ex.Message}", statusCode: StatusCodes.Status500InternalServerError);
+    }
+  }
 }

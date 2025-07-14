@@ -9,6 +9,10 @@ using Microsoft.AspNetCore.Rewrite;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Read PORT from environment for deployment (e.g., Render)
+var port = Environment.GetEnvironmentVariable("PORT") ?? "7189";
+builder.WebHost.UseUrls($"https://*:{port}");
+
 // JSON
 builder.Services.Configure<JsonOptions>(options =>
 {
@@ -58,6 +62,7 @@ var rewriteOptions = new RewriteOptions()
     .AddRewrite("^register/?$", "register.html", skipRemainingRules: true)
     .AddRewrite("^blog/?$", "blog.html", skipRemainingRules: true)
     .AddRewrite("^my-profile/?$", "myProfile.html", skipRemainingRules: true)
+    .AddRewrite("^admin/?$", "admin.html", skipRemainingRules: true)
     .AddRewrite("^post/?(.*)$", "post.html?$1", skipRemainingRules: true)
     .AddRewrite("^welcome/?$", "welcome.html", skipRemainingRules: true);
 

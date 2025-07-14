@@ -96,6 +96,63 @@ window.addEventListener("DOMContentLoaded", () => {
     window.location.href = "login";
   });
 
+  // ---------- ADMIN BUTTON FOR ADMIN USERS ----------
+  const adminBtn = document.getElementById("adminBtn");
+  console.log("DEBUG: Admin button element found:", !!adminBtn);
+
+  if (adminBtn) {
+    // Check if user is admin
+    const token = localStorage.getItem("jwtToken");
+    console.log("DEBUG: JWT Token exists:", !!token);
+
+    if (token) {
+      try {
+        // Parse JWT to get role
+        const base64Url = token.split(".")[1];
+        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+        const jsonPayload = decodeURIComponent(
+          atob(base64)
+            .split("")
+            .map(function (c) {
+              return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+            })
+            .join("")
+        );
+        const payload = JSON.parse(jsonPayload);
+
+        console.log("DEBUG: JWT Payload:", payload);
+
+        // Check both possible claim names for role
+        const userRole =
+          payload.role ||
+          payload[
+            "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+          ];
+        console.log("DEBUG: User Role:", userRole);
+
+        if (userRole === "Admin") {
+          console.log("DEBUG: User is Admin - showing admin button");
+          adminBtn.style.display = "inline-block";
+          adminBtn.addEventListener("click", () => {
+            console.log(
+              "DEBUG: Admin button clicked - redirecting to admin page"
+            );
+            window.location.href = "/admin";
+          });
+        } else {
+          console.log("DEBUG: User is not Admin - hiding admin button");
+          adminBtn.style.display = "none";
+        }
+      } catch (error) {
+        console.error("DEBUG: Error parsing JWT:", error);
+        adminBtn.style.display = "none";
+      }
+    } else {
+      console.log("DEBUG: No JWT token - hiding admin button");
+      adminBtn.style.display = "none";
+    }
+  }
+
   // ---------- SEARCH & PAGINATION ----------
   document.getElementById("searchInput")?.addEventListener("input", () => {
     currentPage = 1;
