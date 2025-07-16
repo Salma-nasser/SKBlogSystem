@@ -104,27 +104,11 @@ function initializeMarkdownEditor() {
 
 function setupEventListeners() {
   document.getElementById("backToBlogBtn")?.addEventListener("click", () => {
-    if (hasUnsavedChanges()) {
-      if (
-        confirm("You have unsaved changes. Are you sure you want to leave?")
-      ) {
-        window.location.href = "/blog";
-      }
-    } else {
-      window.location.href = "/blog";
-    }
+    window.location.href = "/blog";
   });
 
   document.getElementById("logoutBtn")?.addEventListener("click", () => {
-    if (hasUnsavedChanges()) {
-      if (
-        confirm("You have unsaved changes. Are you sure you want to logout?")
-      ) {
-        logout();
-      }
-    } else {
-      logout();
-    }
+    logout();
   });
 
   document
@@ -145,14 +129,6 @@ function setupEventListeners() {
         .slice(0, 16);
     } else {
       scheduleDiv.style.display = "none";
-    }
-  });
-
-  window.addEventListener("beforeunload", (e) => {
-    if (hasUnsavedChanges()) {
-      e.preventDefault();
-      e.returnValue =
-        "You have unsaved changes. Are you sure you want to leave?";
     }
   });
 }
@@ -426,14 +402,20 @@ async function submitPost(isPublished) {
     if (!response.ok) {
       let errorMessage;
       try {
-        const errorData = await response.json();
-        errorMessage =
-          errorData.message ||
-          errorData.title ||
-          `HTTP error! status: ${response.status}`;
+        // Clone the response so we can try different parsing methods
+        const responseClone = response.clone();
+        try {
+          const errorData = await response.json();
+          errorMessage =
+            errorData.message ||
+            errorData.title ||
+            `HTTP error! status: ${response.status}`;
+        } catch {
+          const errorText = await responseClone.text();
+          errorMessage = errorText || `HTTP error! status: ${response.status}`;
+        }
       } catch {
-        const errorText = await response.text();
-        errorMessage = errorText || `HTTP error! status: ${response.status}`;
+        errorMessage = `HTTP error! status: ${response.status}`;
       }
       throw new Error(errorMessage);
     }
@@ -463,15 +445,10 @@ async function submitPost(isPublished) {
       updateImagePreviewsWithActualUrls(result);
     }
 
-    // Reset form or redirect
-    if (isPublished) {
-      setTimeout(() => {
-        window.location.href = "/blog";
-      }, 2000);
-    } else {
-      // For drafts, just show success and keep editing
-      markAsSaved();
-    }
+    // Redirect to blog page after successful submission
+    setTimeout(() => {
+      window.location.href = "/blog";
+    }, 1500);
   } catch (error) {
     console.error("Error submitting post:", error);
     showMessage(
@@ -495,19 +472,6 @@ function hasContent() {
   return title || description || body || selectedFiles.length > 0;
 }
 
-function hasUnsavedChanges() {
-  // Simple implementation - you could make this more sophisticated
-  return hasContent() && !isMarkedAsSaved();
-}
-
-function markAsSaved() {
-  document.body.dataset.saved = "true";
-}
-
-function isMarkedAsSaved() {
-  return document.body.dataset.saved === "true";
-}
-
 function logout() {
   localStorage.removeItem("jwtToken");
   localStorage.removeItem("username");
@@ -515,20 +479,4 @@ function logout() {
   setTimeout(() => {
     window.location.href = "/login";
   }, 1000);
-}
-
-// Track changes to mark as unsaved
-document.addEventListener("input", () => {
-  delete document.body.dataset.saved;
-});
-
-// Also track EasyMDE changes
-if (typeof EasyMDE !== "undefined") {
-  document.addEventListener("DOMContentLoaded", () => {
-    if (easyMDE) {
-      easyMDE.codemirror.on("change", () => {
-        delete document.body.dataset.saved;
-      });
-    }
-  });
 }

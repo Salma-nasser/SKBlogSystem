@@ -261,7 +261,7 @@ public class BlogPostService : IBlogPostService
     try
     {
       var date = DateTime.UtcNow;
-      var baseSlug = request.CustomUrl ?? GenerateSlugFromTitle(request.Title);
+      var baseSlug = string.IsNullOrWhiteSpace(request.CustomUrl) ? GenerateSlugFromTitle(request.Title) : request.CustomUrl;
 
       // Generate a unique slug to avoid collisions
       var slug = GenerateUniqueSlug(baseSlug);
@@ -735,25 +735,20 @@ public class BlogPostService : IBlogPostService
 
     return uniqueSlug;
   }
-
   private string GenerateSlugFromTitle(string title)
   {
     if (string.IsNullOrWhiteSpace(title))
       return "untitled";
 
-    // Remove special characters except word characters, spaces, and hyphens
-    var slug = System.Text.RegularExpressions.Regex.Replace(title, @"[^\w\s-]", "");
+    var slug = title.ToLowerInvariant();
 
-    // Replace spaces with hyphens
-    slug = System.Text.RegularExpressions.Regex.Replace(slug, @"\s+", "-");
+    // Remove all non-alphanumeric characters except spaces and hyphens
+    slug = System.Text.RegularExpressions.Regex.Replace(slug, @"[^a-z0-9\s-]", "");
 
-    // Convert to lowercase
-    slug = slug.ToLowerInvariant();
+    // Replace multiple spaces or hyphens with single hyphen
+    slug = System.Text.RegularExpressions.Regex.Replace(slug, @"[\s-]+", "-");
 
-    // Replace multiple hyphens with single hyphen
-    slug = System.Text.RegularExpressions.Regex.Replace(slug, @"-+", "-");
-
-    // Remove leading/trailing hyphens
+    // Trim hyphens from start and end
     slug = slug.Trim('-');
 
     // Ensure we have something
