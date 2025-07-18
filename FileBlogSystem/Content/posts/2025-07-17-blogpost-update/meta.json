@@ -1,0 +1,23 @@
+{
+  "title": "BlogPost update",
+  "description": "testing if the slug works now",
+  "author": "Salma",
+  "publishedDate": "2025-07-17T22:57:00.5017765Z",
+  "lastModified": null,
+  "tags": [
+    "testing"
+  ],
+  "categories": [
+    "tryAgain"
+  ],
+  "slug": "blogpost-update",
+  "isPublished": false,
+  "scheduledDate": null,
+  "images": [
+    "/assets/NewProfilePicture.jpeg"
+  ],
+  "likes": [
+    "Salma"
+  ],
+  "commentCount": 0
+}

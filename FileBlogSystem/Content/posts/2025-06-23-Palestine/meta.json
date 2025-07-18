@@ -1,22 +1,22 @@
 {
   "title": "Palestine",
   "description": "Discussing the issues in Palestine",
-  "customUrl": "",
   "author": "Salma",
+  "publishedDate": "2025-06-23T22:21:09.7121984Z",
+  "lastModified": "2025-07-14T11:14:20.9442674Z",
   "tags": [
     ""
   ],
   "categories": [
     ""
   ],
-  "publishedDate": "2025-06-23T22:21:09.7121984Z",
-  "lastModified": "2025-07-14T11:14:20.9442674Z",
   "slug": "Palestine",
   "isPublished": true,
   "scheduledDate": null,
   "images": [],
   "likes": [
-    "Henry"
+    "Henry",
+    "Salma"
   ],
   "commentCount": 0
 }

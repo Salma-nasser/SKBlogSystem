@@ -40,14 +40,14 @@ function needsReadMore(text) {
   // Count paragraphs by splitting on double newlines in the original markdown
   const paragraphs = text.split(/\n\s*\n/).filter((p) => p.trim().length > 0);
 
-  // Also check for length - if more than 300 characters of plain text, show read more
-  return paragraphs.length > 1 || plainText.length > 300;
+  // Increased threshold - if more than 500 characters or 3 paragraphs, show read more
+  return paragraphs.length > 3 || plainText.length > 500;
 }
 
 // Helper function to create truncated version of rendered HTML
 function getTruncatedContent(
   text,
-  maxLength = 300,
+  maxLength = 500, // Increased from 300 to 500
   postSlug = "",
   publishedDate = ""
 ) {
@@ -62,29 +62,12 @@ function getTruncatedContent(
   const plainText = stripHtml(renderedHtml);
 
   // If the plain text is short enough, return the full rendered HTML
-  if (plainText.length <= maxLength) return renderedHtml;
-
-  // Simple approach: if the content is mostly text, use first paragraph
-  const firstParagraph = text.split(/\n\s*\n/)[0];
-  if (
-    firstParagraph &&
-    stripHtml(
-      renderMarkdownWithImageHandling(firstParagraph, postSlug, publishedDate)
-    ).length <= maxLength
-  ) {
-    return renderMarkdownWithImageHandling(
-      firstParagraph,
-      postSlug,
-      publishedDate
-    );
+  if (plainText.length <= maxLength) {
+    return renderedHtml;
   }
 
-  // Fallback: render truncated plain text as simple HTML
-  const truncated = plainText.substring(0, maxLength);
-  const lastSpace = truncated.lastIndexOf(" ");
-  const truncateAt = lastSpace > 0 ? lastSpace : maxLength;
-  const truncatedText = plainText.substring(0, truncateAt) + "...";
-  return `<p>${truncatedText}</p>`;
+  // Return truncated version - the CSS will handle the visual truncation
+  return renderedHtml;
 }
 
 // Helper function to render markdown content
@@ -347,8 +330,8 @@ export function renderPosts(posts, containerId, options = {}) {
       <div class="post-content-wrapper">
         <h3><a href="post/${post.Slug}">${post.Title}</a></h3>
         <p class="post-description">${post.Description}</p>
-        ${bodyHtml}
         ${imgHtml}
+        ${bodyHtml}
       </div>
       
       <div class="post-footer">
@@ -649,5 +632,46 @@ export function renderPosts(posts, containerId, options = {}) {
         btn.dataset.action = "expand";
       }
     });
+  });
+
+  // Create read more functionality if needed
+  posts.forEach((post) => {
+    const postContentWrapper = document.querySelector(
+      `.post-card[data-slug="${post.Slug}"] .post-content-wrapper`
+    );
+    const postBody = postContentWrapper.querySelector(".post-body");
+
+    if (needsReadMore(post.Body)) {
+      const readMoreContainer = document.createElement("div");
+      readMoreContainer.className = "read-more";
+
+      const readMoreLink = document.createElement("a");
+      readMoreLink.href = "#";
+      readMoreLink.className = "read-more-link";
+      readMoreLink.textContent = "Read more";
+      readMoreLink.setAttribute("data-action", "expand");
+
+      readMoreLink.addEventListener("click", function (e) {
+        e.preventDefault();
+        const postBody = this.closest(".post-card").querySelector(".post-body");
+        const isExpanded = this.getAttribute("data-action") === "collapse";
+
+        if (isExpanded) {
+          postBody.classList.add("truncated");
+          this.textContent = "Read more";
+          this.setAttribute("data-action", "expand");
+        } else {
+          postBody.classList.remove("truncated");
+          this.textContent = "Read less";
+          this.setAttribute("data-action", "collapse");
+        }
+      });
+
+      readMoreContainer.appendChild(readMoreLink);
+      postContentWrapper.appendChild(readMoreContainer);
+
+      // Initially show truncated version
+      postBody.classList.add("truncated");
+    }
   });
 }
