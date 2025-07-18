@@ -152,36 +152,44 @@ class AdminDashboard {
     this.users.forEach((user) => {
       const row = document.createElement("tr");
       row.innerHTML = `
-                <td>
-                    <strong>${this.escapeHtml(user.Username)}</strong>
-                    ${
-                      user.Bio
-                        ? `<br><small class="text-muted">${this.escapeHtml(
-                            user.Bio
-                          )}</small>`
-                        : ""
-                    }
-                </td>
-                <td>${this.escapeHtml(user.Email)}</td>
-                <td>
-                    <span class="role-badge role-${user.Role.toLowerCase()}">
-                        ${user.Role}
-                    </span>
-                </td>
-                <td>${this.formatDate(user.CreatedAt)}</td>
-                <td>${this.formatDate(user.LastLoginDate)}</td>
-                <td>
-                    <span class="status-badge status-${
-                      user.IsActive ? "active" : "inactive"
-                    }">
-                        ${user.IsActive ? "Active" : "Inactive"}
-                    </span>
-                </td>
-                <td>
-                    ${this.renderUserActions(user)}
-                </td>
-            `;
+      <td>
+        <strong>${this.escapeHtml(user.Username)}</strong>
+        ${
+          user.Bio
+            ? `<br><small class="text-muted">${this.escapeHtml(
+                user.Bio
+              )}</small>`
+            : ""
+        }
+      </td>
+      <td>${this.escapeHtml(user.Email)}</td>
+      <td>
+        <span class="role-badge role-${user.Role.toLowerCase()}">
+          ${user.Role}
+        </span>
+      </td>
+      <td>${this.formatDate(user.CreatedAt)}</td>
+      <td>${this.formatDate(user.LastLoginDate)}</td>
+      <td>
+        <span class="status-badge status-${
+          user.IsActive ? "active" : "inactive"
+        }">
+          ${user.IsActive ? "Active" : "Inactive"}
+        </span>
+      </td>
+      <td>
+        ${this.renderUserActions(user)}
+      </td>
+    `;
       tbody.appendChild(row);
+
+      // Add event listeners after the row is added to the DOM
+      const promoteBtn = row.querySelector(".promote-btn");
+      if (promoteBtn) {
+        promoteBtn.addEventListener("click", () => {
+          this.showPromoteModal(user.Username);
+        });
+      }
     });
   }
 
@@ -195,10 +203,10 @@ class AdminDashboard {
     }
 
     return `
-            <button class="btn btn-primary" onclick="adminDashboard.showPromoteModal('${user.Username}')">
-                Promote to Admin
-            </button>
-        `;
+    <button class="btn btn-primary promote-btn" data-username="${user.Username}">
+      Promote to Admin
+    </button>
+  `;
   }
 
   updateStats() {
@@ -350,7 +358,7 @@ class AdminDashboard {
 }
 
 // Initialize admin dashboard when page loads
-let adminDashboard;
+window.adminDashboard; // Make it globally accessible
 document.addEventListener("DOMContentLoaded", () => {
-  adminDashboard = new AdminDashboard();
+  window.adminDashboard = new AdminDashboard();
 });
