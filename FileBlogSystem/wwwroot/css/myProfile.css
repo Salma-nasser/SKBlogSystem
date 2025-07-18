@@ -1,81 +1,234 @@
-body {
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@400;500;600;700&display=swap");
+@import url('./blog.css');
+/* CSS Reset and Base Styles */
+* {
+  box-sizing: border-box;
   margin: 0;
-  font-family: "Segoe UI", sans-serif;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  line-height: 1.7;
   background-color: var(--bg-color);
   color: var(--text-color);
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: all 0.3s ease;
+  font-size: 16px;
+  overflow-x: hidden;
 }
 
+/* Enhanced CSS Variables - Feminine & Neutral Palette */
 :root {
-  --bg-color: #fdfaf6; /* soft warm cream */
-  --text-color: #3e3e3e; /* deep neutral gray */
-  --accent-color: #c89b7b; /* soft terracotta */
-  --accent-hover: #a6765b; /* rich terracotta hover */
-  --button-bg: #8c6e63; /* soft brown button */
-  --button-text: #ffffff; /* white button text */
-  --header-bg: #bfa89a; /* muted beige header */
-  --header-text: #3e3e3e; /* header text remains dark */
-  --header-shadow: rgba(0, 0, 0, 0.1);
-  --post-bg: #ffffff; /* clean white post background */
-  --card-background: #f9f9f9; /* light gray for cards */
-  --text-muted: #666; /* muted text color */
-  --secondary-button-bg: #8c6e63; /* Add this */
-  --secondary-button-hover: #a6765b; /* Add this */
-  --border-color: rgba(0, 0, 0, 0.1); /* Add this */
+  /* Colors - Light Mode */
+  --bg-color: #fdf8f6;
+  --bg-secondary: #ffffff;
+  --text-color: #4a3c3a;
+  --text-muted: #8b7d7b;
+  --text-light: #b5a8a6;
+
+  /* Brand Colors - Warm & Feminine */
+  --primary-color: #d4a574;
+  --primary-hover: #c19660;
+  --accent-color: #e8b4b8;
+  --accent-hover: #e09ca2;
+
+  /* Secondary Colors */
+  --secondary-color: #c8a8d8;
+  --secondary-hover: #b896c8;
+  --tertiary-color: #a8c8a8;
+  --tertiary-hover: #96b896;
+
+  /* UI Colors */
+  --border-color: #f0e6e3;
+  --border-hover: #e8d5d1;
+  --shadow-light: rgba(212, 165, 116, 0.08);
+  --shadow-medium: rgba(212, 165, 116, 0.15);
+  --shadow-heavy: rgba(212, 165, 116, 0.25);
+
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+
+  /* Border Radius */
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  /* Typography */
+  --font-heading: "Playfair Display", Georgia, serif;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Layout */
+  --container-max-width: 800px;
+  --header-height: 80px;
 }
 
+/* Dark Mode Variables - Warm Dark Tones */
 body.dark-mode {
-  --bg-color: #3a2e2a; /* deep chocolate */
-  --text-color: #f0eae4; /* light beige text */
-  --text-muted: #c0c0c0; /* Add this */
-  --accent-color: #d6a07b; /* warm bronze accent */
-  --accent-hover: #b67f5f; /* rich bronze hover */
-  --button-bg: #6e554a; /* muted coffee brown button */
-  --button-text: #fdfaf6; /* soft cream text */
-  --header-bg: #4f3c35; /* dark coffee header */
-  --header-text: #fdfaf6; /* light header text */
-  --header-shadow: rgba(0, 0, 0, 0.2);
-  --post-bg: #4a3a35; /* soft coffee post background */
-  --card-background: #5a4a45; /* Add this */
-  --secondary-button-bg: #6e554a; /* Add this */
-  --secondary-button-hover: #b67f5f; /* Add this */
-  --border-color: rgba(255, 255, 255, 0.1); /* Add this */
+  --bg-color: #2d2420;
+  --bg-secondary: #3a2f2a;
+  --text-color: #f5f0ed;
+  --text-muted: #c8b8b5;
+  --text-light: #a8988f;
+
+  --primary-color: #e8c4a0;
+  --primary-hover: #f0d2b0;
+  --accent-color: #f0c4c8;
+  --accent-hover: #f8d4d8;
+
+  --secondary-color: #d8c4e8;
+  --secondary-hover: #e0d2f0;
+  --tertiary-color: #c4e8c4;
+  --tertiary-hover: #d2f0d2;
+
+  --border-color: #4a3f3a;
+  --border-hover: #5a4f4a;
+  --shadow-light: rgba(0, 0, 0, 0.2);
+  --shadow-medium: rgba(0, 0, 0, 0.3);
+  --shadow-heavy: rgba(0, 0, 0, 0.4);
 }
 
-body.dark-mode .post-card h3,
-body.dark-mode .post-card p,
-body.dark-mode .post-body,
-body.dark-mode .post-card small {
-  color: #f0eae4; /* light beige for dark mode text */
-}
-
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem 2rem;
-  background-color: var(--button-bg);
-  color: var(--header-text);
-  box-shadow: 0 2px 6px var(--header-shadow);
+/* Typography Styles */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text-color);
+  margin-bottom: var(--spacing-lg);
 }
 
 h1 {
-  margin: 0;
+  font-size: 2.5rem;
+}
+h2 {
+  font-size: 2rem;
+}
+h3 {
+  font-size: 1.75rem;
+}
+h4 {
+  font-size: 1.5rem;
+}
+h5 {
+  font-size: 1.25rem;
+}
+h6 {
+  font-size: 1.125rem;
 }
 
+p {
+  margin-bottom: var(--spacing-lg);
+  color: var(--text-color);
+  font-size: 1.125rem;
+  line-height: 1.8;
+}
+
+/* Header Styles */
+header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--bg-secondary);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border-color);
+  padding: var(--spacing-md) var(--spacing-xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: var(--header-height);
+  box-shadow: 0 2px 8px var(--shadow-light);
+}
+
+header h1 {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin: 0;
+  letter-spacing: -0.025em;
+}
+
+header h1 a {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+header h1 a:hover {
+  color: var(--primary-hover);
+}
+
+/* Navigation Buttons */
+.header-nav {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+/* Enhanced Button Styles */
 button {
-  padding: 0.5rem 1rem;
-  font-weight: bold;
-  background-color: var(--button-bg);
-  color: var(--button-text);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  padding: var(--spacing-sm) var(--spacing-md);
   border: none;
-  border-radius: 5px;
+  border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background-color 0.2s ease;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  min-height: 40px;
+  background: var(--primary-color);
+  color: white;
+  box-shadow: 0 2px 8px var(--shadow-light);
 }
 
 button:hover {
-  background-color: var(--accent-hover);
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px var(--shadow-medium);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Secondary Button */
+.btn-secondary {
+  background: var(--accent-color);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: var(--accent-hover);
+}
+
+/* Outline Button */
+.btn-outline {
+  background: transparent;
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+}
+
+.btn-outline:hover {
+  background: var(--primary-color);
+  color: white;
 }
 
 main {
@@ -84,7 +237,6 @@ main {
   flex-direction: column;
   align-items: center;
   gap: 1.5rem;
-  max-width: 900px;
   margin: 0 auto;
 }
 
@@ -103,10 +255,14 @@ main {
 
 .profile-nav button {
   padding: 0.5rem 1rem;
-  background: var(--header-bg);
-  border: 1px solid var(--accent-color);
+  background: transparent;
+  border: 1px solid var(--primary-color);
   border-radius: 5px;
   cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--primary-color);
+  transition: background 0.2s ease, color 0.2s ease;
 }
 
 .profile-nav button.active {
@@ -178,10 +334,10 @@ main {
 
 .post-body {
   margin: 1rem 0;
-  padding: 1rem;
-  background-color: var(--card-background, #f9f9f9);
-  border-radius: 8px;
-  border-left: 4px solid var(--accent-color, #8b7355);
+  padding: 0;
+  background-color: transparent;
+  border-radius: 0;
+  border-left: none;
   line-height: 1.6;
   color: var(--text-color);
   overflow: visible;
@@ -1048,20 +1204,4 @@ header h1 a {
 
 header h1 a:hover {
   color: var(--accent-color);
-}
-
-/* Read more link */
-.read-more {
-  margin-top: 15px;
-}
-
-.read-more-link {
-  color: var(--accent-color);
-  text-decoration: none;
-  font-weight: 500;
-  font-size: 0.9rem;
-}
-
-.read-more-link:hover {
-  text-decoration: underline;
 }

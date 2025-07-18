@@ -243,58 +243,6 @@ button:disabled {
   color: white;
 }
 
-/* Search Container */
-.search-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: var(--spacing-md);
-  margin: var(--spacing-xl) auto;
-  max-width: var(--container-max-width);
-  padding: 0 var(--spacing-xl);
-}
-
-.input-wrapper {
-  flex: 1;
-  max-width: 400px;
-}
-
-#searchInput {
-  width: 100%;
-  padding: var(--spacing-md);
-  font-size: 1rem;
-  border: 2px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  background: var(--bg-secondary);
-  color: var(--text-color);
-  transition: all 0.2s ease;
-  font-family: var(--font-body);
-  box-shadow: 0 2px 8px var(--shadow-light);
-}
-
-#searchInput:focus {
-  outline: none;
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(212, 165, 116, 0.2);
-}
-
-#searchInput::placeholder {
-  color: var(--text-muted);
-}
-
-#clearFilterBtn {
-  background: var(--accent-color);
-  color: white;
-  padding: var(--spacing-md) var(--spacing-lg);
-  border-radius: var(--radius-lg);
-  font-weight: 500;
-}
-
-#clearFilterBtn:hover {
-  background: var(--accent-hover);
-  transform: translateY(-2px);
-}
-
 main {
   padding: 2rem;
   display: flex;

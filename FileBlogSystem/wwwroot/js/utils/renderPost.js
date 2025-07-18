@@ -306,6 +306,8 @@ export function renderPosts(posts, containerId, options = {}) {
           post.Slug,
           post.PublishedDate
         );
+
+        // Use link-based approach instead of button
         bodyHtml = `
           <div class="post-body truncated" data-full-content="${fullRenderedContent.replace(
             /"/g,
@@ -314,7 +316,9 @@ export function renderPosts(posts, containerId, options = {}) {
           /"/g,
           "&quot;"
         )}">${truncatedContent}</div>
-          <button class="read-more-btn" data-action="expand">Read More</button>
+          <div class="read-more">
+            <a href="#" class="read-more-link" data-action="expand">Read more</a>
+          </div>
         `;
       } else {
         const renderedContent = renderMarkdownWithImageHandling(
@@ -609,69 +613,28 @@ export function renderPosts(posts, containerId, options = {}) {
     });
   });
 
-  // Add event listeners for read more buttons
-  postsContainer.querySelectorAll(".read-more-btn").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
+  // Add event listeners for read more links (keep this)
+  postsContainer.querySelectorAll(".read-more-link").forEach((link) => {
+    link.addEventListener("click", (e) => {
       e.preventDefault();
-      const postBody = btn.parentElement.querySelector(".post-body");
-      const action = btn.dataset.action;
+      const postBody = link.closest(".post-card").querySelector(".post-body");
+      const action = link.dataset.action;
 
       if (action === "expand") {
         // Show full content
         const fullContent = postBody.dataset.fullContent;
         postBody.innerHTML = fullContent;
         postBody.classList.remove("truncated");
-        btn.textContent = "Read Less";
-        btn.dataset.action = "collapse";
+        link.textContent = "Read less";
+        link.dataset.action = "collapse";
       } else {
         // Show truncated content
         const truncatedContent = postBody.dataset.truncatedContent;
         postBody.innerHTML = truncatedContent;
         postBody.classList.add("truncated");
-        btn.textContent = "Read More";
-        btn.dataset.action = "expand";
+        link.textContent = "Read more";
+        link.dataset.action = "expand";
       }
     });
-  });
-
-  // Create read more functionality if needed
-  posts.forEach((post) => {
-    const postContentWrapper = document.querySelector(
-      `.post-card[data-slug="${post.Slug}"] .post-content-wrapper`
-    );
-    const postBody = postContentWrapper.querySelector(".post-body");
-
-    if (needsReadMore(post.Body)) {
-      const readMoreContainer = document.createElement("div");
-      readMoreContainer.className = "read-more";
-
-      const readMoreLink = document.createElement("a");
-      readMoreLink.href = "#";
-      readMoreLink.className = "read-more-link";
-      readMoreLink.textContent = "Read more";
-      readMoreLink.setAttribute("data-action", "expand");
-
-      readMoreLink.addEventListener("click", function (e) {
-        e.preventDefault();
-        const postBody = this.closest(".post-card").querySelector(".post-body");
-        const isExpanded = this.getAttribute("data-action") === "collapse";
-
-        if (isExpanded) {
-          postBody.classList.add("truncated");
-          this.textContent = "Read more";
-          this.setAttribute("data-action", "expand");
-        } else {
-          postBody.classList.remove("truncated");
-          this.textContent = "Read less";
-          this.setAttribute("data-action", "collapse");
-        }
-      });
-
-      readMoreContainer.appendChild(readMoreLink);
-      postContentWrapper.appendChild(readMoreContainer);
-
-      // Initially show truncated version
-      postBody.classList.add("truncated");
-    }
   });
 }

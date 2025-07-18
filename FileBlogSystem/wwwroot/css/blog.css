@@ -587,11 +587,6 @@ main {
   outline-offset: 2px;
 }
 
-/* Remove the old button styles */
-.read-more-btn {
-  display: none; /* Hide the old button style */
-}
-
 /* Post Content Layout */
 .post-content-wrapper {
   flex-grow: 1;
