@@ -4,21 +4,21 @@ let originalData = {};
 let currentData = {};
 let hasChanges = false;
 
-// Get post ID from URL parameters
+// Get post slug from URL parameters
 const urlParams = new URLSearchParams(window.location.search);
-const postId = urlParams.get("id");
+const postSlug = urlParams.get("slug");
 
 document.addEventListener("DOMContentLoaded", async function () {
   // Check if user is authenticated
-  const token = localStorage.getItem("token");
+  const token = localStorage.getItem("jwtToken");
   if (!token) {
     window.location.href = "/login.html";
     return;
   }
 
-  // Check if postId is provided
-  if (!postId) {
-    alert("No post ID provided");
+  // Check if postSlug is provided
+  if (!postSlug) {
+    alert("No post slug provided");
     window.location.href = "/myProfile.html";
     return;
   }
@@ -64,7 +64,7 @@ function initializeMarkdownEditor() {
     spellChecker: false,
     autosave: {
       enabled: true,
-      uniqueId: `modify_post_${postId}`,
+      uniqueId: `modify_post_${postSlug}`,
       delay: 10000,
     },
     toolbar: [
@@ -95,8 +95,8 @@ function initializeMarkdownEditor() {
 
 async function loadPostData() {
   try {
-    const token = localStorage.getItem("token");
-    const response = await fetch(`/api/posts/${postId}`, {
+    const token = localStorage.getItem("jwtToken");
+    const response = await fetch(`/api/posts/${postSlug}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -108,24 +108,35 @@ async function loadPostData() {
 
     const post = await response.json();
 
-    // Store original data
+    // Map backend PascalCase properties to form fields
     originalData = {
-      title: post.title || "",
-      description: post.description || "",
-      customUrl: post.customUrl || "",
-      tags: Array.isArray(post.tags) ? post.tags.join(", ") : post.tags || "",
-      categories: Array.isArray(post.categories)
+      title: post.Title || post.title || "",
+      description: post.Description || post.description || "",
+      customUrl: post.CustomUrl || post.customUrl || "",
+      tags: Array.isArray(post.Tags)
+        ? post.Tags.join(", ")
+        : post.tags
+        ? post.tags.join(", ")
+        : post.tags || "",
+      categories: Array.isArray(post.Categories)
+        ? post.Categories.join(", ")
+        : post.categories
         ? post.categories.join(", ")
         : post.categories || "",
-      content: post.content || "",
-      schedulePost: post.isScheduled || false,
-      scheduledDate: post.scheduledDate
+      content: post.Content || post.content || "",
+      schedulePost:
+        post.IsScheduled !== undefined
+          ? post.IsScheduled
+          : post.isScheduled || false,
+      scheduledDate: post.ScheduledDate
+        ? new Date(post.ScheduledDate).toISOString().slice(0, 16)
+        : post.scheduledDate
         ? new Date(post.scheduledDate).toISOString().slice(0, 16)
         : "",
     };
 
     // Populate form fields
-    document.getElementById("postId").value = postId;
+    document.getElementById("postId").value = postSlug;
     document.getElementById("title").value = originalData.title;
     document.getElementById("description").value = originalData.description;
     document.getElementById("customUrl").value = originalData.customUrl;
@@ -357,7 +368,7 @@ async function handleFormSubmit(e) {
   updateBtn.disabled = true;
 
   try {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("jwtToken");
     const formData = new FormData();
 
     // Add changed fields only
@@ -384,7 +395,7 @@ async function handleFormSubmit(e) {
       }
     }
 
-    const response = await fetch(`/api/posts/${postId}`, {
+    const response = await fetch(`/api/posts/modify/${postSlug}`, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -406,7 +417,7 @@ async function handleFormSubmit(e) {
 
     // Optionally redirect to the post or profile
     if (confirm("Post updated! Would you like to view the updated post?")) {
-      window.location.href = `/post.html?id=${postId}`;
+      window.location.href = `/post/${postSlug}`;
     }
   } catch (error) {
     console.error("Error updating post:", error);
@@ -422,7 +433,7 @@ async function saveDraft() {
   saveDraftBtn.classList.add("loading");
 
   try {
-    const token = localStorage.getItem("token");
+    const token = localStorage.getItem("jwtToken");
     const draftData = {
       ...currentData,
       isDraft: true,
@@ -442,7 +453,7 @@ async function saveDraft() {
         .filter((v) => v);
     }
 
-    const response = await fetch(`/api/posts/${postId}/draft`, {
+    const response = await fetch(`/api/posts/modify/${postSlug}`, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,

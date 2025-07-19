@@ -3,29 +3,54 @@ import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
 import { showMessage, showConfirmation } from "./utils/notifications.js";
 
-// Global variables for modify functionality
+// Global variables
 let currentPost = null;
 let imagesToKeep = [];
 
 window.addEventListener("DOMContentLoaded", () => {
+  console.log("DOMContentLoaded event fired - myProfile.js is loading");
+
   // Get username from URL parameters if viewing someone else's profile
   const urlParams = new URLSearchParams(window.location.search);
   const profileUsername = urlParams.get("username");
+  console.log("Profile username from URL:", profileUsername);
 
   // Get current user's username
   const currentUsername = localStorage.getItem("username");
   const token = localStorage.getItem("jwtToken");
+  console.log("Current username:", currentUsername);
+  console.log("JWT token exists:", !!token);
 
   // Determine if this is the user's own profile
   const isOwnProfile = !profileUsername || profileUsername === currentUsername;
   const targetUsername = isOwnProfile ? currentUsername : profileUsername;
 
-  // Update page title
-  document.title = isOwnProfile ? "My Profile" : `${targetUsername}'s Profile`;
+  // Update page title and header
+  const headerElement = document.querySelector("header h1");
+  if (isOwnProfile) {
+    document.title = "Ather&ink - Your Profile";
+    if (headerElement) headerElement.textContent = "Ather&ink - Your Profile";
+    // If viewing own profile, ensure URL is clean (can be /my-profile or /profile/{username})
+    // Don't change URL if already correct
+  } else {
+    document.title = `Ather&ink - ${targetUsername}'s Profile`;
+    if (headerElement)
+      headerElement.textContent = `Ather&ink - ${targetUsername}'s Profile`;
+    // Update URL to use profile format for other users
+    const expectedUrl = `/profile/${profileUsername}`;
+    if (
+      window.location.pathname !== expectedUrl &&
+      !window.location.pathname.endsWith("myProfile.html")
+    ) {
+      window.history.replaceState({}, "", expectedUrl);
+    }
+  }
 
   // Initialize components
+  console.log("Initializing components...");
   initializeImageModal();
   initializeThemeToggle();
+  console.log("Components initialized");
 
   // Make functions globally accessible for onclick handlers
   window.deletePost = deletePost;
@@ -39,6 +64,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // Navigation buttons
   const backToBlogBtn = document.getElementById("backToBlogBtn");
   const logoutBtn = document.getElementById("logoutBtn");
+  const adminBtn = document.getElementById("adminBtn");
 
   // User info elements
   const userUsername = document.getElementById("userUsername");
@@ -123,6 +149,7 @@ window.addEventListener("DOMContentLoaded", () => {
     "click",
     () => (window.location.href = "blog")
   );
+  adminBtn?.addEventListener("click", () => (window.location.href = "admin"));
   logoutBtn?.addEventListener("click", () => {
     localStorage.removeItem("jwtToken");
     showMessage("Logged out successfully", "info");
@@ -140,16 +167,22 @@ window.addEventListener("DOMContentLoaded", () => {
   console.log(
     `Loading profile for: ${targetUsername}, isOwnProfile: ${isOwnProfile}`
   );
+  console.log("About to fetch published posts...");
   fetchPublishedPosts(targetUsername);
   if (isOwnProfile) {
+    console.log("About to fetch drafts and user info...");
+    console.log("Current username for fetchUserInfo:", currentUsername);
+    console.log("Token for fetchUserInfo:", token ? "exists" : "missing");
     fetchDrafts();
     fetchUserInfo();
   } else {
+    console.log("About to fetch user info for profile...");
     fetchUserInfoForProfile(targetUsername);
   }
 
   // Helper function to find post by slug
   function findPostBySlug(slug) {
+    console.log("findPostBySlug called with slug:", slug);
     // Try to find in the currently loaded posts data
     const publishedContainer = document.getElementById("publishedContainer");
     const draftsContainer = document.getElementById("draftsContainer");
@@ -160,16 +193,24 @@ window.addEventListener("DOMContentLoaded", () => {
       ...(draftsContainer?.querySelectorAll(".post-card") || []),
     ];
 
+    console.log("Found post cards:", allPostCards.length);
+
     for (const card of allPostCards) {
+      console.log("Checking card with slug:", card.dataset.slug);
       if (card.dataset.slug === slug) {
+        console.log("Found matching card for slug:", slug);
         // Try to get the post data from the modify button
         const modifyBtn = card.querySelector(".modifyBtn");
+        console.log("Modify button found:", !!modifyBtn);
         if (modifyBtn) {
           const encodedData = modifyBtn.getAttribute("data-post-encoded");
+          console.log("Encoded data found:", !!encodedData);
           if (encodedData) {
             try {
               const postDataString = safeBase64Decode(encodedData);
-              return JSON.parse(postDataString);
+              const postData = JSON.parse(postDataString);
+              console.log("Decoded post data:", postData);
+              return postData;
             } catch (error) {
               console.error("Error parsing post data:", error);
             }
@@ -178,6 +219,7 @@ window.addEventListener("DOMContentLoaded", () => {
       }
     }
 
+    console.log("Post not found for slug:", slug);
     return null;
   }
 
@@ -205,14 +247,11 @@ window.addEventListener("DOMContentLoaded", () => {
       const slug = postCard?.dataset.slug;
 
       if (slug) {
-        // Find the post data to get the ID
-        const post = findPostBySlug(slug);
-        if (post && post.Id) {
-          // Navigate to modify post page with post ID
-          window.location.href = `/modifyPost.html?id=${post.Id}`;
-        } else {
-          showMessage("Post data not found", "error");
-        }
+        console.log("Modify button clicked for slug:", slug);
+        // Navigate to modify post page with post slug (not ID)
+        window.location.href = `/modifyPost.html?slug=${slug}`;
+      } else {
+        showMessage("Post slug not found", "error");
       }
     }
 
@@ -231,25 +270,38 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // Fetch and display published posts
   async function fetchPublishedPosts(username) {
+    console.log(`fetchPublishedPosts called with username: ${username}`);
+    console.log(`Token available: ${!!token}`);
+
     try {
-      const response = await fetch(
-        `https://localhost:7189/api/posts/user/${username}/published`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const url = `https://localhost:7189/api/posts/user/${username}`;
+      console.log(`Making request to: ${url}`);
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log(`Response status: ${response.status}`);
 
       if (response.ok) {
         const posts = await response.json();
+        console.log(`Received ${posts.length} published posts:`, posts);
         renderPosts(posts, "publishedContainer", {
           showDelete: isOwnProfile,
           showModify: isOwnProfile,
           showAuthor: false, // Don't show author since this is a profile page
         });
+        console.log("Published posts rendered successfully");
       } else {
-        console.error("Failed to fetch published posts");
+        const errorText = await response.text();
+        console.error(
+          "Failed to fetch published posts. Status:",
+          response.status,
+          "Error:",
+          errorText
+        );
         showMessage("Failed to load published posts", "error");
       }
     } catch (error) {
@@ -261,14 +313,11 @@ window.addEventListener("DOMContentLoaded", () => {
   // Fetch and display drafts (only for own profile)
   async function fetchDrafts() {
     try {
-      const response = await fetch(
-        "https://localhost:7189/api/posts/user/drafts",
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await fetch("https://localhost:7189/api/posts/drafts", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (response.ok) {
         const drafts = await response.json();
@@ -289,18 +338,31 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // Fetch user info for own profile
   async function fetchUserInfo() {
+    console.log("fetchUserInfo called");
     try {
-      const response = await fetch("https://localhost:7189/api/user/profile", {
+      const url = `https://localhost:7189/api/users/${currentUsername}`;
+      console.log(`Making request to: ${url}`);
+
+      const response = await fetch(url, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
 
+      console.log(`User info response status: ${response.status}`);
+
       if (response.ok) {
         const user = await response.json();
+        console.log("User info received:", user);
         displayUserInfo(user);
       } else {
-        console.error("Failed to fetch user info");
+        const errorText = await response.text();
+        console.error(
+          "Failed to fetch user info. Status:",
+          response.status,
+          "Error:",
+          errorText
+        );
         showMessage("Failed to load user information", "error");
       }
     } catch (error) {
@@ -313,7 +375,7 @@ window.addEventListener("DOMContentLoaded", () => {
   async function fetchUserInfoForProfile(username) {
     try {
       const response = await fetch(
-        `https://localhost:7189/api/user/profile/${username}`,
+        `https://localhost:7189/api/users/${username}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -336,25 +398,64 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // Display user information
   function displayUserInfo(user) {
-    if (userUsername) userUsername.textContent = user.username;
-    if (userEmail) userEmail.textContent = user.email;
-    if (userRole) userRole.textContent = user.role || "User";
-    if (userMemberSince) {
-      userMemberSince.textContent = new Date(
-        user.dateCreated
-      ).toLocaleDateString();
+    console.log("displayUserInfo called with:", user);
+    console.log("DOM elements check:");
+    console.log("userUsername element:", userUsername);
+    console.log("userEmail element:", userEmail);
+    console.log("userRole element:", userRole);
+    console.log("userMemberSince element:", userMemberSince);
+    console.log("userPostsCount element:", userPostsCount);
+
+    if (userUsername) {
+      console.log("Setting username to:", user.Username);
+      userUsername.textContent = user.Username;
+    } else {
+      console.error("userUsername element not found!");
     }
-    if (userPostsCount) userPostsCount.textContent = user.postsCount || "0";
+
+    if (userEmail) {
+      console.log("Setting email to:", user.Email);
+      userEmail.textContent = user.Email;
+    } else {
+      console.error("userEmail element not found!");
+    }
+
+    if (userRole) {
+      console.log("Setting role to:", user.Role || "User");
+      userRole.textContent = user.Role || "User";
+
+      // Show admin button if user is admin
+      if (adminBtn && user.Role === "Admin") {
+        adminBtn.style.display = "inline-block";
+      }
+    } else {
+      console.error("userRole element not found!");
+    }
+
+    if (userMemberSince) {
+      const memberSinceDate = new Date(user.CreatedAt).toLocaleDateString();
+      console.log("Setting member since to:", memberSinceDate);
+      userMemberSince.textContent = memberSinceDate;
+    } else {
+      console.error("userMemberSince element not found!");
+    }
+
+    if (userPostsCount) {
+      console.log("Setting posts count to:", user.PostsCount || "0");
+      userPostsCount.textContent = user.PostsCount || "0";
+    } else {
+      console.error("userPostsCount element not found!");
+    }
 
     // Handle profile picture
-    if (userProfilePic && user.profilePicture) {
-      userProfilePic.src = user.profilePicture;
+    if (userProfilePic && user.ProfilePictureUrl) {
+      userProfilePic.src = user.ProfilePictureUrl;
       userProfilePic.classList.remove("hidden");
     }
 
     // If this is own profile, populate edit forms
     if (isOwnProfile) {
-      if (currentEmailInput) currentEmailInput.value = user.email;
+      if (currentEmailInput) currentEmailInput.value = user.Email;
     }
   }
 
@@ -376,6 +477,18 @@ window.addEventListener("DOMContentLoaded", () => {
     changePictureBtn?.addEventListener("click", () => {
       hideAllEditSections();
       changePictureSection?.classList.remove("hidden");
+
+      // Show current profile picture if it exists
+      if (
+        userProfilePic &&
+        userProfilePic.src &&
+        !userProfilePic.src.endsWith("/")
+      ) {
+        if (picturePreview) {
+          picturePreview.src = userProfilePic.src;
+          picturePreview.classList.remove("hidden");
+        }
+      }
     });
 
     // Form submissions
@@ -393,16 +506,27 @@ window.addEventListener("DOMContentLoaded", () => {
 
     // Picture preview
     newProfilePictureInput?.addEventListener("change", (e) => {
+      console.log("File input changed");
       const file = e.target.files[0];
       if (file) {
+        console.log("File selected:", file.name, file.type);
         const reader = new FileReader();
         reader.onload = (e) => {
+          console.log(
+            "File reader loaded, result length:",
+            e.target.result.length
+          );
           if (picturePreview) {
             picturePreview.src = e.target.result;
             picturePreview.classList.remove("hidden");
+            console.log("Picture preview updated and shown");
+          } else {
+            console.error("Picture preview element not found!");
           }
         };
         reader.readAsDataURL(file);
+      } else {
+        console.log("No file selected");
       }
     });
   }
@@ -411,6 +535,17 @@ window.addEventListener("DOMContentLoaded", () => {
     changeEmailSection?.classList.add("hidden");
     changePasswordSection?.classList.add("hidden");
     changePictureSection?.classList.add("hidden");
+
+    // Reset picture preview when hiding sections
+    if (picturePreview) {
+      picturePreview.classList.add("hidden");
+      picturePreview.src = "";
+    }
+
+    // Clear file input
+    if (newProfilePictureInput) {
+      newProfilePictureInput.value = "";
+    }
   }
 
   // Handle email change
@@ -428,17 +563,16 @@ window.addEventListener("DOMContentLoaded", () => {
 
     try {
       const response = await fetch(
-        "https://localhost:7189/api/user/change-email",
+        `https://localhost:7189/api/users/${currentUsername}`,
         {
-          method: "POST",
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            currentEmail,
-            newEmail,
-            password,
+            email: newEmail,
+            confirmPassword: password,
           }),
         }
       );
@@ -477,9 +611,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
     try {
       const response = await fetch(
-        "https://localhost:7189/api/user/change-password",
+        `https://localhost:7189/api/users/${currentUsername}/password`,
         {
-          method: "POST",
+          method: "PUT",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
@@ -516,18 +650,32 @@ window.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    const formData = new FormData();
-    formData.append("profilePicture", file);
-
     try {
+      // Convert file to base64
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const result = reader.result;
+          // Remove the data:image/...;base64, prefix
+          const base64Data = result.substring(result.indexOf(",") + 1);
+          resolve(base64Data);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
       const response = await fetch(
-        "https://localhost:7189/api/user/change-picture",
+        `https://localhost:7189/api/users/${currentUsername}`,
         {
-          method: "POST",
+          method: "PUT",
           headers: {
+            "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: formData,
+          body: JSON.stringify({
+            profilePictureBase64: base64,
+            profilePictureFileName: file.name,
+          }),
         }
       );
 
@@ -557,9 +705,7 @@ window.addEventListener("DOMContentLoaded", () => {
     if (!confirmed) return;
 
     try {
-      const endpoint = isDraft
-        ? `https://localhost:7189/api/posts/${slug}/draft`
-        : `https://localhost:7189/api/posts/${slug}`;
+      const endpoint = `https://localhost:7189/api/posts/delete/${slug}`;
 
       const response = await fetch(endpoint, {
         method: "DELETE",
