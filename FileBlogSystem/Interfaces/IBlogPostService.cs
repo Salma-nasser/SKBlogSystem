@@ -7,7 +7,7 @@ namespace FileBlogSystem.Interfaces
         IEnumerable<Post> GetAllPosts(string? currentUsername = null);
         IEnumerable<Post> GetPostsByCategory(string category, string currentUsername);
         IEnumerable<Post> GetPostsByTag(string tag, string currentUsername);
-        Post? GetPostBySlug(string slug, string currentUsername);
+        Post? GetPostBySlug(string slug, string? currentUsername);
         IEnumerable<Post> GetUserDrafts(string username);
         Task<dynamic> CreatePostAsync(CreatePostRequest request, string authorUsername);
         Task<(bool Success, string Message)> ModifyPostAsync(string slug, CreatePostRequest updatedData, string currentUsername);

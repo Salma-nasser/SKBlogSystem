@@ -78,7 +78,7 @@ public class BlogPostService : IBlogPostService
     }
   }
 
-  public Post? GetPostBySlug(string slug, string currentUsername)
+  public Post? GetPostBySlug(string slug, string? currentUsername)
   {
     if (!Directory.Exists(_rootPath)) return null;
 

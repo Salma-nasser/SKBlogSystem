@@ -9,6 +9,11 @@ public static class BlogPostEndpoints
 {
     public static void MapBlogPostEndpoints(this IEndpointRouteBuilder app)
     {
+        app.MapGet("/api/posts/published", (IBlogPostService service) =>
+        {
+            return Results.Ok(service.GetAllPosts());
+        });
+
         app.MapGet("/api/posts", [Authorize] (IBlogPostService service, HttpContext ctx) =>
         {
             var currentUsername = ctx.User.Identity?.Name;
@@ -33,11 +38,9 @@ public static class BlogPostEndpoints
             return Results.Ok(service.GetPostsByTag(tag, currentUsername));
         });
 
-        app.MapGet("/api/posts/{slug}", [Authorize] (string slug, IBlogPostService service, HttpContext ctx) =>
+        app.MapGet("/api/posts/{slug}", (string slug, IBlogPostService service, HttpContext ctx) =>
         {
             var currentUsername = ctx.User.Identity?.Name;
-            if (string.IsNullOrEmpty(currentUsername))
-                return Results.Unauthorized();
             var post = service.GetPostBySlug(slug, currentUsername);
             return post != null ? Results.Ok(post) : Results.NotFound(new { message = "Post not found." });
         });

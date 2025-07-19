@@ -118,57 +118,6 @@
     </section>
   </main>
 
-  <!-- Post Modification Modal -->
-  <div id="modifyPostModal" class="modal hidden">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2>Modify Post</h2>
-        <button type="button" id="closeModifyModal" class="close">✖</button>
-      </div>
-      <form id="modifyPostForm" enctype="multipart/form-data">
-        <div class="form-group">
-          <label for="modifyTitle">Title *</label>
-          <input type="text" id="modifyTitle" name="Title" required />
-        </div>
-        <div class="form-group">
-          <label for="modifyDescription">Description *</label>
-          <input type="text" id="modifyDescription" name="Description" required />
-        </div>
-        <div class="form-group">
-          <label for="modifyBody">Body *</label>
-          <textarea id="modifyBody" name="Body" rows="10" required></textarea>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="modifyTags">Tags</label>
-            <input type="text" id="modifyTags" name="Tags" placeholder="tag1, tag2, tag3" />
-          </div>
-          <div class="form-group">
-            <label for="modifyCategories">Categories</label>
-            <input type="text" id="modifyCategories" name="Categories" placeholder="category1, category2" />
-          </div>
-        </div>
-        <div class="form-group">
-          <label>Current Images</label>
-          <div id="currentImagesContainer" class="current-images-grid">
-            <!-- Current images will be displayed here -->
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="modifyImages">Add Images</label>
-          <input type="file" id="modifyImages" name="Images" multiple accept="image/*" />
-          <small>Select additional images to add to this post</small>
-        </div>
-        <input type="hidden" id="postSlug" name="Slug" />
-
-        <div class="form-actions">
-          <button type="button" id="cancelModify" class="btn-secondary">Cancel</button>
-          <button type="submit" class="btn-primary">Update Post</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
   <script type="module" src="js/myProfile.js"></script>
 </body>
 

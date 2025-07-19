@@ -24,18 +24,16 @@
 
   <div class="search-container">
     <div class="input-wrapper">
-      <input type="text" id="searchInput" placeholder="Search posts...">
+      <label for="searchInput" class="sr-only">Search blog posts</label>
+      <input type="text" id="searchInput" placeholder="Search posts..." aria-label="Search blog posts">
     </div>
     <div class="button-wrapper">
       <button id="clearFilterBtn">Show All Posts</button>
     </div>
   </div>
 
-
-<div id="postsContainer"></div>
-
-
   <main id="postsContainer">
+    <h2 class="sr-only">Blog Posts</h2>
     <!-- Posts will be rendered here -->
   </main>
 

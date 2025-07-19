@@ -123,10 +123,12 @@ function renderMarkdownWithImageHandling(
           imageSrc = href;
         }
 
-        return `<img src="${imageSrc}" alt="${text || ""}" title="${
+        return `<img src="${imageSrc}" alt="${
+          text || `Image from blog post: ${postSlug || "content"}`
+        }" title="${
           title || ""
         }" class="markdown-image" style="max-width: 100%; height: auto; border-radius: 8px; margin: 10px 0; cursor: pointer;" onclick="openImageModal('${imageSrc}', '${
-          text || ""
+          text || `Image from blog post: ${postSlug || "content"}`
         }')">`;
       };
 
@@ -227,9 +229,11 @@ export function renderPosts(posts, containerId, options = {}) {
       imgHtml = `
         <div class="post-images post-images-${post.Images.length}">
           ${post.Images.map(
-            (image) => `
-            <img src="https://localhost:7189/Content/posts/${dateOnly}-${post.Slug}${image}"
-                alt="Post Image"
+            (image, index) => `
+            <img src="https://localhost:7189/Content/posts/${dateOnly}-${
+              post.Slug
+            }${image}"
+                alt="Image ${index + 1} for blog post: ${post.Title}"
                 class="post-image" />
           `
           ).join("")}
@@ -317,7 +321,9 @@ export function renderPosts(posts, containerId, options = {}) {
           "&quot;"
         )}">${truncatedContent}</div>
           <div class="read-more">
-            <a href="#" class="read-more-link" data-action="expand">Read more</a>
+            <a href="#" class="read-more-link" data-action="expand" aria-label="Read more of ${
+              post.Title
+            }">Read more<span class="sr-only"> of ${post.Title}</span></a>
           </div>
         `;
       } else {
@@ -617,7 +623,9 @@ export function renderPosts(posts, containerId, options = {}) {
   postsContainer.querySelectorAll(".read-more-link").forEach((link) => {
     link.addEventListener("click", (e) => {
       e.preventDefault();
-      const postBody = link.closest(".post-card").querySelector(".post-body");
+      const postCard = link.closest(".post-card");
+      const postBody = postCard.querySelector(".post-body");
+      const postTitle = postCard.querySelector("h3 a").textContent;
       const action = link.dataset.action;
 
       if (action === "expand") {
@@ -625,14 +633,16 @@ export function renderPosts(posts, containerId, options = {}) {
         const fullContent = postBody.dataset.fullContent;
         postBody.innerHTML = fullContent;
         postBody.classList.remove("truncated");
-        link.textContent = "Read less";
+        link.innerHTML = `Read less<span class="sr-only"> of ${postTitle}</span>`;
+        link.setAttribute("aria-label", `Read less of ${postTitle}`);
         link.dataset.action = "collapse";
       } else {
         // Show truncated content
         const truncatedContent = postBody.dataset.truncatedContent;
         postBody.innerHTML = truncatedContent;
         postBody.classList.add("truncated");
-        link.textContent = "Read more";
+        link.innerHTML = `Read more<span class="sr-only"> of ${postTitle}</span>`;
+        link.setAttribute("aria-label", `Read more of ${postTitle}`);
         link.dataset.action = "expand";
       }
     });

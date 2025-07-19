@@ -1,85 +1,33 @@
-/* Admin Dashboard Styles */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-:root {
-  --bg-color: #fdfaf6; /* soft warm cream */
-  --text-color: #3e3e3e; /* deep neutral gray */
-  --text-muted: #666; /* muted text color */
-  --accent-color: #c89b7b; /* soft terracotta */
-  --accent-hover: #a6765b; /* rich terracotta hover */
-  --button-bg: #8c6e63; /* soft brown button */
-  --button-text: #ffffff; /* white button text */
-  --header-bg: #bfa89a; /* muted beige header */
-  --header-text: #3e3e3e; /* header text remains dark */
-  --header-shadow: rgba(0, 0, 0, 0.1);
-  --post-bg: #ffffff; /* clean white post background */
-  --card-background: #f9f9f9; /* light card background */
-  --border-color: #dee2e6;
-  --success-bg: #d4edda;
-  --success-color: #155724;
-  --error-bg: #f8d7da;
-  --error-color: #721c24;
-  --modal-bg: rgba(0, 0, 0, 0.5);
-}
-
-body.dark-mode {
-  --bg-color: #3a2e2a; /* deep chocolate */
-  --text-color: #f0eae4; /* light beige text */
-  --text-muted: #c0c0c0; /* lighter muted text for dark mode */
-  --accent-color: #d6a07b; /* warm bronze accent */
-  --accent-hover: #b67f5f; /* rich bronze hover */
-  --button-bg: #6e554a; /* muted coffee brown button */
-  --button-text: #fdfaf6; /* soft cream text */
-  --header-bg: #4f3c35; /* dark coffee header */
-  --header-text: #fdfaf6; /* light header text */
-  --header-shadow: rgba(0, 0, 0, 0.2);
-  --post-bg: #4a3a35; /* soft coffee post background */
-  --card-background: #5a4a45; /* darker card background for dark mode */
-  --border-color: #555;
-  --success-bg: #2d4a22;
-  --success-color: #b8e6b8;
-  --error-bg: #4a2026;
-  --error-color: #f5c2c7;
-  --modal-bg: rgba(0, 0, 0, 0.7);
-}
-
-body {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  min-height: 100vh;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
+@import url("shared/shared.css");
 
 /* Navigation */
 .navbar {
-  background-color: var(--header-bg);
-  color: var(--header-text);
+  background: var(--bg-secondary);
   backdrop-filter: blur(10px);
-  box-shadow: 0 2px 20px var(--header-shadow);
-  position: sticky;
-  top: 0;
-  z-index: 1000;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  border-bottom: 2px solid var(--primary-color);
+  box-shadow: 0 4px 12px var(--shadow-medium);
+  position: static;
+  transition: background-color 0.3s ease;
 }
 
 .nav-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 1rem;
+  padding: var(--spacing-md) var(--spacing-xl);
   display: flex;
   justify-content: space-between;
   align-items: center;
+  min-height: var(--header-height);
 }
 
 .nav-brand h1 {
-  color: var(--accent-color);
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--primary-color);
+  margin: 0;
+  letter-spacing: -0.025em;
+  text-shadow: 0 1px 3px rgba(139, 69, 19, 0.2);
 }
 
 .nav-menu {
@@ -89,37 +37,40 @@ body {
 }
 
 .nav-link {
-  color: var(--text-muted);
+  background: var(--primary-color);
+  color: white;
   text-decoration: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  transition: all 0.3s ease;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  transition: all 0.2s ease;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--shadow-light);
 }
 
 .nav-link:hover {
-  background: var(--card-background);
-  color: var(--accent-color);
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px var(--shadow-medium);
 }
 
 .logout-btn {
-  background: var(--button-bg);
+  background: var(--accent-color);
   color: white;
   border: none;
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
+  padding: var(--spacing-sm) var(--spacing-md);
+  border-radius: var(--radius-md);
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--shadow-light);
 }
 
 .logout-btn:hover {
-  background: #c82333;
-}
-
-/* Container */
-.container {
-  max-width: 1200px;
-  margin: 2rem auto;
-  padding: 0 1rem;
+  background: var(--accent-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px var(--shadow-medium);
 }
 
 /* Admin Header */
@@ -138,6 +89,8 @@ body {
   color: var(--accent-color);
   font-size: 2rem;
   margin-bottom: 0.5rem;
+  text-align: center;
+  font-family: var(--font-cursive);
 }
 
 .admin-header p {
@@ -207,7 +160,7 @@ body {
 }
 
 .stat-card {
-  background: var(--accent-color);
+  background: #8b4513; /* Brown color to match the buttons */
   color: white;
   padding: 1.5rem;
   border-radius: 12px;
@@ -218,17 +171,21 @@ body {
 
 .stat-card:hover {
   transform: translateY(-2px);
-  background: var(--accent-hover);
+  background: #654321; /* Darker brown on hover */
 }
 
 .stat-card h3 {
-  font-size: 2rem;
+  font-size: 2.5rem;
   margin-bottom: 0.5rem;
+  color: #ffffff;
+  font-weight: 800;
 }
 
 .stat-card p {
-  font-size: 0.9rem;
-  opacity: 0.9;
+  font-size: 1.1rem;
+  opacity: 1;
+  color: #ffffff;
+  font-weight: 500;
 }
 
 /* Users Table */
@@ -283,7 +240,7 @@ body {
 }
 
 .role-author {
-  background: #28a745;
+  background: #1e5128;
   color: white;
 }
 
@@ -307,39 +264,28 @@ body {
 }
 
 /* Buttons */
-.btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.875rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  text-decoration: none;
-  display: inline-block;
-}
-
-.btn-primary {
-  background: var(--button-bg);
-  color: var(--button-text);
-}
-
-.btn-primary:hover {
-  background: var(--accent-hover);
-}
-
-.btn-primary:disabled {
-  background: var(--text-muted);
-  cursor: not-allowed;
-}
-
 .btn-danger {
-  background: #dc3545;
+  background: var(
+    --error-color
+  ); /* Use theme error color for better contrast */
   color: white;
+  font-weight: 600; /* Bold for better readability */
 }
 
 .btn-danger:hover {
-  background: #c82333;
+  background: var(--error-hover);
+}
+
+/* Dark mode override for danger buttons */
+body.dark-mode .btn-danger {
+  background: var(--error-color);
+  color: white;
+  font-weight: 600;
+}
+
+body.dark-mode .btn-danger:hover {
+  background: var(--error-hover);
+  color: white; /* Keep white text for better contrast */
 }
 
 .btn-secondary {
@@ -353,14 +299,15 @@ body {
 
 /* Modal */
 .modal {
-  display: none;
+  display: none; /* Hidden by default */
   position: fixed;
-  z-index: 2000;
+  z-index: 1001;
   left: 0;
   top: 0;
   width: 100%;
   height: 100%;
-  background: var(--modal-bg);
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.6);
   backdrop-filter: blur(5px);
 }
 
@@ -469,11 +416,51 @@ body {
 
 body.dark-mode #modeToggle {
   transform: rotate(180deg);
+  background-color: var(--bg-secondary);
+  color: var(--text-color);
+  border-color: var(--primary-color);
+}
+
+body.dark-mode #modeToggle:hover {
+  background-color: var(--primary-color);
+  color: #0f0804;
 }
 
 /* Dark mode specific adjustments */
 body.dark-mode .text-muted {
   color: var(--text-muted) !important;
+}
+
+/* Dark mode header button text fixes */
+body.dark-mode .nav-link {
+  color: #0f0804 !important; /* Dark text for better contrast on light button backgrounds */
+  font-weight: 600 !important; /* Bold for better readability */
+}
+
+body.dark-mode .logout-btn {
+  color: #0f0804 !important; /* Dark text for better contrast on light button backgrounds */
+  font-weight: 600 !important; /* Bold for better readability */
+}
+
+/* Dark mode stats cards text fixes */
+body.dark-mode .stat-card {
+  background: var(--primary-color); /* Use theme primary color */
+  color: #0f0804 !important; /* Dark text for better contrast */
+}
+
+body.dark-mode .stat-card:hover {
+  background: var(--primary-hover); /* Use theme primary hover color */
+  color: #0f0804 !important; /* Maintain dark text on hover */
+}
+
+body.dark-mode .stat-card h3 {
+  color: #0f0804 !important; /* Dark text for stats numbers */
+  font-weight: 800; /* Bold for better visibility */
+}
+
+body.dark-mode .stat-card p {
+  color: #2c1810 !important; /* Slightly lighter dark text for labels */
+  font-weight: 600; /* Bold for better readability */
 }
 
 body.dark-mode .users-table th,
@@ -499,28 +486,24 @@ body.dark-mode .status-badge.status-inactive {
   color: var(--error-color);
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-  .nav-container {
-    flex-direction: column;
-    gap: 1rem;
-  }
+/* Dark Mode Button Text Overrides for Better Contrast */
+body.dark-mode button:not(.close-btn):not(.delete-btn) {
+  color: #0f0804 !important;
+}
 
-  .admin-header h2 {
-    font-size: 1.5rem;
-  }
+body.dark-mode .stat-card {
+  background-color: var(--primary-color);
+  color: #0f0804;
+}
 
-  .users-stats {
-    grid-template-columns: 1fr;
-  }
+body.dark-mode .stat-card h3 {
+  color: #ffffff; /* Pure white for numbers in dark mode for maximum contrast */
+  font-weight: 800;
+  font-size: 2.5rem;
+}
 
-  .users-table th,
-  .users-table td {
-    padding: 0.5rem;
-    font-size: 0.875rem;
-  }
-
-  .modal-actions {
-    flex-direction: column;
-  }
+body.dark-mode .stat-card p {
+  color: #ffffff; /* Pure white for descriptive text in dark mode */
+  opacity: 0.85;
+  font-weight: 500;
 }

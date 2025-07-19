@@ -106,7 +106,7 @@
   font-weight: 600;
 }
 
-.create-post-header {
+.modify-post-header {
   background: var(--post-bg);
   padding: 2rem;
   border-radius: 16px;
@@ -116,14 +116,14 @@
   transition: background-color 0.3s ease;
 }
 
-.create-post-header h2 {
+.modify-post-header h2 {
   color: var(--accent-color);
   font-size: 2rem;
   margin-bottom: 0.5rem;
   font-family: var(--font-cursive);
 }
 
-.create-post-header p {
+.modify-post-header p {
   color: var(--text-muted);
   font-size: 1.1rem;
 }
@@ -142,7 +142,7 @@
 }
 
 /* Form */
-.create-post-form {
+.modify-post-form {
   background: var(--post-bg);
   padding: 2rem;
   border-radius: 16px;
@@ -208,6 +208,35 @@
   border: 1px solid var(--input-border);
 }
 
+/* Modified Fields Highlighting */
+.form-group input.modified,
+.form-group textarea.modified {
+  border-color: var(--warning-color);
+  background-color: rgba(184, 134, 11, 0.05);
+}
+
+.form-group input.modified:focus,
+.form-group textarea.modified:focus {
+  border-color: var(--warning-color);
+  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.1);
+}
+
+/* Changes Indicator */
+.changes-indicator {
+  display: none;
+  background: var(--warning-color);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.changes-indicator.show {
+  display: block;
+}
+
 /* Image Preview */
 .image-preview {
   margin-top: 1rem;
@@ -259,11 +288,9 @@
 }
 
 .btn-success {
-  background: var(
-    --success-color
-  ); /* Use theme success color for better contrast */
+  background: var(--success-color);
   color: white;
-  font-weight: 600; /* Bold for better readability */
+  font-weight: 600;
 }
 
 .btn-success:hover {
@@ -271,11 +298,9 @@
 }
 
 .btn-danger {
-  background: var(
-    --error-color
-  ); /* Use theme error color for better contrast */
+  background: var(--error-color);
   color: white;
-  font-weight: 600; /* Bold for better readability */
+  font-weight: 600;
 }
 
 .btn-danger:hover {
@@ -291,7 +316,7 @@ body.dark-mode .btn-danger {
 
 body.dark-mode .btn-danger:hover {
   background: var(--error-hover);
-  color: white; /* Keep white text for better contrast */
+  color: white;
 }
 
 /* Image Help Info */
@@ -355,6 +380,30 @@ body.dark-mode .btn-danger:hover {
 
 .btn-icon {
   font-size: 1.1rem;
+}
+
+/* Update Button States */
+#updatePostBtn:disabled {
+  background: var(--text-muted) !important;
+  color: var(--bg-secondary) !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  opacity: 0.6;
+}
+
+#updatePostBtn:disabled:hover {
+  background: var(--text-muted) !important;
+  transform: none !important;
+  box-shadow: 0 2px 8px var(--shadow-light) !important;
+}
+
+#updatePostBtn:not(:disabled) {
+  background: var(--success-color) !important;
+  color: white !important;
+}
+
+#updatePostBtn:not(:disabled):hover {
+  background: var(--success-hover) !important;
 }
 
 /* Mode Toggle */
@@ -595,7 +644,7 @@ body.dark-mode .EasyMDEContainer .CodeMirror .cm-code {
     gap: 1rem;
   }
 
-  .create-post-header h2 {
+  .modify-post-header h2 {
     font-size: 1.5rem;
   }
 
@@ -611,7 +660,7 @@ body.dark-mode .EasyMDEContainer .CodeMirror .cm-code {
     padding: 0 0.5rem;
   }
 
-  .create-post-form {
+  .modify-post-form {
     padding: 1rem;
   }
 }
@@ -649,4 +698,17 @@ body.dark-mode .EasyMDEContainer .CodeMirror .cm-code {
 /* Dark Mode Button Text Overrides for Better Contrast */
 body.dark-mode button:not(.close-btn):not(.delete-btn) {
   color: #0f0804 !important;
+}
+
+/* Dark mode for modified fields */
+body.dark-mode .form-group input.modified,
+body.dark-mode .form-group textarea.modified {
+  border-color: var(--warning-color);
+  background-color: rgba(212, 184, 150, 0.05);
+}
+
+body.dark-mode .form-group input.modified:focus,
+body.dark-mode .form-group textarea.modified:focus {
+  border-color: var(--warning-color);
+  box-shadow: 0 0 0 3px rgba(212, 184, 150, 0.1);
 }

@@ -1,0 +1,644 @@
+@import url("https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&display=swap");
+
+/* CSS Reset and Base Styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  line-height: 1.7;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  transition: all 0.3s ease;
+  font-size: 16px;
+  overflow-x: hidden;
+}
+
+/* Updated CSS Variables with Brown & Pastel Palette */
+:root {
+  /* Colors - Light Mode (Rich Browns & Pastels) */
+  --bg-color: #f8f6f3;
+  --bg-secondary: #ffffff;
+  --text-color: #2c1810; /* Rich dark brown for excellent contrast */
+  --text-muted: #6b5b4f; /* Warm brown for muted text */
+  --text-light: #8a7a6e; /* Light brown for secondary text */
+
+  /* Brand Colors - Sophisticated Brown Palette */
+  --primary-color: #8b4513; /* Rich saddle brown */
+  --primary-hover: #7a3c0f;
+  --accent-color: #d2691e; /* Warm chocolate accent */
+  --accent-hover: #b8601a;
+
+  /* Secondary Colors with Pastel Depth */
+  --accent-secondary: #a8c49a; /* Pastel sage green */
+  --accent-secondary-hover: #9bb88d;
+  --accent-tertiary: #c4a8c4; /* Pastel lavender */
+  --accent-tertiary-hover: #b894b8;
+
+  --secondary-color: #c4a8c4;
+  --secondary-hover: #b894b8;
+  --tertiary-color: #a8c49a;
+  --tertiary-hover: #9bb88d;
+
+  /* UI Colors with Warm Undertones */
+  --border-color: #d4c4b0;
+  --border-hover: #c2b09d;
+
+  --shadow-light: rgba(139, 69, 19, 0.08);
+  --shadow-medium: rgba(139, 69, 19, 0.15);
+  --shadow-heavy: rgba(139, 69, 19, 0.25);
+
+  /* Status Colors with Natural Tones */
+  --success-color: #5d7c4a; /* Forest green */
+  --success-hover: #4d6b3a;
+  --warning-color: #b8860b; /* Dark goldenrod */
+  --warning-hover: #9e7209;
+  --error-color: #a0522d; /* Sienna red-brown */
+  --error-hover: #8b4513;
+  --info-color: #708090; /* Slate gray */
+  --info-hover: #5f6f7f;
+
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  --font-heading: "Dancing Script", "Playfair Display", Georgia, serif;
+  --font-cursive: "Dancing Script", "Brush Script MT", cursive;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --container-max-width: 800px;
+  --header-height: 80px;
+
+  /* Legacy Variables for Compatibility */
+  --post-bg: var(--bg-secondary);
+  --card-background: var(--bg-secondary);
+  --header-bg: var(--bg-secondary);
+  --header-text: var(--text-color);
+  --header-shadow: var(--shadow-light);
+  --button-bg: var(--primary-color);
+  --button-text: white;
+  --secondary-button-bg: var(--accent-color);
+  --secondary-button-hover: var(--accent-hover);
+  --input-border: var(--border-color);
+  --input-focus: var(--accent-color);
+  --accent-color-light: rgba(232, 168, 176, 0.1);
+  --success-bg: rgba(168, 200, 176, 0.1);
+  --error-bg: rgba(232, 168, 168, 0.1);
+  --pure-white: #ffffff;
+  --section-padding: 80px 0;
+  --transition: all 0.3s ease;
+}
+
+/* Dark Mode Variables with Warm Brown Palette */
+body.dark-mode {
+  --bg-color: #1a0f0a;
+  --bg-secondary: #2c1810;
+  --text-color: #f4f1ed; /* Warm off-white */
+  --text-muted: #e6d4c1; /* Lighter brown for better contrast */
+  --text-light: #d4c4b0;
+
+  /* Brand Colors - Nude Beige Palette for Dark Mode */
+  --primary-color: #d4b896; /* Nude beige - better than orangey yellow */
+  --primary-hover: #e0c4a8;
+  --accent-color: #c9a876; /* Warm nude tan accent */
+  --accent-hover: #d5b482;
+
+  /* Secondary Colors - Muted Pastels for Dark Mode */
+  --accent-secondary: #b3c4a0; /* Improved sage with better contrast */
+  --accent-secondary-hover: #c1d1ae;
+  --accent-tertiary: #d0b8d0; /* Improved mauve with better contrast */
+  --accent-tertiary-hover: #dcc5dc;
+
+  --secondary-color: #d0b8d0;
+  --secondary-hover: #dcc5dc;
+  --tertiary-color: #b3c4a0;
+  --tertiary-hover: #c1d1ae;
+
+  --border-color: #4a3b2f;
+  --border-hover: #5d4c3f;
+
+  --shadow-light: rgba(0, 0, 0, 0.3);
+  --shadow-medium: rgba(0, 0, 0, 0.4);
+  --shadow-heavy: rgba(0, 0, 0, 0.6);
+
+  /* Status Colors - Natural for Dark Mode */
+  --success-color: #8fbc8f; /* Light forest green */
+  --success-hover: #9fcf9f;
+  --warning-color: #d4b896; /* Nude beige for warnings too */
+  --warning-hover: #e0c4a8;
+  --error-color: #cd853f; /* Peru brown */
+  --error-hover: #d4b896;
+  --info-color: #a8b2c2; /* Light slate */
+  --info-hover: #b5bfcf;
+
+  /* Legacy Variables for Dark Mode Compatibility */
+  --post-bg: var(--bg-secondary);
+  --card-background: var(--bg-secondary);
+  --header-bg: var(--bg-secondary);
+  --header-text: var(--text-color);
+  --header-shadow: var(--shadow-light);
+  --button-bg: var(--primary-color);
+  --button-text: white;
+  --secondary-button-bg: var(--accent-color);
+  --secondary-button-hover: var(--accent-hover);
+  --input-border: var(--border-color);
+  --input-focus: var(--accent-color);
+  --accent-color-light: rgba(240, 170, 182, 0.1);
+  --success-bg: rgba(176, 208, 184, 0.1);
+  --error-bg: rgba(240, 192, 192, 0.1);
+}
+
+/* Typography with Enhanced Contrast */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: var(--font-heading);
+  font-weight: 700; /* Bolder for better visibility */
+  line-height: 1.3;
+  color: var(--primary-color); /* Use primary brown for titles */
+  margin-bottom: var(--spacing-lg);
+  text-shadow: 0 1px 2px rgba(139, 69, 19, 0.1); /* Subtle depth */
+}
+
+h1 {
+  font-size: 2.5rem;
+  color: var(--text-color); /* Main titles use dark brown */
+}
+h2 {
+  font-size: 2rem;
+  color: var(--primary-color); /* Section titles use primary brown */
+}
+h3 {
+  font-size: 1.75rem;
+  color: var(--accent-color); /* Warm chocolate for h3 */
+}
+h4 {
+  font-size: 1.5rem;
+  color: var(--text-color);
+}
+h5 {
+  font-size: 1.25rem;
+  color: var(--text-color);
+}
+h6 {
+  font-size: 1.125rem;
+  color: var(--text-muted);
+}
+
+p {
+  margin-bottom: var(--spacing-lg);
+  color: var(--text-color);
+  font-size: 1.125rem;
+  line-height: 1.8;
+}
+
+/* Header with Enhanced Contrast */
+header {
+  position: static;
+  background: var(--bg-secondary);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid var(--primary-color); /* Brown border for definition */
+  padding: var(--spacing-md) var(--spacing-xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: var(--header-height);
+  box-shadow: 0 4px 12px var(--shadow-medium); /* Deeper shadow */
+}
+
+header h1 {
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 800; /* Extra bold for strong brand presence */
+  color: var(--primary-color);
+  margin: 0;
+  letter-spacing: -0.025em;
+  text-shadow: 0 1px 3px rgba(139, 69, 19, 0.2); /* Subtle depth */
+}
+
+header h1 a {
+  color: inherit;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+header h1 a:hover {
+  color: var(--accent-color);
+  transform: translateY(-1px); /* Subtle lift effect */
+}
+
+.welcome-message {
+  font-size: 0.875rem;
+  color: var(--text-color);
+  font-weight: 500;
+  margin-top: 0.25rem;
+}
+
+.welcome-message #username {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+/* Navigation */
+.header-nav {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+}
+
+/* Buttons */
+button,
+.btn {
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600; /* Increased from 500 for better contrast */
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-xs);
+  min-height: 40px;
+  background: var(--primary-color);
+  color: white;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--shadow-light);
+}
+
+button:hover,
+.btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px var(--shadow-medium);
+}
+
+button:disabled,
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-secondary {
+  background: var(--accent-color);
+  color: white;
+  font-weight: 600; /* Bold for better contrast */
+}
+.btn-secondary:hover {
+  background: var(--accent-hover);
+}
+
+.btn-tertiary {
+  background: var(--accent-secondary);
+  color: white;
+  font-weight: 600; /* Bold for better contrast */
+}
+.btn-tertiary:hover {
+  background: var(--accent-secondary-hover);
+}
+
+.btn-quaternary {
+  background: var(--accent-tertiary);
+  color: white;
+  font-weight: 600; /* Bold for better contrast */
+}
+.btn-quaternary:hover {
+  background: var(--accent-tertiary-hover);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--primary-color);
+  border: 2px solid var(--primary-color);
+  font-weight: 600; /* Bold for better contrast */
+}
+.btn-outline:hover {
+  background: var(--primary-color);
+  color: white;
+}
+
+.btn-outline-secondary {
+  background: transparent;
+  color: var(--accent-color);
+  border: 2px solid var(--accent-color);
+  font-weight: 600; /* Bold for better contrast */
+}
+.btn-outline-secondary:hover {
+  background: var(--accent-color);
+  color: white;
+}
+
+.btn-success {
+  background: var(--success-color);
+  color: white;
+  font-weight: 600; /* Bold for better contrast */
+}
+.btn-success:hover {
+  background: var(--success-hover);
+}
+
+.btn-warning {
+  background: var(--warning-color);
+  color: white;
+  font-weight: 600; /* Bold for better contrast */
+}
+.btn-warning:hover {
+  background: var(--warning-hover);
+}
+
+.btn-error {
+  background: var(--error-color);
+  color: white;
+  font-weight: 600; /* Bold for better contrast */
+}
+.btn-error:hover {
+  background: var(--error-hover);
+}
+
+.btn-info {
+  background: var(--info-color);
+  color: white;
+  font-weight: 600; /* Bold for better contrast */
+}
+.btn-info:hover {
+  background: var(--info-hover);
+}
+
+/* Cards */
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-lg);
+  box-shadow: 0 2px 8px var(--shadow-light);
+  transition: all 0.2s ease;
+}
+.card:hover {
+  border-color: var(--border-hover);
+  box-shadow: 0 4px 16px var(--shadow-medium);
+  transform: translateY(-2px);
+}
+.card-accent {
+  border-left: 4px solid var(--accent-color);
+}
+.card-secondary {
+  border-left: 4px solid var(--accent-secondary);
+}
+.card-tertiary {
+  border-left: 4px solid var(--accent-tertiary);
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
+}
+.badge-primary {
+  background: var(--primary-color);
+  color: white;
+}
+.badge-accent {
+  background: var(--accent-color);
+  color: white;
+}
+.badge-secondary {
+  background: var(--accent-secondary);
+  color: white;
+}
+.badge-tertiary {
+  background: var(--accent-tertiary);
+  color: white;
+}
+.badge-success {
+  background: var(--success-color);
+  color: white;
+}
+.badge-warning {
+  background: var(--warning-color);
+  color: white;
+}
+.badge-error {
+  background: var(--error-color);
+  color: white;
+}
+.badge-info {
+  background: var(--info-color);
+  color: white;
+}
+
+/* Alerts */
+.alert {
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+  border-left: 4px solid;
+  margin-bottom: var(--spacing-lg);
+}
+.alert-success {
+  background: rgba(168, 200, 176, 0.1);
+  border-color: var(--success-color);
+  color: var(--text-color);
+}
+.alert-warning {
+  background: rgba(232, 196, 140, 0.1);
+  border-color: var(--warning-color);
+  color: var(--text-color);
+}
+.alert-error {
+  background: rgba(232, 168, 168, 0.1);
+  border-color: var(--error-color);
+  color: var(--text-color);
+}
+.alert-info {
+  background: rgba(200, 176, 216, 0.1);
+  border-color: var(--info-color);
+  color: var(--text-color);
+}
+
+/* Main Layout */
+main {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.hidden {
+  display: none;
+}
+.modal-content {
+  position: relative;
+  background-color: transparent;
+  padding: 10px;
+  border-radius: 10px;
+  max-width: 90%;
+  max-height: 90%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal-content img {
+  max-width: 100%;
+  max-height: 80vh;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  cursor: zoom-in;
+}
+.modal-content .close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 5px 10px;
+  background-color: transparent;
+  color: white;
+  border-radius: 5px;
+}
+.modal-content .close:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Utilities */
+.text-accent-secondary {
+  color: var(--accent-secondary);
+}
+.text-accent-tertiary {
+  color: var(--accent-tertiary);
+}
+.bg-accent-secondary {
+  background-color: var(--accent-secondary);
+}
+.bg-accent-tertiary {
+  background-color: var(--accent-tertiary);
+}
+.border-accent-secondary {
+  border-color: var(--accent-secondary);
+}
+.border-accent-tertiary {
+  border-color: var(--accent-tertiary);
+}
+
+/* Focus States */
+button:focus,
+.btn:focus,
+input:focus,
+textarea:focus,
+select:focus {
+  outline: 3px solid var(--accent-color);
+  outline-offset: 2px;
+}
+
+/* Forms */
+input,
+textarea,
+select {
+  font-family: var(--font-body);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 2px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-secondary);
+  color: var(--text-color);
+  transition: all 0.2s ease;
+}
+input:hover,
+textarea:hover,
+select:hover {
+  border-color: var(--border-hover);
+}
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 3px rgba(232, 168, 176, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  header {
+    padding: var(--spacing-sm) var(--spacing-md);
+    flex-direction: column;
+    gap: var(--spacing-sm);
+    min-height: auto;
+  }
+  header h1 {
+    font-size: 1.5rem;
+  }
+  .header-nav {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  main {
+    padding: var(--spacing-md);
+  }
+  h1 {
+    font-size: 2rem;
+  }
+  h2 {
+    font-size: 1.75rem;
+  }
+  h3 {
+    font-size: 1.5rem;
+  }
+}
+
+/* Dark Mode Text Color Overrides for Better Contrast */
+body.dark-mode .badge-primary,
+body.dark-mode .badge-accent,
+body.dark-mode .badge-secondary,
+body.dark-mode .badge-tertiary,
+body.dark-mode .badge-warning {
+  color: #0f0804; /* Very dark brown for excellent contrast */
+}
+
+body.dark-mode button:not(.close-btn):not(.delete-btn) {
+  color: #0f0804 !important; /* Very dark text on light button backgrounds */
+}
+
+body.dark-mode .read-more-link {
+  color: var(--primary-color);
+}
+
+body.dark-mode .clickable-tag.active-filter {
+  background-color: var(--primary-color);
+  color: #0f0804;
+}

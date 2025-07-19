@@ -1,37 +1,4 @@
-:root {
-  --bg-color: #fdfaf6; /* soft warm cream */
-  --text-color: #3e3e3e; /* deep neutral gray */
-  --accent-color: #c89b7b; /* soft terracotta */
-  --accent-hover: #a6765b; /* rich terracotta hover */
-  --button-bg: #8c6e63; /* soft brown button */
-  --button-text: #ffffff; /* white button text */
-  --header-bg: #bfa89a; /* muted beige header */
-  --header-text: #3e3e3e; /* header text remains dark */
-  --header-shadow: rgba(0, 0, 0, 0.1);
-  --post-bg: #ffffff; /* clean white post background */
-}
-
-body.dark-mode {
-  --bg-color: #3a2e2a; /* deep chocolate */
-  --text-color: #3e3e3e; /* light beige text */
-  --accent-color: #d6a07b; /* warm bronze accent */
-  --accent-hover: #b67f5f; /* rich bronze hover */
-  --button-bg: #6e554a; /* muted coffee brown button */
-  --button-text: #fdfaf6; /* soft cream text */
-  --header-bg: #4f3c35; /* dark coffee header */
-  --header-text: #fdfaf6; /* light header text */
-  --header-shadow: rgba(0, 0, 0, 0.2);
-  --post-bg: #4a3a35; /* soft coffee post background */
-}
-html,
-body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-  font-family: "Segoe UI", sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-}
+@import url("shared/shared.css");
 
 .page-wrapper {
   display: flex;
@@ -48,11 +15,11 @@ body {
 
 .register-box,
 .login-box {
-  background-color: #fff;
+  background-color: var(--bg-secondary);
   padding: 30px;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  width: 300px;
+  width: 450px; /* Increased from 300px to 450px for better screen utilization */
 }
 
 .register-box h2,
@@ -62,34 +29,120 @@ body {
   color: var(--text-color);
 }
 
-input[type="text"],
-input[type="email"],
-input[type="password"] {
+.register-box,
+.login-box {
+  background-color: var(--bg-secondary);
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(139, 69, 19, 0.15); /* Enhanced shadow with brown tint */
+  width: 450px; /* Increased from 300px to 450px for better screen utilization */
+  border: 2px solid var(--border-color); /* Thicker border for better definition */
+  position: relative;
+}
+
+.register-box h2,
+.login-box h2 {
+  text-align: center;
+  margin-bottom: 25px;
+  color: var(
+    --primary-color
+  ); /* Use primary brown for better contrast against white background */
+  font-weight: 700; /* Bold for better visibility */
+  font-size: 1.75rem; /* Larger size for prominence */
+  text-shadow: 0 1px 2px rgba(139, 69, 19, 0.15); /* Subtle depth */
+  padding-bottom: 10px; /* Add some padding */
+  border-bottom: 2px solid var(--accent-color); /* Decorative underline */
+  position: relative;
+  font-family: var(--font-cursive);
+}
+
+/* Add decorative element to titles */
+.register-box h2::after,
+.login-box h2::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 50px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+  border-radius: 2px;
+}
+
+/* Form labels styling */
+.register-box label,
+.login-box label {
+  display: block;
+  margin-bottom: 8px;
+  margin-top: 15px;
+  color: var(--text-color);
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Consolidated input styles for auth forms */
+.register-box input[type="text"],
+.register-box input[type="email"],
+.register-box input[type="password"],
+.login-box input[type="text"],
+.login-box input[type="email"],
+.login-box input[type="password"] {
   width: 100%;
-  padding: 10px 40px 10px 10px;
-  margin-bottom: 15px;
-  border: 1px solid #ccc;
+  padding: 12px 40px 12px 12px;
+  margin-bottom: 20px; /* Increased spacing between fields */
+  margin-top: 5px; /* Small space after label */
+  border: 2px solid var(--border-color);
   border-radius: 6px;
   box-sizing: border-box;
   font-size: 16px;
-  background-color: #fff;
+  background-color: var(--bg-secondary);
   color: var(--text-color);
+  display: block;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-button {
+.register-box input:focus,
+.login-box input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(184, 93, 56, 0.2);
+}
+
+/* Enhanced button styles for better contrast */
+.register-box button,
+.login-box button {
   width: 100%;
-  padding: 10px;
-  background-color: var(--button-bg);
-  color: var(--button-text);
+  padding: 12px;
+  background-color: var(--primary-color);
+  color: white;
   border: none;
   border-radius: 6px;
   font-size: 16px;
+  font-weight: 600; /* Bold text for better readability */
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease;
+  display: block;
+  transform: none !important;
+  box-shadow: 0 2px 4px var(--shadow-light);
+  min-height: auto;
+  gap: normal;
+  margin-top: 10px; /* Add some space above button */
 }
 
-button:hover {
-  background-color: var(--accent-hover);
+.register-box button:hover,
+.login-box button:hover {
+  background-color: var(--primary-hover);
+  transform: none !important;
+  box-shadow: 0 4px 8px var(--shadow-medium);
+}
+
+.register-box button:focus,
+.login-box button:focus {
+  outline: 3px solid var(--accent-color);
+  outline-offset: 2px;
 }
 
 #passwordRules {
@@ -97,7 +150,7 @@ button:hover {
   list-style: none;
   padding-left: 0;
   font-size: 0.85rem;
-  color: #777;
+  color: var(--text-muted);
   display: none;
 }
 
@@ -107,6 +160,11 @@ button:hover {
 
 .password-wrapper {
   position: relative;
+  margin-bottom: 20px; /* Consistent spacing with other fields */
+}
+
+.password-wrapper label {
+  margin-bottom: 8px; /* Consistent with other labels */
 }
 
 #togglePassword,
@@ -116,12 +174,18 @@ button:hover {
   top: 50%;
   transform: translateY(-50%);
   font-size: 18px;
-  color: #555;
+  color: var(--text-muted); /* Use theme color for better contrast */
   cursor: pointer;
   user-select: none;
   height: 100%;
   display: flex;
   align-items: center;
+  transition: color 0.2s ease;
+}
+
+#togglePassword:hover,
+#toggleLoginPassword:hover {
+  color: var(--primary-color);
 }
 
 input::-ms-reveal,
@@ -133,56 +197,86 @@ input::-ms-clear {
   display: none;
   text-align: center;
   margin-top: 10px;
-  color: green;
+  color: var(--success-color); /* Use theme success color */
   font-weight: bold;
+  background-color: rgba(
+    45,
+    106,
+    58,
+    0.1
+  ); /* Light background for better contrast */
+  padding: 8px;
+  border-radius: 4px;
+  border: 1px solid var(--success-color);
 }
 
 .account-switch {
-  text-align: center;
+  text-align: right; /* Align to the right */
   margin-top: 1rem;
   font-size: 0.95em;
+  padding-right: 0.5rem; /* Add some right padding */
 }
 
 .account-switch a {
-  color: var(--accent-color);
+  color: var(--primary-color); /* Use primary color for better contrast */
   text-decoration: none;
-  font-weight: 500;
+  font-weight: 600; /* Bold for better readability */
 }
 
 .account-switch a:hover {
   text-decoration: underline;
+  color: var(--primary-hover);
 }
 
+/* Header styling to match blog main page with proper dark mode support */
 .top-banner {
-  background-color: var(--button-bg);
-  color: var(--header-text);
-  padding: 15px 30px;
-  box-shadow: 0 2px 6px var(--header-shadow);
+  position: static;
+  background: var(--bg-secondary);
+  backdrop-filter: blur(10px);
+  border-bottom: 2px solid var(--primary-color); /* Brown border for definition */
+  padding: var(--spacing-md) var(--spacing-xl);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: var(--header-height);
+  box-shadow: 0 4px 12px var(--shadow-medium); /* Deeper shadow */
 }
 
 .banner-content {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%; /* Ensure full width */
+  max-width: 1200px; /* Limit max width */
+  margin: 0 auto; /* Center the banner content */
 }
 
 .blog-name {
-  font-size: 24px;
+  font-family: var(--font-heading);
+  font-size: 1.75rem;
+  font-weight: 800; /* Extra bold for strong brand presence */
+  color: var(--primary-color);
   margin: 0;
+  letter-spacing: -0.025em;
+  text-shadow: 0 1px 3px rgba(139, 69, 19, 0.2); /* Subtle depth */
 }
 
 .login-link {
-  color: var(--header-text);
+  color: white;
   text-decoration: none;
   font-weight: bold;
   background-color: var(--accent-color);
-  padding: 8px 16px;
-  border-radius: 6px;
-  transition: background-color 0.3s ease;
+  padding: 10px 20px; /* Slightly larger padding */
+  border-radius: 8px; /* Slightly more rounded */
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(139, 69, 19, 0.2); /* Subtle shadow */
+  margin-left: auto; /* Ensure it stays on the right */
 }
 
 .login-link:hover {
   background-color: var(--accent-hover);
+  transform: translateY(-2px); /* Subtle lift effect */
+  box-shadow: 0 4px 12px rgba(139, 69, 19, 0.3); /* Enhanced shadow on hover */
 }
 
 #modeToggle {
@@ -191,8 +285,8 @@ input::-ms-clear {
   right: 20px;
   width: 40px;
   height: 40px;
-  background-color: var(--button-bg);
-  color: var(--button-text);
+  background-color: var(--primary-color);
+  color: white;
   border: 1px solid var(--accent-color);
   border-radius: 50%;
   font-size: 22px;
@@ -200,26 +294,65 @@ input::-ms-clear {
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 2px 6px var(--header-shadow);
+  box-shadow: 0 2px 6px var(--shadow-light);
   transition: transform 0.6s ease, background-color 0.3s ease, color 0.3s ease;
   transform-style: preserve-3d;
 }
 
 #modeToggle:hover {
   transform: scale(1.1);
-  color: #fff;
-}
-
-#modeToggle[data-theme="light"]:hover {
-  background-color: #ffe5ec;
-  color: #333;
-}
-
-#modeToggle[data-theme="dark"]:hover {
-  background-color: #2b2b2b;
-  color: #fff;
 }
 
 body.dark-mode #modeToggle {
   transform: rotate(180deg);
+  background-color: var(--bg-secondary);
+  color: var(--text-color);
+  border-color: var(--primary-color);
+}
+
+body.dark-mode #modeToggle:hover {
+  transform: rotate(180deg) scale(1.1);
+  background-color: var(--primary-color);
+  color: #0f0804;
+}
+
+/* Responsive Design for Auth Pages */
+@media (max-width: 768px) {
+  .register-box,
+  .login-box {
+    width: 90%;
+    max-width: 450px; /* Updated to match new width */
+    padding: 25px;
+  }
+
+  .register-box h2,
+  .login-box h2 {
+    font-size: 1.5rem;
+  }
+
+  .top-banner {
+    padding: 12px 20px;
+  }
+
+  .banner-content {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+
+  .login-link {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+  }
+
+  .account-switch {
+    text-align: center; /* Center on mobile for better UX */
+    padding-right: 0;
+  }
+}
+
+@media (min-width: 769px) {
+  .account-switch {
+    text-align: right; /* Right align on desktop */
+  }
 }

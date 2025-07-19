@@ -24,6 +24,9 @@ export function initializeImageModal() {
   const prevImageBtn = document.getElementById("prevImageBtn");
   const nextImageBtn = document.getElementById("nextImageBtn");
 
+  // Ensure modal starts hidden
+  modal.classList.add("hidden");
+
   // Click outside to close
   modal.addEventListener("click", (e) => {
     if (e.target === modal) {
@@ -32,8 +35,17 @@ export function initializeImageModal() {
   });
 
   // Close button
-  closeImageModal.addEventListener("click", () => {
+  closeImageModal.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     closeModal();
+  });
+
+  // Escape key to close
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !modal.classList.contains("hidden")) {
+      closeModal();
+    }
   });
 
   // Zoom
@@ -48,7 +60,9 @@ export function initializeImageModal() {
   });
 
   // Previous
-  prevImageBtn.addEventListener("click", () => {
+  prevImageBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     currentIndex =
       (currentIndex - 1 + currentImages.length) % currentImages.length;
     modalImage.src = currentImages[currentIndex];
@@ -57,7 +71,9 @@ export function initializeImageModal() {
   });
 
   // Next
-  nextImageBtn.addEventListener("click", () => {
+  nextImageBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     currentIndex = (currentIndex + 1) % currentImages.length;
     modalImage.src = currentImages[currentIndex];
     isZoomed = false;
@@ -66,7 +82,15 @@ export function initializeImageModal() {
 }
 
 export function openImageModal(images, clickedIndex) {
-  if (!images?.length) return;
+  if (!images?.length) {
+    console.warn("No images provided to openImageModal");
+    return;
+  }
+
+  if (clickedIndex < 0 || clickedIndex >= images.length) {
+    console.warn("Invalid image index provided to openImageModal");
+    return;
+  }
 
   currentImages = images;
   currentIndex = clickedIndex;
@@ -77,6 +101,11 @@ export function openImageModal(images, clickedIndex) {
   const modalContent = document.getElementById("modalContent");
   const prevImageBtn = document.getElementById("prevImageBtn");
   const nextImageBtn = document.getElementById("nextImageBtn");
+
+  if (!modal || !modalImage || !modalContent) {
+    console.error("Modal elements not found");
+    return;
+  }
 
   modalImage.src = currentImages[currentIndex];
   resetZoom();
@@ -102,7 +131,20 @@ function resetZoom() {
 
 function closeModal() {
   const modal = document.getElementById("imageModal");
-  modal.classList.add("hidden");
+  const modalImage = document.getElementById("modalImage");
+
+  if (modal) {
+    modal.classList.add("hidden");
+  }
+
+  if (modalImage) {
+    modalImage.src = ""; // Clear the image source
+  }
+
   isZoomed = false;
   resetZoom();
+
+  // Reset current images array
+  currentImages = [];
+  currentIndex = 0;
 }
