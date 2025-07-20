@@ -123,7 +123,7 @@ async function loadPostData() {
         : post.categories
         ? post.categories.join(", ")
         : post.categories || "",
-      content: post.Content || post.content || "",
+      body: post.Body || post.body || "",
       schedulePost:
         post.IsScheduled !== undefined
           ? post.IsScheduled
@@ -146,7 +146,9 @@ async function loadPostData() {
     document.getElementById("scheduledDate").value = originalData.scheduledDate;
 
     // Set markdown editor content
-    easyMDE.value(originalData.content);
+    if (easyMDE && typeof easyMDE.value === "function") {
+      easyMDE.value(originalData.content || "");
+    }
 
     // Update slug preview
     updateSlugPreview(originalData.title);
@@ -161,7 +163,7 @@ async function loadPostData() {
   } catch (error) {
     console.error("Error loading post data:", error);
     alert("Failed to load post data. Please try again.");
-    window.location.href = "/myProfile.html";
+    window.location.href = "/profile";
   }
 }
 
@@ -284,7 +286,7 @@ function checkForChanges() {
     customUrl: document.getElementById("customUrl").value.trim(),
     tags: document.getElementById("tags").value.trim(),
     categories: document.getElementById("categories").value.trim(),
-    content: easyMDE.value().trim(),
+    body: easyMDE.value().trim(),
     schedulePost: document.getElementById("schedulePost").checked,
     scheduledDate: document.getElementById("scheduledDate").value,
   };
@@ -299,17 +301,13 @@ function checkForChanges() {
       changedFields.push(key);
 
       // Add visual indicator for changed fields
-      const field = document.getElementById(
-        key === "content" ? "content" : key
-      );
+      const field = document.getElementById(key === "body" ? "content" : key);
       if (field && field !== document.getElementById("content")) {
         field.classList.add("modified");
       }
     } else {
       // Remove visual indicator if field matches original
-      const field = document.getElementById(
-        key === "content" ? "content" : key
-      );
+      const field = document.getElementById(key === "body" ? "content" : key);
       if (field && field !== document.getElementById("content")) {
         field.classList.remove("modified");
       }
@@ -317,7 +315,7 @@ function checkForChanges() {
   }
 
   // Update markdown editor styling for content changes
-  const contentChanged = currentData.content !== originalData.content;
+  const contentChanged = currentData.body !== originalData.body;
   const codeMirrorElement = document.querySelector(".CodeMirror");
   if (codeMirrorElement) {
     if (contentChanged) {
@@ -381,6 +379,8 @@ async function handleFormSubmit(e) {
             .map((v) => v.trim())
             .filter((v) => v);
           formData.append(key, JSON.stringify(values));
+        } else if (key === "body") {
+          formData.append("body", currentData[key]);
         } else {
           formData.append(key, currentData[key]);
         }
@@ -452,6 +452,7 @@ async function saveDraft() {
         .map((v) => v.trim())
         .filter((v) => v);
     }
+    // Always send 'body' to backend
 
     const response = await fetch(`/api/posts/modify/${postSlug}`, {
       method: "PUT",
@@ -496,6 +497,13 @@ function handleImageUpload(e) {
       reader.readAsDataURL(file);
     }
   });
+
+  // Add remove functionality for images in markdown content
+  previewContainer.querySelectorAll(".btn-danger").forEach((btn, idx) => {
+    btn.addEventListener("click", function () {
+      removeImagePreview(btn, idx);
+    });
+  });
 }
 
 function createImagePreviewItem(fileName, src, index) {
@@ -506,7 +514,7 @@ function createImagePreviewItem(fileName, src, index) {
             <img src="${src}" alt="${fileName}">
             <div class="image-preview-actions">
                 <div class="image-name">${fileName}</div>
-                <button type="button" class="btn-sm btn-danger" onclick="removeImagePreview(this, ${index})">
+                <button type="button" class="btn-sm btn-danger" data-index="${index}">
                     Remove
                 </button>
             </div>
@@ -530,6 +538,17 @@ function removeImagePreview(button, index) {
 
   // Remove preview item
   button.closest(".image-preview-item").remove();
+
+  // Remove image markdown from editor if present
+  const fileName =
+    button.parentElement.querySelector(".image-name").textContent;
+  const content = easyMDE.value();
+  // Remove markdown image syntax for this file if present
+  const updatedContent = content.replace(
+    new RegExp(`!\[.*?\]\(.*?${fileName}.*?\)`, "g"),
+    ""
+  );
+  easyMDE.value(updatedContent);
 }
 
 function logout() {

@@ -404,8 +404,9 @@ body.dark-mode .post-actions .deleteBtn:hover {
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 1rem;
   min-height: 2.5rem;
+  overflow: hidden;
 }
 
 .user-details p:hover {
@@ -413,17 +414,24 @@ body.dark-mode .post-actions .deleteBtn:hover {
   border-color: var(--accent-color);
 }
 
+.user-details p {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: nowrap; /* ensure inline alignment */
+}
+
 .user-details p strong {
-  color: var(--text-color);
-  min-width: 140px;
-  font-weight: 600;
-  display: inline-block;
+  flex-shrink: 0; /* don’t shrink too much */
+  width: auto;
 }
 
 .user-details p span {
+  min-width: 0;
   flex: 1;
-  color: var(--text-color);
-  margin-left: 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .user-details .edit-btn {
