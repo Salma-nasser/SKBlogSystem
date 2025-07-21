@@ -6,20 +6,49 @@ import { showMessage, showConfirmation } from "./utils/notifications.js";
 let imagesToKeep = [];
 
 window.addEventListener("DOMContentLoaded", () => {
-  // Get username from URL parameters if viewing someone else's profile
+  // Get username from query parameter or URL path
   const urlParams = new URLSearchParams(window.location.search);
-  const profileUsername = urlParams.get("username");
+  let profileUsername = urlParams.get("username");
+
+  // If no query param, try to extract from path: /profile/{username}
+  if (!profileUsername) {
+    const pathMatch = window.location.pathname.match(/^\/profile\/(.+)$/);
+    if (pathMatch && pathMatch[1] && pathMatch[1] !== "my-profile") {
+      profileUsername = pathMatch[1];
+    }
+  }
 
   // Get current user's username
   const currentUsername = localStorage.getItem("username");
   const token = localStorage.getItem("jwtToken");
 
   // Determine if this is the user's own profile
-  const isOwnProfile = !profileUsername || profileUsername === currentUsername;
+  const isOwnProfile =
+    profileUsername === currentUsername ||
+    (!profileUsername && window.location.pathname === "/profile/my-profile");
   const targetUsername = isOwnProfile ? currentUsername : profileUsername;
 
-  // Update page title
+  const ProfileTitle = document.getElementById("ProfileTitle");
+  // Update page title and header
   document.title = isOwnProfile ? "My Profile" : `${targetUsername}'s Profile`;
+  if (ProfileTitle) {
+    ProfileTitle.textContent = isOwnProfile
+      ? "Your Profile"
+      : `${targetUsername}'s Profile`;
+  }
+  // Update URL to reflect profile being viewed
+  const currentPath = window.location.pathname;
+  const currentSearch = window.location.search;
+  // Only rewrite to /profile/my-profile if the user is truly viewing their own profile
+  if (
+    isOwnProfile &&
+    (currentPath === `/profile/${currentUsername}` ||
+      currentSearch === `?username=${currentUsername}`)
+  ) {
+    if (currentPath !== "/profile/my-profile") {
+      window.history.replaceState({}, document.title, "/profile/my-profile");
+    }
+  }
 
   // Initialize components
   initializeImageModal();
@@ -478,22 +507,6 @@ window.addEventListener("DOMContentLoaded", () => {
     }, 1000);
   });
 
-  // Modal close event
-  closeModifyModal?.addEventListener("click", () => {
-    modifyPostModal?.classList.add("hidden");
-  });
-
-  // Cancel modify button
-  document.getElementById("cancelModify")?.addEventListener("click", () => {
-    modifyPostModal?.classList.add("hidden");
-  });
-
-  // Post modification form submission
-  modifyPostForm?.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    await submitModification();
-  });
-
   // Only add edit functionality if it's the user's own profile
   if (isOwnProfile) {
     setupEditFunctionality();
@@ -819,109 +832,6 @@ window.addEventListener("DOMContentLoaded", () => {
         "error"
       );
       console.error(err);
-    }
-  }
-
-  async function submitModification() {
-    const form = document.getElementById("modifyPostForm");
-    const formData = new FormData();
-    const slug = document.getElementById("postSlug").value;
-
-    // Get form values manually to ensure correct naming
-    const title = document.getElementById("modifyTitle").value.trim();
-    const description = document
-      .getElementById("modifyDescription")
-      .value.trim();
-    const body = document.getElementById("modifyBody").value.trim();
-    const tags = document.getElementById("modifyTags").value.trim();
-    const categories = document.getElementById("modifyCategories").value.trim();
-
-    // Validate required fields
-    if (!title) {
-      showMessage("Title is required", "warning");
-      return;
-    }
-    if (!description) {
-      showMessage("Description is required", "warning");
-      return;
-    }
-    if (!body) {
-      showMessage("Body content is required", "warning");
-      return;
-    }
-
-    // Add all fields to formData
-    formData.append("Title", title);
-    formData.append("Description", description);
-    formData.append("Body", body);
-    formData.append("Tags", tags);
-    formData.append("Categories", categories);
-    formData.append("IsPublished", "true");
-
-    // Add kept images (images that weren't removed)
-    if (imagesToKeep && imagesToKeep.length > 0) {
-      imagesToKeep.forEach((imagePath) => {
-        formData.append("KeptImages", imagePath);
-      });
-    }
-
-    // Add any new images from file input
-    const imageFiles = document.getElementById("modifyImages").files;
-    if (imageFiles.length > 0) {
-      for (let i = 0; i < imageFiles.length; i++) {
-        formData.append("Images", imageFiles[i]);
-      }
-    }
-
-    try {
-      showMessage("Updating post...", "info");
-
-      const response = await fetch(
-        `https://localhost:7189/api/posts/modify/${slug}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
-
-      if (response.ok) {
-        const result = await response.json();
-        showMessage("Post updated successfully!", "success");
-        modifyPostModal.classList.add("hidden");
-
-        // Reset the tracking variables
-        currentPost = null;
-        imagesToKeep = [];
-
-        // Refresh the post lists
-        if (isOwnProfile) {
-          fetchDraftPosts();
-        }
-        fetchPublishedPosts(targetUsername);
-      } else {
-        const errorText = await response.text();
-        console.error("Server response:", errorText);
-
-        try {
-          const errorJson = JSON.parse(errorText);
-          showMessage(
-            "Error: " +
-              (errorJson.message || errorJson.title || "Unknown error"),
-            "error"
-          );
-        } catch {
-          showMessage(
-            `Error updating post (${response.status}): ${errorText}`,
-            "error"
-          );
-        }
-      }
-    } catch (error) {
-      console.error("Network error:", error);
-      showMessage("Network error occurred while updating the post", "error");
     }
   }
 
