@@ -338,7 +338,7 @@ export function renderPosts(posts, containerId, options = {}) {
 
     card.innerHTML = `
       <div class="post-content-wrapper">
-        <h3><a href="post/${post.Slug}">${post.Title}</a></h3>
+        <h3><a href="/post/${post.Slug}">${post.Title}</a></h3>
         <p class="post-description">${post.Description}</p>
         ${imgHtml}
         ${bodyHtml}

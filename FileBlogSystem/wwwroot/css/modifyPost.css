@@ -85,6 +85,19 @@
   box-shadow: 0 4px 16px var(--shadow-medium);
 }
 
+/* Dark mode: ensure good contrast */
+body.dark-mode .header-buttons .btn,
+body.dark-mode .header-buttons button {
+  color: #0f0804 !important;
+  background: var(--primary-color);
+}
+
+body.dark-mode .header-buttons .btn:hover,
+body.dark-mode .header-buttons button:hover {
+  background: var(--primary-hover);
+  color: #0f0804 !important;
+}
+
 .header-buttons .btn-secondary {
   background: var(--accent-color) !important;
   color: white !important;

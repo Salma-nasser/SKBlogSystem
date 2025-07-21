@@ -85,7 +85,6 @@ function initializeMarkdownEditor() {
       "ordered-list",
       "|",
       "link",
-      "image",
       "table",
       "|",
       "preview",
@@ -138,7 +137,7 @@ function setupImagePreview() {
   const previewContainer = document.getElementById("imagePreview");
 
   imageInput?.addEventListener("change", (e) => {
-    selectedFiles = Array.from(e.target.files);
+    selectedFiles = Array.from(e.target.files).slice(0, 1); // Limit to one image
     displayImagePreviews();
   });
 
@@ -152,23 +151,11 @@ function setupImagePreview() {
           const previewItem = document.createElement("div");
           previewItem.className = "image-preview-item";
 
-          // Generate the future URL path (this will be the actual URL once the post is created)
-          const fileName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
-          const futureImageUrl = `![${file.name}](PLACEHOLDER_URL/assets/${fileName})`;
-
           previewItem.innerHTML = `
             <div class="image-preview-content">
               <img src="${e.target.result}" alt="Preview ${index + 1}">
               <div class="image-preview-actions">
                 <span class="image-name">${file.name}</span>
-                <button type="button" class="btn btn-sm btn-secondary copy-url-btn" 
-                        data-filename="${fileName}" data-alt="${file.name}">
-                  📋 Copy Markdown
-                </button>
-                <button type="button" class="btn btn-sm btn-primary insert-btn" 
-                        data-filename="${fileName}" data-alt="${file.name}">
-                  ➕ Insert in Post
-                </button>
                 <button type="button" class="btn btn-sm btn-danger remove-image" 
                         onclick="removeImage(${index})">
                   ❌ Remove
@@ -177,18 +164,6 @@ function setupImagePreview() {
             </div>
           `;
           previewContainer.appendChild(previewItem);
-
-          previewItem
-            .querySelector(".copy-url-btn")
-            .addEventListener("click", () => {
-              copyImageMarkdown(fileName, file.name);
-            });
-
-          previewItem
-            .querySelector(".insert-btn")
-            .addEventListener("click", () => {
-              insertImageIntoPost(fileName, file.name);
-            });
         };
         reader.readAsDataURL(file);
       }

@@ -61,12 +61,12 @@ var rewriteOptions = new RewriteOptions()
     .AddRewrite("^login/?$", "login.html", skipRemainingRules: true)
     .AddRewrite("^register/?$", "register.html", skipRemainingRules: true)
     .AddRewrite("^blog/?$", "blog.html", skipRemainingRules: true)
-    .AddRewrite("^my-profile/?$", "myProfile.html", skipRemainingRules: true)
-    .AddRewrite("^profile/([^/?]+)/?$", "myProfile.html?username=$1", skipRemainingRules: true)
+    .AddRewrite("^profile/([^/?]+)/?$", "myProfile.html", skipRemainingRules: true)
     .AddRewrite("^admin/?$", "admin.html", skipRemainingRules: true)
     .AddRewrite("^create-post/?$", "createPost.html", skipRemainingRules: true)
     .AddRewrite("^post/([^/?]+)/?$", "post.html?slug=$1", skipRemainingRules: true)
-    .AddRewrite("^welcome/?$", "welcome.html", skipRemainingRules: true);
+    .AddRewrite("^welcome/?$", "welcome.html", skipRemainingRules: true)
+    .AddRewrite("^modify-post/([^/?]+)/?$", "modifyPost.html?slug=$1", skipRemainingRules: true);
 
 app.UseRewriter(rewriteOptions);
 

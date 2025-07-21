@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Create New Post - Aether & Ink</title>
-    <link rel="stylesheet" href="/css/createPost.css">
+    <link rel="stylesheet" href="/css/createPost.css" />
     <!-- Include a markdown editor -->
     <script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css" />
 </head>
 
 <body>
@@ -15,8 +16,9 @@
         <div class="header-container">
             <h1><a href="/blog">Aether & Ink</a></h1>
             <div class="header-buttons">
-                <button id="backToBlogBtn" class="btn btn-secondary">Back to Blog</button>
-                <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+                <button id="backToBlogBtn" class="btn">Home</button>
+                <button id="backToProfileBtn" class="btn">Profile</button>
+                <button id="logoutBtn" class="btn">Logout</button>
             </div>
         </div>
     </header>
@@ -28,13 +30,14 @@
             <div class="create-post-header">
                 <h2>Create New Post</h2>
                 <p>Share your thoughts with the world</p>
-                <small class="save-notice">Remember to save your work! Use the "Save as Draft" button to save without publishing.</small>
+                <small class="save-notice">Remember to save your work! Use the "Save as Draft" button to save
+                    without publishing.</small>
             </div>
 
             <form id="createPostForm" class="create-post-form">
                 <div class="form-group">
                     <label for="title">Title *</label>
-                    <input type="text" id="title" name="title" required placeholder="Enter your post title...">
+                    <input type="text" id="title" name="title" required placeholder="Enter your post title..." />
                     <small class="help-text">
                         URL Preview: <span id="slugPreview">/post/your-post-title</span>
                     </small>
@@ -42,63 +45,59 @@
 
                 <div class="form-group">
                     <label for="description">Description *</label>
-                    <textarea id="description" name="description" required placeholder="Brief description of your post..." rows="3"></textarea>
+                    <textarea id="description" name="description" required
+                        placeholder="Brief description of your post..." rows="3"></textarea>
                 </div>
 
                 <div class="form-group">
                     <label for="customUrl">Custom URL (Optional)</label>
-                    <input type="text" id="customUrl" name="customUrl" placeholder="my-custom-post-url">
+                    <input type="text" id="customUrl" name="customUrl" placeholder="my-custom-post-url" />
                     <small class="help-text">
-                        Leave empty to auto-generate from title. Use lowercase letters, numbers, and hyphens only.
+                        Leave empty to auto-generate from title. Use lowercase letters,
+                        numbers, and hyphens only.
                     </small>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group">
                         <label for="tags">Tags</label>
-                        <input type="text" id="tags" name="tags" placeholder="tag1, tag2, tag3...">
+                        <input type="text" id="tags" name="tags" placeholder="tag1, tag2, tag3..." />
                         <small class="help-text">Separate tags with commas</small>
                     </div>
 
                     <div class="form-group">
                         <label for="categories">Categories</label>
-                        <input type="text" id="categories" name="categories" placeholder="category1, category2...">
+                        <input type="text" id="categories" name="categories" placeholder="category1, category2..." />
                         <small class="help-text">Separate categories with commas</small>
                     </div>
                 </div>
 
                 <div class="form-group">
-                    <label for="images">Images</label>
-                    <input type="file" id="images" name="images" multiple accept="image/*">
-                    <small class="help-text">Select multiple images for your post</small>
-                    <div class="image-help-info">
-                        <strong>How to use images in your post:</strong>
-                        <ul>
-                            <li>Upload images using the file selector above</li>
-                            <li>Use the "Copy Markdown" button to copy image syntax to clipboard</li>
-                            <li>Use the "Insert in Post" button to add image directly to your content</li>
-                            <li>Images will be available at the URLs shown after you save the post</li>
-                        </ul>
-                    </div>
-                    <div id="imagePreview" class="image-preview"></div>
+                    <label for="images">Upload Image</label>
+                    <input type="file" id="images" name="images" accept="image/*" required />
+                    <small class="help-text">Only one image per post is allowed. Markdown image links are not
+                        supported.</small>
+                    <div id="imagePreview"></div>
                 </div>
 
                 <div class="form-group">
                     <label for="body">Content *</label>
-                    <textarea id="body" name="body" placeholder="Write your post content here using Markdown..."></textarea>
+                    <textarea id="body" name="body"
+                        placeholder="Write your post content here using Markdown..."></textarea>
                     <small class="help-text">
-                        You can use <strong>Markdown</strong> syntax: **bold**, *italic*, `code`, # headers, - lists, etc.
+                        You can use <strong>Markdown</strong> syntax: **bold**, *italic*,
+                        `code`, # headers, - lists, etc.
                     </small>
                 </div>
 
                 <div class="form-group schedule-group">
                     <label class="checkbox-label">
-                        <input type="checkbox" id="schedulePost">
+                        <input type="checkbox" id="schedulePost" />
                         <span class="checkmark"></span>
                         Schedule for later
                     </label>
-                    <div id="scheduleDateTime" class="schedule-input" style="display: none;">
-                        <input type="datetime-local" id="scheduledDate" name="scheduledDate">
+                    <div id="scheduleDateTime" class="schedule-input" style="display: none">
+                        <input type="datetime-local" id="scheduledDate" name="scheduledDate" />
                     </div>
                 </div>
 
@@ -116,4 +115,5 @@
 
     <script type="module" src="/js/createPost.js"></script>
 </body>
+
 </html>

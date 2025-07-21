@@ -102,7 +102,11 @@ class AdminDashboard {
     document
       .getElementById("logoutBtn")
       .addEventListener("click", this.logout.bind(this));
-
+    document
+      .getElementById("backToProfileBtn")
+      .addEventListener("click", () => {
+        window.location.href = "/profile/" + encodeURIComponent(this.currentUser);
+      });
     // Modal event listeners
     document
       .getElementById("confirmYes")
@@ -362,3 +366,4 @@ window.adminDashboard; // Make it globally accessible
 document.addEventListener("DOMContentLoaded", () => {
   window.adminDashboard = new AdminDashboard();
 });
+

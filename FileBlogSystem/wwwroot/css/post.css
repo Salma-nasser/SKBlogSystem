@@ -515,11 +515,65 @@ body.dark-mode #modeToggle:hover {
 
 .post-container {
   max-width: 800px;
-  margin: 2rem auto;
-  padding: 2rem;
-  background-color: var(--bg-secondary);
-  border-radius: var(--radius-lg);
-  box-shadow: 0 8px 32px var(--shadow-medium);
+  margin: 40px auto;
+  padding: 24px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+  font-family: "Segoe UI", sans-serif;
+}
+
+/* Typography and readability */
+.post-container p {
+  font-size: 17px;
+  line-height: 1.7;
+  color: #333;
+  margin-bottom: 1em;
+}
+
+.post-container h1,
+.post-container h2,
+.post-container h3 {
+  margin-top: 1.5em;
+  color: #222;
+}
+
+/* Embedded image styling */
+.post-container img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 24px auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Lists and blockquotes */
+.post-container ul,
+.post-container ol {
+  padding-left: 1.5em;
+  margin: 1em 0;
+}
+
+.post-container blockquote {
+  margin: 1.5em 0;
+  padding: 1em 1.5em;
+  background-color: #f4f4f4;
+  border-left: 5px solid #ccc;
+  font-style: italic;
+}
+
+/* Optional: smooth spacing for inline elements */
+.post-container strong,
+.post-container em,
+.post-container a {
+  color: #0066cc;
+}
+
+/* Optional: if you want to preserve responsive image ratio */
+.post-container img[src*="http"] {
+  aspect-ratio: auto;
 }
 
 .post-header h1 {

@@ -53,7 +53,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // ---------- VIEW PROFILE ----------
   document.getElementById("profileBtn")?.addEventListener("click", () => {
-    window.location.href = "my-profile";
+    window.location.href = "/profile/" + localStorage.getItem("username");
   });
 
   // ---------- USER INFO & LOGOUT ----------
@@ -65,7 +65,7 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("logoutBtn")?.addEventListener("click", () => {
     localStorage.removeItem("jwtToken");
     localStorage.removeItem("username");
-    window.location.href = "login";
+    window.location.href = "/login";
   });
 
   // ---------- ADMIN BUTTON FOR ADMIN USERS ----------
@@ -166,7 +166,10 @@ window.addEventListener("DOMContentLoaded", () => {
         .querySelectorAll(".clickable-tag")
         .forEach((b) => b.classList.remove("active-filter"));
       el.classList.add("active-filter");
+
+      // Make "Show All Posts" button visible
       document.getElementById("clearFilterBtn").style.visibility = "visible";
+      document.getElementById("clearFilterBtn").style.display = "inline-block";
 
       activeFilter = {
         type: el.dataset.type,

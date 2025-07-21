@@ -1,1 +1,0 @@
-checking if images are uploaded correctly
