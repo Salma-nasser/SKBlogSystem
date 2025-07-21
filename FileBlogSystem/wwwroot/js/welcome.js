@@ -1,5 +1,9 @@
-// Ather&ink Blog Entrance Page JavaScript
+const menuBtn = document.getElementById("mobileMenuBtn");
+const navLinks = document.querySelector(".nav");
 
+menuBtn.addEventListener("click", () => {
+  navLinks.classList.toggle("nav-visible");
+});
 document.addEventListener("DOMContentLoaded", function () {
   // Mobile menu functionality
   const mobileMenuBtn = document.getElementById("mobileMenuBtn");
