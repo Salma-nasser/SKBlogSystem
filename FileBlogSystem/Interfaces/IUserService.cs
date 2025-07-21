@@ -11,6 +11,7 @@ namespace FileBlogSystem.Interfaces
         Task<IResult> UpdateUserProfile(string username, UpdateProfileRequest formData);
         Task<IResult> UpdatePassword(string username, string currentPassword, string newPassword);
         bool IsAdmin(ClaimsPrincipal user);
+        Task<IResult> DeleteUser(string username);
 
     }
 }

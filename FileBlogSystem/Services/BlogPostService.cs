@@ -278,28 +278,9 @@ public class BlogPostService : IBlogPostService
       {
         foreach (var image in request.Images)
         {
-          if (image.Length > 0)
-          {
-            var fileName = Path.GetFileName(image.FileName);
-            fileName = string.Join("_", fileName.Split(Path.GetInvalidFileNameChars()));
-
-            string uniqueFileName = fileName;
-            int counter = 1;
-            while (File.Exists(Path.Combine(assetsDirectory, uniqueFileName)))
-            {
-              string fileNameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
-              string extension = Path.GetExtension(fileName);
-              uniqueFileName = $"{fileNameWithoutExt}_{counter++}{extension}";
-            }
-
-            var filePath = Path.Combine(assetsDirectory, uniqueFileName);
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-              await image.CopyToAsync(stream);
-            }
-
-            savedImages.Add($"/assets/{uniqueFileName}");
-          }
+          var savedPath = await ImageService.SaveAndCompressAsync(image, assetsDirectory);
+          if (savedPath != null)
+            savedImages.Add(savedPath);
         }
       }
 
@@ -461,57 +442,28 @@ public class BlogPostService : IBlogPostService
       // Clear existing images - we'll replace them completely
       var newImages = new List<string>();
 
-      // Only process new images if they are provided
       if (updatedData.Images != null && updatedData.Images.Count > 0)
       {
         if (!Directory.Exists(assetsDirectory))
           Directory.CreateDirectory(assetsDirectory);
 
-        // Delete all existing image files in the assets directory
-        if (Directory.Exists(assetsDirectory))
+        // Delete all existing image files
+        foreach (var file in Directory.GetFiles(assetsDirectory))
         {
-          var existingFiles = Directory.GetFiles(assetsDirectory);
-          foreach (var file in existingFiles)
+          try { File.Delete(file); }
+          catch (Exception ex)
           {
-            try
-            {
-              File.Delete(file);
-            }
-            catch (Exception ex)
-            {
-              Console.WriteLine($"Warning: Could not delete existing image file {file}: {ex.Message}");
-            }
+            Console.WriteLine($"Warning: Could not delete image file {file}: {ex.Message}");
           }
         }
 
-        // Process and save new images
         foreach (var image in updatedData.Images)
         {
-          if (image.Length > 0)
-          {
-            var fileName = Path.GetFileName(image.FileName);
-            fileName = string.Join("_", fileName.Split(Path.GetInvalidFileNameChars()));
-
-            string uniqueFileName = fileName;
-            int counter = 1;
-            while (File.Exists(Path.Combine(assetsDirectory, uniqueFileName)))
-            {
-              string fileNameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
-              string extension = Path.GetExtension(fileName);
-              uniqueFileName = $"{fileNameWithoutExt}_{counter++}{extension}";
-            }
-
-            var filePath = Path.Combine(assetsDirectory, uniqueFileName);
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-              await image.CopyToAsync(stream);
-            }
-
-            newImages.Add($"/assets/{uniqueFileName}");
-          }
+          var savedPath = await ImageService.SaveAndCompressAsync(image, assetsDirectory);
+          if (savedPath != null)
+            newImages.Add(savedPath);
         }
       }
-      // If no new images are provided, keep existing images as they are
       else
       {
         newImages = existingImages;

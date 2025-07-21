@@ -28,5 +28,17 @@ public static class UserEndpoints
     .RequireAuthorization()
     .WithName("UpdateUserProfile")
     .WithTags("Users");
+    app.MapPatch("/api/users/delete/{username}", [Authorize] async (
+        string username,
+        HttpContext context,
+        IUserService userService) =>
+    {
+      var currentUser = context.User.Identity?.Name;
+      if (currentUser == null || currentUser != username)
+        return Results.Unauthorized();
+      return await userService.DeleteUser(username);
+    })
+    .RequireAuthorization()
+    .WithName("DeleteUser");
   }
 }

@@ -247,8 +247,9 @@ export function renderPosts(posts, containerId, options = {}) {
       const currentUsername = localStorage.getItem("username");
       const authorUrl =
         post.Author === currentUsername
-          ? "my-profile"
-          : `my-profile?username=${post.Author}`;
+          ? `/profile/${currentUsername}`
+          : `/profile/${post.author}`;
+      console.log("Author URL:", authorUrl);
       authorHtml = `<small>By <a href="${authorUrl}" class="author-link">${
         post.Author
       }</a> • ${new Date(post.PublishedDate).toLocaleString()}</small>`;
@@ -558,7 +559,7 @@ export function renderPosts(posts, containerId, options = {}) {
                   : ""
               }
             </div>
-            <a href="my-profile?username=${user.username}" style="
+            <a href="/profile/${user.username}" style="
               padding: 5px 12px;
               background: var(--accent-color, #c89b7b);
               color: white;

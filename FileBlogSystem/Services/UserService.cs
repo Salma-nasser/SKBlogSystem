@@ -342,16 +342,17 @@ public class UserService : IUserService
     string sanitizedUsername = SanitizeDirectoryName(username);
     string userDir = Path.Combine(_usersDirectory.FullName, sanitizedUsername);
     string assetsDir = Path.Combine(userDir, "assets");
-    Directory.CreateDirectory(assetsDir);
 
-    string cleanFileName = $"{username}_{Path.GetFileName(originalFileName)}";
-    string filePath = Path.Combine(assetsDir, cleanFileName);
+    var savedFileName = await ImageService.SaveAndCompressFromBase64Async(
+        base64Image,
+        originalFileName,
+        assetsDir,
+        filePrefix: $"{sanitizedUsername}_"
+    );
 
-    byte[] imageBytes = Convert.FromBase64String(base64Image);
-    await File.WriteAllBytesAsync(filePath, imageBytes);
-
-    return $"/Content/users/{username}/assets/{cleanFileName}";
+    return $"/Content/users/{sanitizedUsername}/assets/{savedFileName}";
   }
+
 
   private int GetUserPostsCount(string sanitizedUsername)
   {
@@ -415,6 +416,56 @@ public class UserService : IUserService
     {
       Console.WriteLine($"Error getting user posts count: {ex.Message}");
       return 0;
+    }
+  }
+  public async Task<IResult> DeleteUser(string username)
+  {
+    try
+    {
+      if (!UserDirectoryExists(username))
+        return Results.NotFound(new { message = "User not found" });
+
+      string sanitizedUsername = SanitizeDirectoryName(username);
+      string userDir = Path.Combine(_usersDirectory.FullName, sanitizedUsername);
+
+      
+      // Soft delete: mark all user's posts as IsDeleted = true in their meta.json
+      string postsDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Content", "posts");
+      if (Directory.Exists(postsDirectory))
+      {
+        var postDirectories = Directory.GetDirectories(postsDirectory);
+        foreach (var postDir in postDirectories)
+        {
+          string metaFile = Path.Combine(postDir, "meta.json");
+          if (!File.Exists(metaFile)) continue;
+
+          string metaJson = await File.ReadAllTextAsync(metaFile);
+          if (string.IsNullOrWhiteSpace(metaJson)) continue;
+
+          var options = new JsonSerializerOptions
+          {
+        PropertyNameCaseInsensitive = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+          };
+
+          var post = JsonSerializer.Deserialize<Post>(metaJson, options);
+          if (post == null || string.IsNullOrEmpty(post.Author)) continue;
+
+          if (post.Author.Equals(sanitizedUsername, StringComparison.OrdinalIgnoreCase))
+          {
+        // Mark post as deleted by setting IsDeleted property
+        post.GetType().GetProperty("IsDeleted")?.SetValue(post, true);
+
+        string updatedMetaJson = JsonSerializer.Serialize(post, options);
+        await File.WriteAllTextAsync(metaFile, updatedMetaJson);
+          }
+        }
+      }
+      return Results.Ok(new { message = "User deleted successfully" });
+    }
+    catch (Exception ex)
+    {
+      return Results.Problem($"An error occurred: {ex.Message}", statusCode: StatusCodes.Status500InternalServerError);
     }
   }
 }

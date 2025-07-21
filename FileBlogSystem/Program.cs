@@ -6,6 +6,9 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.Rewrite;
+using SixLabors.ImageSharp.Web.Middleware;
+using SixLabors.ImageSharp.Web.DependencyInjection;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,7 +30,7 @@ builder.Services.AddScoped<IBlogPostService, BlogPostService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddHostedService<ScheduledPostPublisher>();
-
+builder.Services.AddImageSharp();
 // Auth
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -76,7 +79,7 @@ app.UseHttpsRedirection();
 // Static Files for wwwroot
 app.UseDefaultFiles(new DefaultFilesOptions
 {
-  DefaultFileNames = { "welcome.html"}
+  DefaultFileNames = { "login.html" }
 });
 app.UseStaticFiles();
 
@@ -87,7 +90,7 @@ app.UseStaticFiles(new StaticFileOptions
         Path.Combine(builder.Environment.ContentRootPath, "Content")),
   RequestPath = "/Content"
 });
-
+app.UseImageSharp();
 app.UseRouting();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
@@ -102,7 +105,7 @@ app.MapAdminEndpoints();
 // Only in development, open browser
 if (app.Environment.IsDevelopment())
 {
-  var url = "https://localhost:7189/welcome";
+  var url = "https://localhost:7189/login";
   try
   {
     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
