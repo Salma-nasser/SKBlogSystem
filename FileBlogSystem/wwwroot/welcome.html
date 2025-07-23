@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ather & Ink</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Dancing+Script&family=Playfair+Display:wght@400;700&family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --prussian-blue: #003049;
+        --reseda-green: #748067;
+        --russet: #884515;
+        --isabelline: #f0eeeb;
+        --seasalt: #f9f9f8;
+
+        --font-heading: "Dancing Script", "Playfair Display", Georgia, serif;
+        --font-cursive: "Dancing Script", "Brush Script MT", cursive;
+        --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      body {
+        font-family: var(--font-body);
+        background-color: var(--seasalt);
+        color: var(--prussian-blue);
+        line-height: 1.6;
+      }
+
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+
+      /* Header */
+      header {
+        background: var(--prussian-blue);
+        color: var(--isabelline);
+        padding: 1rem 2%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .logo {
+        font-family: var(--font-cursive);
+        font-size: 2.4rem;
+      }
+
+      nav ul {
+        list-style: none;
+        display: flex;
+        gap: 1.5rem;
+      }
+
+      nav a {
+        font-size: 1rem;
+        transition: color 0.2s;
+      }
+
+      nav a:hover {
+        color: var(--russet);
+      }
+
+      /* Hero */
+      .hero {
+        position: relative;
+        height: 80vh;
+        min-height: 500px;
+        background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
+          url("placeholders/assets/backdrop.png") center/cover no-repeat;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        color: var(--isabelline);
+      }
+
+      .hero h1 {
+        font-family: var(--font-heading);
+        font-size: 3.5rem;
+        margin-bottom: 0.5rem;
+      }
+
+      .hero .tagline {
+        font-family: var(--font-cursive);
+        font-size: 1.5rem;
+        opacity: 0.9;
+        margin-bottom: 2rem;
+      }
+
+      .hero .cta-button {
+        background: var(--russet);
+        color: var(--isabelline);
+        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        font-family: var(--font-body);
+        font-weight: 600;
+        transition: transform 0.2s, background 0.2s;
+      }
+
+      .hero .cta-button:hover {
+        background: var(--prussian-blue);
+        transform: scale(1.05);
+      }
+
+      /* Rest of page (featured, categories, latest, newsletter, footer) */
+      .featured,
+      .categories,
+      .latest,
+      .newsletter,
+      footer {
+        padding: 3rem 2%;
+      }
+
+      .featured {
+        background: var(--isabelline);
+        text-align: center;
+      }
+
+      .categories {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 1.5rem;
+        text-align: center;
+      }
+
+      .latest .post-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 2rem;
+        max-width: 1000px;
+        margin: 0 auto;
+      }
+
+      .newsletter {
+        background: var(--prussian-blue);
+        color: var(--isabelline);
+        text-align: center;
+      }
+
+      footer {
+        background: var(--isabelline);
+        text-align: center;
+        font-size: 0.9rem;
+        color: var(--prussian-blue);
+      }
+
+      @media (max-width: 600px) {
+        .hero h1 {
+          font-size: 2.4rem;
+        }
+        .hero .tagline {
+          font-size: 1.2rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Header -->
+    <header>
+      <div class="logo">Ather & Ink</div>
+      <nav>
+        <ul>
+          <li><a href="#">Home</a></li>
+          <li><a href="#featured">Featured</a></li>
+          <li><a href="#categories">Categories</a></li>
+          <li><a href="#latest">Latest</a></li>
+          <li><a href="#contact">Contact</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <!-- Hero -->
+    <section class="hero">
+      <div>
+        <a href="/blog" class="cta-button">Explore the Blog</a>
+      </div>
+    </section>
+
+    <!-- Featured Post -->
+    <section id="featured" class="featured">
+      <h2>Featured Story</h2>
+      <p>
+        “How a Single Book Changed My World” – dive into a memoir of curiosity
+        and endless discovery.
+      </p>
+      <a href="#">Read the full post →</a>
+    </section>
+
+    <!-- Browse Categories -->
+    <section id="categories" class="categories">
+      <div class="cat-card">
+        <h3>Design</h3>
+        <p>UI/UX, typography & branding</p>
+      </div>
+      <div class="cat-card">
+        <h3>Dev</h3>
+        <p>CSS tips, JavaScript tricks</p>
+      </div>
+      <div class="cat-card">
+        <h3>Life</h3>
+        <p>Reflections & personal essays</p>
+      </div>
+      <div class="cat-card">
+        <h3>Bookshelf</h3>
+        <p>Reviews & recommendations</p>
+      </div>
+    </section>
+
+    <!-- Latest Posts -->
+    <section id="latest" class="latest">
+      <div class="post-list">
+        <article class="post">
+          <h4>Debugging a Flexbox Mystery</h4>
+          <p>
+            How I tracked down a subtle CSS quirk and restored pixel-perfect
+            alignment.
+          </p>
+        </article>
+        <article class="post">
+          <h4>Choosing the Right Color Palette</h4>
+          <p>Balancing emotion, readability & brand integrity in UI design.</p>
+        </article>
+        <article class="post">
+          <h4>The Magic of SessionStorage</h4>
+          <p>
+            Passing state between pages without polluting your URL or query
+            params.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <!-- Newsletter / Contact -->
+    <section id="contact" class="newsletter">
+      <h2>Hear from me</h2>
+      <p>
+        Get new posts, resources & behind-the-scenes updates delivered to your
+        inbox.
+      </p>
+      <form>
+        <input type="email" placeholder="Your email address" required />
+        <button type="submit">Subscribe</button>
+      </form>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <p>© 2025 Ather & Ink. Crafted with care & a dash of russet.</p>
+      <p><a href="#">Privacy Policy</a> · <a href="#">Terms of Use</a></p>
+    </footer>
+  </body>
+</html>
