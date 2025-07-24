@@ -55,6 +55,11 @@ public class UserService : IUserService
         return Results.Problem("Invalid user profile data", statusCode: StatusCodes.Status500InternalServerError);
       }
 
+      if (!user.IsActive)
+      {
+        return Results.Problem("Account is deleted", statusCode: 403);
+      }
+
       bool isPasswordValid = _passwordService.VerifyPassword(password, user.PasswordHash);
       if (!isPasswordValid)
       {
@@ -183,6 +188,11 @@ public class UserService : IUserService
         return Results.Problem("Invalid user profile data", statusCode: StatusCodes.Status500InternalServerError);
       }
 
+      if (!user.IsActive)
+      {
+        return Results.Problem("Account is deleted", statusCode: 403);
+      }
+
       bool isOwnProfile = !string.IsNullOrEmpty(requestingUser) && username.Equals(requestingUser, StringComparison.OrdinalIgnoreCase);
 
       if (isOwnProfile)
@@ -236,6 +246,8 @@ public class UserService : IUserService
       var user = await LoadUserProfile(profilePath);
       if (user == null)
         return Results.Problem("Invalid user profile data", statusCode: 500);
+      if (!user.IsActive)
+        return Results.Problem("Account is deleted", statusCode: 403);
 
       if (request.ConfirmPassword != null && !string.IsNullOrWhiteSpace(request.ConfirmPassword))
       {
@@ -301,6 +313,8 @@ public class UserService : IUserService
       var user = await LoadUserProfile(profilePath);
       if (user == null)
         return Results.Problem("Invalid user profile data", statusCode: 500);
+      if (!user.IsActive)
+        return Results.Problem("Account is deleted", statusCode: 403);
 
       // Verify current password
       bool isPasswordValid = _passwordService.VerifyPassword(currentPassword, user.PasswordHash);
@@ -423,44 +437,27 @@ public class UserService : IUserService
     try
     {
       if (!UserDirectoryExists(username))
-        return Results.NotFound(new { message = "User not found" });
+        return await Task.FromResult(Results.NotFound(new { message = "User not found" }));
 
       string sanitizedUsername = SanitizeDirectoryName(username);
       string userDir = Path.Combine(_usersDirectory.FullName, sanitizedUsername);
+      string profilePath = Path.Combine(userDir, "profile.json");
 
-      
-      // Soft delete: mark all user's posts as IsDeleted = true in their meta.json
-      string postsDirectory = Path.Combine(Directory.GetCurrentDirectory(), "Content", "posts");
-      if (Directory.Exists(postsDirectory))
+      if (File.Exists(profilePath))
       {
-        var postDirectories = Directory.GetDirectories(postsDirectory);
-        foreach (var postDir in postDirectories)
+        var user = await LoadUserProfile(profilePath);
+        if (user == null)
+          return Results.Problem("Invalid user profile data", statusCode: 500);
+
+        if (!user.IsActive)
         {
-          string metaFile = Path.Combine(postDir, "meta.json");
-          if (!File.Exists(metaFile)) continue;
-
-          string metaJson = await File.ReadAllTextAsync(metaFile);
-          if (string.IsNullOrWhiteSpace(metaJson)) continue;
-
-          var options = new JsonSerializerOptions
-          {
-        PropertyNameCaseInsensitive = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-          };
-
-          var post = JsonSerializer.Deserialize<Post>(metaJson, options);
-          if (post == null || string.IsNullOrEmpty(post.Author)) continue;
-
-          if (post.Author.Equals(sanitizedUsername, StringComparison.OrdinalIgnoreCase))
-          {
-        // Mark post as deleted by setting IsDeleted property
-        post.GetType().GetProperty("IsDeleted")?.SetValue(post, true);
-
-        string updatedMetaJson = JsonSerializer.Serialize(post, options);
-        await File.WriteAllTextAsync(metaFile, updatedMetaJson);
-          }
+          return Results.Problem("Account is deleted", statusCode: 403);
         }
+
+        user.IsActive = false;
+        await SaveUserProfile(profilePath, user);
       }
+
       return Results.Ok(new { message = "User deleted successfully" });
     }
     catch (Exception ex)

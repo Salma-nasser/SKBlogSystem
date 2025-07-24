@@ -42,6 +42,9 @@ public class BlogPostService : IBlogPostService
 
       if (post != null && post.IsPublished && post.Categories.Contains(category, StringComparer.OrdinalIgnoreCase))
       {
+        // Check if author is active
+        if (!IsUserActive(post.Author))
+          continue;
         if (!string.IsNullOrEmpty(currentUsername))
         {
           post.LikedByCurrentUser = post.Likes.Contains(currentUsername, StringComparer.OrdinalIgnoreCase);
@@ -69,6 +72,9 @@ public class BlogPostService : IBlogPostService
 
       if (post != null && post.IsPublished && post.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
       {
+        // Check if author is active
+        if (!IsUserActive(post.Author))
+          continue;
         if (!string.IsNullOrEmpty(currentUsername))
         {
           post.LikedByCurrentUser = post.Likes.Contains(currentUsername, StringComparer.OrdinalIgnoreCase);
@@ -89,6 +95,9 @@ public class BlogPostService : IBlogPostService
         var post = LoadPost(dir);
         if (post != null && post.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase))
         {
+          // Check if author is active
+          if (!IsUserActive(post.Author))
+            continue;
           if (!string.IsNullOrEmpty(currentUsername))
           {
             post.LikedByCurrentUser = post.Likes.Contains(currentUsername, StringComparer.OrdinalIgnoreCase);
@@ -122,7 +131,11 @@ public class BlogPostService : IBlogPostService
       }
 
       if (post != null && !post.IsPublished && post.Author.Equals(username, StringComparison.OrdinalIgnoreCase))
+      {
+        if (!IsUserActive(post.Author))
+          continue;
         yield return post;
+      }
     }
   }
 
@@ -144,6 +157,8 @@ public class BlogPostService : IBlogPostService
 
       if (post != null && post.Author.Equals(username, StringComparison.OrdinalIgnoreCase) && post.IsPublished)
       {
+        if (!IsUserActive(post.Author))
+          continue;
         if (!string.IsNullOrEmpty(username))
         {
           post.LikedByCurrentUser = post.Likes.Contains(username, StringComparer.OrdinalIgnoreCase);
@@ -651,7 +666,11 @@ public class BlogPostService : IBlogPostService
       }
 
       if (post != null)
+      {
+        if (!IsUserActive(post.Author))
+          continue;
         yield return post;
+      }
     }
   }
   private bool SlugExists(string slug)
@@ -711,7 +730,7 @@ public class BlogPostService : IBlogPostService
   }
 
   // ...existing code...
-  public IResult LikePost(string slug, string username)
+  public IResult LikePost(string slug, string likerUsername, NotificationService notificationService)
   {
     var postDir = GetPostDirectoryBySlug(slug);
     if (postDir == null)
@@ -721,14 +740,22 @@ public class BlogPostService : IBlogPostService
     if (post == null)
       return Results.NotFound(new { message = "Post not found" });
 
-    if (post.Likes.Contains(username, StringComparer.OrdinalIgnoreCase))
+    if (post.Likes.Contains(likerUsername, StringComparer.OrdinalIgnoreCase))
       return Results.BadRequest(new { message = "Post already liked" });
 
-    post.Likes.Add(username);
+    post.Likes.Add(likerUsername);
     SavePost(postDir, post);
+
+    // Send notification to the post's author (but not to self)
+    if (!string.Equals(post.Author, likerUsername, StringComparison.OrdinalIgnoreCase))
+    {
+      var message = $"{likerUsername} liked your post: \"{post.Title}\"";
+      notificationService.NotifyAsync(post.Author, message).Wait(); // or use `.GetAwaiter().GetResult()` if preferred
+    }
 
     return Results.Ok(new { message = "Post liked successfully", likeCount = post.Likes.Count });
   }
+
 
   public IResult UnlikePost(string slug, string username)
   {
@@ -838,12 +865,33 @@ public class BlogPostService : IBlogPostService
 
       if (post != null && post.IsPublished)
       {
+        if (!IsUserActive(post.Author))
+          continue;
         if (!string.IsNullOrEmpty(currentUsername))
         {
           post.LikedByCurrentUser = post.Likes.Contains(currentUsername, StringComparer.OrdinalIgnoreCase);
         }
         yield return post;
       }
+    }
+  }
+  // Helper method to check if a user is active
+  private bool IsUserActive(string username)
+  {
+    if (string.IsNullOrWhiteSpace(username))
+      return false;
+    var profilePath = Path.Combine(_usersDirectory, username, "profile.json");
+    if (!File.Exists(profilePath))
+      return false;
+    try
+    {
+      var json = File.ReadAllText(profilePath);
+      var user = JsonSerializer.Deserialize<User>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+      return user != null && user.IsActive;
+    }
+    catch
+    {
+      return false;
     }
   }
 

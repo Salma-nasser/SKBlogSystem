@@ -13,7 +13,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // If no query param, try to extract from path: /profile/{username}
   if (!profileUsername) {
     const pathMatch = window.location.pathname.match(/^\/profile\/(.+)$/);
-    if (pathMatch && pathMatch[1] && pathMatch[1] !== "my-profile") {
+    if (pathMatch && pathMatch[1] && pathMatch[1] !== "profile") {
       profileUsername = pathMatch[1];
     }
   }
@@ -173,7 +173,15 @@ window.addEventListener("DOMContentLoaded", () => {
     fetchDraftPosts();
   }
   loadUserInfo(targetUsername);
-
+  function deleteAccount() {
+    fetch(`https://localhost:7189/api/users/delete/${currentUsername}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
   function setupEditFunctionality() {
     // Edit section toggle buttons
     changeEmailBtn?.addEventListener("click", () => toggleEditSection("email"));
@@ -183,7 +191,15 @@ window.addEventListener("DOMContentLoaded", () => {
     changePictureBtn?.addEventListener("click", () =>
       toggleEditSection("picture")
     );
-
+    deleteAccountBtn?.addEventListener("click", () => {
+      showConfirmation(
+        "Delete Account",
+        "Are you sure you want to delete your account?",
+        () => {
+          deleteAccount();
+        }
+      );
+    });
     // Cancel buttons
     document
       .getElementById("cancelEmailChange")

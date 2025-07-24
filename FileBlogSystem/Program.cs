@@ -30,6 +30,7 @@ builder.Services.AddScoped<IBlogPostService, BlogPostService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddHostedService<ScheduledPostPublisher>();
+builder.Services.AddSingleton<NotificationService>();
 builder.Services.AddImageSharp();
 // Auth
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -79,7 +80,7 @@ app.UseHttpsRedirection();
 // Static Files for wwwroot
 app.UseDefaultFiles(new DefaultFilesOptions
 {
-  DefaultFileNames = { "login.html" }
+  DefaultFileNames = { "welcome.html" }
 });
 app.UseStaticFiles();
 
@@ -105,7 +106,7 @@ app.MapAdminEndpoints();
 // Only in development, open browser
 if (app.Environment.IsDevelopment())
 {
-  var url = "https://localhost:7189/login";
+  var url = "https://localhost:7189/welcome";
   try
   {
     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo

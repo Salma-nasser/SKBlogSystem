@@ -1,3 +1,73 @@
+// === NOTIFICATIONS PANEL ===
+function createNotificationsPanel() {
+  let panel = document.getElementById("notificationsPanel");
+  if (!panel) {
+    panel = document.createElement("aside");
+    panel.id = "notificationsPanel";
+    panel.style.position = "absolute";
+    panel.style.top = "120px";
+    panel.style.right = "30px";
+    panel.style.width = "340px";
+    panel.style.maxHeight = "70vh";
+    panel.style.overflowY = "auto";
+    panel.style.background = "#fff8e1";
+    panel.style.border = "1px solid #d4c4b0";
+    panel.style.borderRadius = "12px";
+    panel.style.boxShadow = "0 2px 16px rgba(139,69,19,0.10)";
+    panel.style.padding = "18px 18px 8px 18px";
+    panel.style.zIndex = 100;
+    panel.innerHTML = `<h3 style='margin-top:0;margin-bottom:12px;color:#8b4513;font-size:1.2rem;'>Notifications</h3><div id="notificationsList"></div>`;
+    document.body.appendChild(panel);
+  }
+}
+
+async function getAllNotifications() {
+  try {
+    // Use a new endpoint to get all notifications (read and unread)
+    const res = await fetch("/notifications?all=true");
+    if (!res.ok) return;
+    const notifications = await res.json();
+    renderNotifications(notifications);
+  } catch (e) {
+    // Optionally log or ignore
+  }
+}
+
+function renderNotifications(notifications) {
+  createNotificationsPanel();
+  const list = document.getElementById("notificationsList");
+  if (!list) return;
+  list.innerHTML = "";
+  if (!notifications || notifications.length === 0) {
+    list.innerHTML = `<div style='color:#8a7a6e;'>No notifications yet.</div>`;
+    return;
+  }
+  notifications.forEach((n) => {
+    const notif = document.createElement("div");
+    notif.className = "notification-item";
+    notif.style.background = n.isRead ? "#f3f3f3" : "#ffe4b5";
+    notif.style.color = "#2c1810";
+    notif.style.borderRadius = "7px";
+    notif.style.padding = "10px 12px";
+    notif.style.marginBottom = "10px";
+    notif.style.fontSize = "0.98rem";
+    notif.style.borderLeft = n.isRead
+      ? "4px solid #d4c4b0"
+      : "4px solid #8b4513";
+    notif.innerHTML = `<span>${
+      n.message
+    }</span><br><span style='font-size:0.8em;color:#8a7a6e;'>${new Date(
+      n.createdAt
+    ).toLocaleString()}</span>`;
+    list.appendChild(notif);
+  });
+}
+
+// Only set one polling interval for notifications
+if (!window._notificationsIntervalSet) {
+  setInterval(getAllNotifications, 10000); // every 10s
+  window._notificationsIntervalSet = true;
+}
 import { renderPosts } from "./utils/renderPost.js";
 import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
@@ -183,6 +253,17 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // ---------- INITIAL POSTS LOAD ----------
   reloadPosts();
+  // Start notification panel polling after DOM is ready
+  getAllNotifications();
+  createNotificationsPanel();
+
+  // Patch like button handler to refresh notifications after like
+  document.body.addEventListener("click", async (e) => {
+    if (e.target.classList.contains("like-toggle")) {
+      // Wait a moment for backend to process, then refresh notifications
+      setTimeout(getAllNotifications, 500);
+    }
+  });
 });
 
 // ---------- SHARED HELPERS ----------

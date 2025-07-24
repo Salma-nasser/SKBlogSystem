@@ -1,0 +1,213 @@
+:root {
+  /* Base Colors */
+  --bg-color: #f8f6f3;
+  --bg-secondary: #ffffff;
+  --text-color: #2c1810;
+  --text-muted: #6b5b4f;
+  --text-light: #8a7a6e;
+
+  /* Brand Colors */
+  --primary-color: #8b4513;
+  --primary-hover: #7a3c0f;
+  --accent-color: #d2691e;
+  --accent-hover: #b8601a;
+
+  --accent-secondary: #a8c49a;
+  --accent-secondary-hover: #9bb88d;
+  --accent-tertiary: #c4a8c4;
+  --accent-tertiary-hover: #b894b8;
+
+  --border-color: #d4c4b0;
+  --border-hover: #c2b09d;
+
+  --shadow-light: rgba(139, 69, 19, 0.08);
+  --shadow-medium: rgba(139, 69, 19, 0.15);
+  --shadow-heavy: rgba(139, 69, 19, 0.25);
+
+  --success-color: #5d7c4a;
+  --success-hover: #4d6b3a;
+  --warning-color: #b8860b;
+  --warning-hover: #9e7209;
+  --error-color: #a0522d;
+  --error-hover: #8b4513;
+  --info-color: #708090;
+  --info-hover: #5f6f7f;
+
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing-md: 1rem;
+  --spacing-lg: 1.5rem;
+  --spacing-xl: 2rem;
+  --spacing-2xl: 3rem;
+  --spacing-3xl: 4rem;
+
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  --font-heading: "Dancing Script", "Playfair Display", Georgia, serif;
+  --font-cursive: "Dancing Script", "Brush Script MT", cursive;
+  --font-body: "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
+
+  --container-max-width: 800px;
+  --header-height: 80px;
+
+  /* Compatibility */
+  --post-bg: var(--bg-secondary);
+  --card-background: var(--bg-secondary);
+  --header-bg: var(--bg-secondary);
+  --header-text: var(--text-color);
+  --header-shadow: var(--shadow-light);
+  --button-bg: var(--primary-color);
+  --button-text: white;
+  --secondary-button-bg: var(--accent-color);
+  --secondary-button-hover: var(--accent-hover);
+  --input-border: var(--border-color);
+  --input-focus: var(--accent-color);
+  --accent-color-light: rgba(232, 168, 176, 0.1);
+  --success-bg: rgba(168, 200, 176, 0.1);
+  --error-bg: rgba(232, 168, 168, 0.1);
+  --pure-white: #ffffff;
+  --section-padding: 80px 0;
+  --transition: all 0.3s ease;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  line-height: 1.6;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Header */
+header {
+  background: var(--bg-secondary);
+  color: var(--text-color);
+  padding: 1rem 2%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 4px var(--shadow-light);
+}
+
+.logo {
+  font-family: var(--font-cursive);
+  font-size: 2.4rem;
+}
+
+nav ul {
+  list-style: none;
+  display: flex;
+  gap: 1.5rem;
+}
+
+nav a {
+  font-size: 1rem;
+  transition: color 0.2s;
+}
+
+nav a:hover {
+  color: var(--accent-color);
+}
+
+/* Hero */
+.hero {
+  position: relative;
+  height: 80vh;
+  min-height: 500px;
+  background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
+    url("/placeholders/assets/backdrop.png") center/cover no-repeat;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--pure-white);
+}
+
+.hero h1 {
+  font-family: var(--font-heading);
+  font-size: 3.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.hero .tagline {
+  font-family: var(--font-cursive);
+  font-size: 1.5rem;
+  opacity: 0.9;
+  margin-bottom: 2rem;
+}
+.cta-button {
+  background: var(--primary-color);
+  color: var(--pure-white);
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  font-weight: 600;
+  transition: transform 0.2s, background 0.2s;
+}
+.cta-button:hover {
+  background: var(--primary-hover);
+  transform: scale(1.05);
+}
+
+/* Sections */
+.featured,
+.categories,
+.latest,
+.newsletter,
+footer {
+  padding: 3rem 2%;
+}
+
+.featured {
+  background: var(--bg-secondary);
+  text-align: center;
+}
+
+.categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1.5rem;
+  text-align: center;
+}
+
+.latest .post-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.newsletter {
+  background: var(--primary-color);
+  color: var(--pure-white);
+  text-align: center;
+}
+
+footer {
+  background: var(--bg-secondary);
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+@media (max-width: 600px) {
+  .hero h1 {
+    font-size: 2.4rem;
+  }
+  .hero .tagline {
+    font-size: 1.2rem;
+  }
+}

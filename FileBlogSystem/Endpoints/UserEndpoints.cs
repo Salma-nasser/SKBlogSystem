@@ -1,5 +1,6 @@
 using FileBlogSystem.Interfaces;
 using FileBlogSystem.Models;
+using FileBlogSystem.Services;
 using Microsoft.AspNetCore.Authorization;
 namespace FileBlogSystem.Endpoints;
 
@@ -40,5 +41,23 @@ public static class UserEndpoints
     })
     .RequireAuthorization()
     .WithName("DeleteUser");
+    app.MapGet("/notifications", async (HttpContext ctx, NotificationService notificationService) =>
+{
+  var username = ctx.User.Identity?.Name;
+  if (username == null) return Results.Unauthorized();
+
+  var notifications = await notificationService.GetUnreadAsync(username);
+  return Results.Ok(notifications);
+});
+
+    app.MapPost("/notifications/read/{id:int}", async (int id, HttpContext ctx, NotificationService service) =>
+    {
+      var username = ctx.User.Identity?.Name;
+      if (username == null) return Results.Unauthorized();
+
+      await service.MarkAsReadAsync(username, id);
+      return Results.Ok();
+    });
+
   }
 }

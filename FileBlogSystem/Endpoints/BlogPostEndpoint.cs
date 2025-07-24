@@ -2,6 +2,7 @@ using FileBlogSystem.Models;
 using FileBlogSystem.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using System.Xml.Linq;
+using FileBlogSystem.Services;
 
 namespace FileBlogSystem.Endpoints;
 
@@ -164,14 +165,14 @@ public static class BlogPostEndpoints
         });
 
         // Like endpoints
-        app.MapPost("/api/posts/{slug}/like", [Authorize] (string slug, HttpContext ctx, IBlogPostService service) =>
+        app.MapPost("/api/posts/{slug}/like", [Authorize] (string slug, HttpContext ctx, IBlogPostService service,NotificationService notificationService) =>
         {
             var userName = ctx.User.Identity?.Name;
 
             if (string.IsNullOrEmpty(userName))
                 return Results.Unauthorized();
 
-            return service.LikePost(slug, userName);
+            return service.LikePost(slug, userName, notificationService);
         })
         .WithName("LikePost")
         .WithTags("BlogPosts");

@@ -60,7 +60,10 @@ if (registerForm) {
       });
 
       if (response.ok) {
-        window.location.href = `blog?username=${encodeURIComponent(username)}`;
+        const data = await response.json();
+        localStorage.setItem("jwtToken", data.token);
+        localStorage.setItem("username", username);
+        window.location.href = "blog";
       } else {
         const error = await response.json();
         document.getElementById("errorMessage").innerText =
