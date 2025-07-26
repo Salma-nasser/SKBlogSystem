@@ -1,4 +1,5 @@
 using FileBlogSystem.Endpoints;
+using FileBlogSystem.Hubs;
 using FileBlogSystem.Services;
 using FileBlogSystem.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -31,6 +32,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddHostedService<ScheduledPostPublisher>();
 builder.Services.AddSingleton<NotificationService>();
+builder.Services.AddSignalR();
 builder.Services.AddImageSharp();
 // Auth
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -50,6 +52,14 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod();
   });
 });
+//email
+builder.Services.AddSingleton(new EmailService(
+    smtpHost: "smtp.gmail.com",       // Or your provider
+    smtpPort: 587,
+    fromAddress: "salma.naser1020@gmail.com",
+    smtpUser: "salma.naser1020@gmail.com",
+    smtpPassword: "msqo gsmd tezi vznp" // Gmail requires an App Password
+));
 
 builder.Services.AddAuthorization();
 builder.Services.Configure<FormOptions>(options =>
@@ -102,6 +112,7 @@ app.MapBlogPostEndpoints();
 app.MapAuthEndpoints();
 app.MapUserEndpoints();
 app.MapAdminEndpoints();
+app.MapHub<NotificationHub>("/notificationHub");
 
 // Only in development, open browser
 if (app.Environment.IsDevelopment())

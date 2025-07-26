@@ -13,4 +13,7 @@ public class User
     public string Bio { get; set; } = string.Empty;
     public DateTime LastLoginDate { get; set; }
     public bool IsActive { get; set; } = true;
+
+    public string? ResetToken { get; set; }
+    public DateTime? ResetTokenExpiration { get; set; }
 }

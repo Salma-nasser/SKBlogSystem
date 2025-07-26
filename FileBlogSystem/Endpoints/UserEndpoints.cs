@@ -2,6 +2,7 @@ using FileBlogSystem.Interfaces;
 using FileBlogSystem.Models;
 using FileBlogSystem.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity.Data;
 namespace FileBlogSystem.Endpoints;
 
 public static class UserEndpoints
@@ -58,6 +59,21 @@ public static class UserEndpoints
       await service.MarkAsReadAsync(username, id);
       return Results.Ok();
     });
+    app.MapPost("/api/users/forgot-password", async (FileBlogSystem.Models.ForgotPasswordRequest request, IUserService userService) =>
+    {
+      if (string.IsNullOrEmpty(request.Username))
+        return Results.BadRequest("Username is required.");
 
+      var result = await userService.ForgotPassword(request.Username, request.Email);
+      return result;
+    });
+    app.MapPost("/api/users/reset-password", async (FileBlogSystem.Models.ResetPasswordRequest request, IUserService userService) =>
+    {
+      if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.NewPassword))
+        return Results.BadRequest("Username and new password are required.");
+
+      var result = await userService.ResetPassword(request.Username, request.NewPassword);
+      return result;
+    });
   }
 }

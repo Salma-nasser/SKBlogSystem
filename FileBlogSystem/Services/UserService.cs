@@ -465,4 +465,72 @@ public class UserService : IUserService
       return Results.Problem($"An error occurred: {ex.Message}", statusCode: StatusCodes.Status500InternalServerError);
     }
   }
+public async Task<IResult> ResetPassword(string username, string newPassword)
+  {
+    try
+    {
+      if (!UserDirectoryExists(username))
+        return Results.NotFound(new { message = "User not found" });
+
+      string sanitizedUsername = SanitizeDirectoryName(username);
+      string userDir = Path.Combine(_usersDirectory.FullName, sanitizedUsername);
+      string profilePath = Path.Combine(userDir, "profile.json");
+
+      if (!File.Exists(profilePath))
+        return Results.NotFound(new { message = "User profile not found" });
+
+      var user = await LoadUserProfile(profilePath);
+      if (user == null)
+        return Results.Problem("Invalid user profile data", statusCode: 500);
+
+      if (!user.IsActive)
+        return Results.Problem("Account is deleted", statusCode: 403);
+
+      // Hash the new password
+      user.PasswordHash = _passwordService.HashPassword(newPassword);
+
+      await SaveUserProfile(profilePath, user);
+
+      return Results.Ok(new { message = "Password reset successfully" });
+    }
+    catch (Exception ex)
+    {
+      return Results.Problem($"An error occurred: {ex.Message}", statusCode: StatusCodes.Status500InternalServerError);
+    }
+  }
+public async Task<IResult> ForgotPassword(string username, string email, EmailService emailService)
+{
+  try
+  {
+    if (!UserDirectoryExists(username))
+      return Results.NotFound(new { message = "User not found" });
+
+    string sanitizedUsername = SanitizeDirectoryName(username);
+    string userDir = Path.Combine(_usersDirectory.FullName, sanitizedUsername);
+    string profilePath = Path.Combine(userDir, "profile.json");
+
+    if (!File.Exists(profilePath))
+      return Results.NotFound(new { message = "User profile not found" });
+
+    var user = await LoadUserProfile(profilePath);
+    if (user == null)
+      return Results.Problem("Invalid user profile data", statusCode: 500);
+
+    if (!user.IsActive)
+      return Results.Problem("Account is deleted", statusCode: 403);
+
+    if (user.Email != email)
+      return Results.BadRequest(new { message = "Email does not match the registered email for this user" });
+
+    string resetToken = _passwordService.GenerateAndStoreResetToken(user);
+    await SaveUserProfile(profilePath, user); // Make sure token is persisted
+
+    await emailService.SendPasswordResetEmail(user.Email, user.Username, resetToken);
+
+    return Results.Ok(new { message = "Password reset email sent" });
+  }
+  catch (Exception ex)
+  {
+    return Results.Problem($"An error occurred: {ex.Message}", statusCode: StatusCodes.Status500InternalServerError);
+  }
 }
