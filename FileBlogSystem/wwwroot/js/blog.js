@@ -1,73 +1,3 @@
-// === NOTIFICATIONS PANEL ===
-function createNotificationsPanel() {
-  let panel = document.getElementById("notificationsPanel");
-  if (!panel) {
-    panel = document.createElement("aside");
-    panel.id = "notificationsPanel";
-    panel.style.position = "absolute";
-    panel.style.top = "120px";
-    panel.style.right = "30px";
-    panel.style.width = "340px";
-    panel.style.maxHeight = "70vh";
-    panel.style.overflowY = "auto";
-    panel.style.background = "#fff8e1";
-    panel.style.border = "1px solid #d4c4b0";
-    panel.style.borderRadius = "12px";
-    panel.style.boxShadow = "0 2px 16px rgba(139,69,19,0.10)";
-    panel.style.padding = "18px 18px 8px 18px";
-    panel.style.zIndex = 100;
-    panel.innerHTML = `<h3 style='margin-top:0;margin-bottom:12px;color:#8b4513;font-size:1.2rem;'>Notifications</h3><div id="notificationsList"></div>`;
-    document.body.appendChild(panel);
-  }
-}
-
-async function getAllNotifications() {
-  try {
-    // Use a new endpoint to get all notifications (read and unread)
-    const res = await fetch("/notifications?all=true");
-    if (!res.ok) return;
-    const notifications = await res.json();
-    renderNotifications(notifications);
-  } catch (e) {
-    // Optionally log or ignore
-  }
-}
-
-function renderNotifications(notifications) {
-  createNotificationsPanel();
-  const list = document.getElementById("notificationsList");
-  if (!list) return;
-  list.innerHTML = "";
-  if (!notifications || notifications.length === 0) {
-    list.innerHTML = `<div style='color:#8a7a6e;'>No notifications yet.</div>`;
-    return;
-  }
-  notifications.forEach((n) => {
-    const notif = document.createElement("div");
-    notif.className = "notification-item";
-    notif.style.background = n.isRead ? "#f3f3f3" : "#ffe4b5";
-    notif.style.color = "#2c1810";
-    notif.style.borderRadius = "7px";
-    notif.style.padding = "10px 12px";
-    notif.style.marginBottom = "10px";
-    notif.style.fontSize = "0.98rem";
-    notif.style.borderLeft = n.isRead
-      ? "4px solid #d4c4b0"
-      : "4px solid #8b4513";
-    notif.innerHTML = `<span>${
-      n.message
-    }</span><br><span style='font-size:0.8em;color:#8a7a6e;'>${new Date(
-      n.createdAt
-    ).toLocaleString()}</span>`;
-    list.appendChild(notif);
-  });
-}
-
-// Only set one polling interval for notifications
-if (!window._notificationsIntervalSet) {
-  setInterval(getAllNotifications, 10000); // every 10s
-  window._notificationsIntervalSet = true;
-}
 import { renderPosts } from "./utils/renderPost.js";
 import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
@@ -255,7 +185,6 @@ window.addEventListener("DOMContentLoaded", () => {
   reloadPosts();
   // Start notification panel polling after DOM is ready
   getAllNotifications();
-  createNotificationsPanel();
 
   // Patch like button handler to refresh notifications after like
   document.body.addEventListener("click", async (e) => {
@@ -351,5 +280,124 @@ document.body.addEventListener("click", (e) => {
     const clickedIndex = images.indexOf(e.target.src);
 
     openImageModal(images, clickedIndex);
+  }
+});
+// === NOTIFICATIONS PANEL ===
+// === NOTIFICATIONS DROPDOWN ===
+function createNotificationsDropdown() {
+  let dropdown = document.getElementById("notificationsDropdown");
+  if (!dropdown) {
+    dropdown = document.createElement("div");
+    dropdown.id = "notificationsDropdown";
+    dropdown.style.position = "absolute";
+    dropdown.style.top = "56px";
+    dropdown.style.right = "32px";
+    dropdown.style.width = "340px";
+    dropdown.style.maxHeight = "70vh";
+    dropdown.style.overflowY = "auto";
+    dropdown.style.background = "#fff8e1";
+    dropdown.style.border = "1px solid #d4c4b0";
+    dropdown.style.borderRadius = "12px";
+    dropdown.style.boxShadow = "0 2px 16px rgba(139,69,19,0.10)";
+    dropdown.style.padding = "18px 18px 8px 18px";
+    dropdown.style.zIndex = 100;
+    dropdown.style.display = "none";
+    dropdown.innerHTML = `<h3 style='margin-top:0;margin-bottom:12px;color:#8b4513;font-size:1.2rem;'>Notifications</h3><div id="notificationsList"></div>`;
+    document.body.appendChild(dropdown);
+  }
+}
+
+async function getAllNotifications() {
+  try {
+    const res = await fetch("/notifications?all=true", {
+      headers: {
+        "Content-Type": "application/json",
+        ...getAuthHeaders(),
+      },
+    });
+    if (!res.ok) return;
+    const notifications = await res.json();
+    renderNotificationsDropdown(notifications);
+    // Update unread count badge
+    const badge = document.getElementById("bellUnreadCount");
+    if (badge) {
+      const unreadCount = notifications.filter((n) => !n.IsRead).length;
+      if (unreadCount > 0) {
+        badge.textContent = unreadCount > 99 ? "99+" : unreadCount;
+        badge.style.display = "inline-block";
+      } else {
+        badge.style.display = "none";
+      }
+    }
+  } catch (e) {
+    // Optionally log or ignore
+  }
+}
+
+// Render notifications in dropdown
+function renderNotificationsDropdown(notifications) {
+  createNotificationsDropdown();
+  const dropdown = document.getElementById("notificationsDropdown");
+  const list = document.getElementById("notificationsList");
+  if (!list) return;
+  list.innerHTML = "";
+  if (!notifications || notifications.length === 0) {
+    list.innerHTML = `<div style='color:#8a7a6e;'>No notifications yet.</div>`;
+    return;
+  }
+  notifications.forEach((n) => {
+    const notif = document.createElement("div");
+    notif.className = "notification-item";
+    notif.style.background = "#ffe4b5";
+    notif.style.color = "#2c1810";
+    notif.style.borderRadius = "7px";
+    notif.style.padding = "10px 12px";
+    notif.style.marginBottom = "10px";
+    notif.style.fontSize = "0.98rem";
+    notif.style.borderLeft = n.IsRead ? "none" : "4px solid #8b4513";
+    notif.innerHTML = `<span>${
+      n.Message
+    }</span><br><span style='font-size:0.8em;color:#8a7a6e;'>${new Date(
+      n.CreatedAt
+    ).toLocaleString()}</span>`;
+    if (!n.IsRead) {
+      notif.style.cursor = "pointer";
+      notif.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        notif.style.pointerEvents = "none";
+        await fetch(`/notifications/read/${n.Id}`, {
+          method: "POST",
+          headers: getAuthHeaders(),
+        });
+        getAllNotifications();
+      });
+    }
+    list.appendChild(notif);
+  });
+}
+// Show/hide dropdown on bell click
+document.addEventListener("DOMContentLoaded", () => {
+  const bell = document.getElementById("notificationBell");
+  createNotificationsDropdown();
+  if (bell) {
+    bell.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const dropdown = document.getElementById("notificationsDropdown");
+      if (dropdown.style.display === "none" || !dropdown.style.display) {
+        dropdown.style.display = "block";
+        getAllNotifications();
+      } else {
+        dropdown.style.display = "none";
+      }
+    });
+    // Hide dropdown when clicking outside
+    document.addEventListener("click", (e) => {
+      const dropdown = document.getElementById("notificationsDropdown");
+      if (dropdown && dropdown.style.display === "block") {
+        if (!dropdown.contains(e.target) && e.target !== bell) {
+          dropdown.style.display = "none";
+        }
+      }
+    });
   }
 });

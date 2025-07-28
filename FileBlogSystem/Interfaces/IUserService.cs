@@ -1,5 +1,6 @@
 using FileBlogSystem.Models;
 using System.Security.Claims;
+using FileBlogSystem.Services;
 
 namespace FileBlogSystem.Interfaces
 {
@@ -12,7 +13,7 @@ namespace FileBlogSystem.Interfaces
         Task<IResult> UpdatePassword(string username, string currentPassword, string newPassword);
         bool IsAdmin(ClaimsPrincipal user);
         Task<IResult> DeleteUser(string username);
-        Task<IResult> ResetPassword(string username, string newPassword);
-        Task<IResult> ForgotPassword(string username, string email);
+        Task<IResult> ResetPassword(string username, string newPassword, string otpCode);
+        Task<IResult> ForgotPassword(string username, string email, EmailService emailService);
     }
 }

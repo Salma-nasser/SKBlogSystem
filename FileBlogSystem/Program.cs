@@ -71,7 +71,7 @@ var app = builder.Build();
 
 // URL Rewriting for kebab-case URLs
 var rewriteOptions = new RewriteOptions()
-    .AddRewrite("^$", "login.html", skipRemainingRules: true)
+    .AddRewrite("^$", "welcome.html", skipRemainingRules: true)
     .AddRewrite("^login/?$", "login.html", skipRemainingRules: true)
     .AddRewrite("^register/?$", "register.html", skipRemainingRules: true)
     .AddRewrite("^blog/?$", "blog.html", skipRemainingRules: true)
@@ -79,7 +79,6 @@ var rewriteOptions = new RewriteOptions()
     .AddRewrite("^admin/?$", "admin.html", skipRemainingRules: true)
     .AddRewrite("^create-post/?$", "createPost.html", skipRemainingRules: true)
     .AddRewrite("^post/([^/?]+)/?$", "post.html?slug=$1", skipRemainingRules: true)
-    .AddRewrite("^welcome/?$", "welcome.html", skipRemainingRules: true)
     .AddRewrite("^modify-post/([^/?]+)/?$", "modifyPost.html?slug=$1", skipRemainingRules: true);
 
 app.UseRewriter(rewriteOptions);
@@ -117,7 +116,7 @@ app.MapHub<NotificationHub>("/notificationHub");
 // Only in development, open browser
 if (app.Environment.IsDevelopment())
 {
-  var url = "https://localhost:7189/welcome";
+  var url = "https://localhost:7189";
   try
   {
     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo

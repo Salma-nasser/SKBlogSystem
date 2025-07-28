@@ -22,11 +22,16 @@ window.addEventListener("DOMContentLoaded", () => {
   const currentUsername = localStorage.getItem("username");
   const token = localStorage.getItem("jwtToken");
 
-  // Determine if this is the user's own profile
-  const isOwnProfile =
-    profileUsername === currentUsername ||
-    (!profileUsername && window.location.pathname === "/profile/my-profile");
-  const targetUsername = isOwnProfile ? currentUsername : profileUsername;
+  // If path is /profile/my-profile, always use localStorage username
+  let isOwnProfile = false;
+  let targetUsername = profileUsername;
+  if (window.location.pathname === "/profile/my-profile") {
+    isOwnProfile = true;
+    targetUsername = currentUsername;
+  } else {
+    isOwnProfile = profileUsername === currentUsername;
+    targetUsername = isOwnProfile ? currentUsername : profileUsername;
+  }
 
   const ProfileTitle = document.getElementById("ProfileTitle");
   // Update page title and header

@@ -105,7 +105,8 @@ class AdminDashboard {
     document
       .getElementById("backToProfileBtn")
       .addEventListener("click", () => {
-        window.location.href = "/profile/" + encodeURIComponent(this.currentUser);
+        window.location.href =
+          "/profile/" + encodeURIComponent(this.currentUser);
       });
     // Modal event listeners
     document
@@ -173,7 +174,6 @@ class AdminDashboard {
         </span>
       </td>
       <td>${this.formatDate(user.CreatedAt)}</td>
-      <td>${this.formatDate(user.LastLoginDate)}</td>
       <td>
         <span class="status-badge status-${
           user.IsActive ? "active" : "inactive"
@@ -366,4 +366,3 @@ window.adminDashboard; // Make it globally accessible
 document.addEventListener("DOMContentLoaded", () => {
   window.adminDashboard = new AdminDashboard();
 });
-

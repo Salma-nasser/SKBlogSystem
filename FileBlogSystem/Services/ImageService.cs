@@ -39,7 +39,7 @@ public class ImageService
     imageSharp.Mutate(x => x.Resize(new ResizeOptions
     {
       Mode = ResizeMode.Max,
-      Size = new Size(1200, 0)
+      Size = new Size(1200, 900)
     }));
 
     await SaveWithFormatAsync(imageSharp, filePath, extension);

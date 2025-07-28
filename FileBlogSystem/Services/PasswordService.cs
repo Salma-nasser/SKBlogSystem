@@ -54,13 +54,14 @@ public class PasswordService
     // ✅ Generate and store reset token on the user
     public string GenerateAndStoreResetToken(User user)
     {
-        byte[] tokenBytes = RandomNumberGenerator.GetBytes(32);
-        string token = Convert.ToBase64String(tokenBytes);
+        // Generate a 6-digit OTP code
+        var rnd = new Random();
+        string otpCode = rnd.Next(100000, 999999).ToString();
 
-        user.ResetToken = token;
+        user.ResetToken = otpCode;
         user.ResetTokenExpiration = DateTime.UtcNow.Add(ResetTokenLifetime);
 
-        return token;
+        return otpCode;
     }
 
     // ✅ Check if the token is valid for this user

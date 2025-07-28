@@ -241,7 +241,7 @@ public class BlogPostService : IBlogPostService
       var description = GetSafeString("description");
       var author = GetSafeString("author");
       if (string.IsNullOrEmpty(author))
-        author = GetSafeString("authorUsername");
+        author = GetSafeString("author");
       var slug = GetSafeString("slug");
 
       var publishedDate = GetSafeDateTime("publishedDate", DateTime.UtcNow);
@@ -271,7 +271,7 @@ public class BlogPostService : IBlogPostService
     }
   }
 
-  public async Task<dynamic> CreatePostAsync(CreatePostRequest request, string authorUsername)
+  public async Task<dynamic> CreatePostAsync(CreatePostRequest request, string author)
   {
     try
     {
@@ -310,7 +310,7 @@ public class BlogPostService : IBlogPostService
         request.Title,
         request.Description,
         request.CustomUrl,
-        AuthorUsername = authorUsername,
+        Author = author,
         request.Tags,
         request.Categories,
         PublishedDate = date,
@@ -318,7 +318,7 @@ public class BlogPostService : IBlogPostService
         Slug = slug,
         request.IsPublished,
         request.ScheduledDate,
-        Images = savedImages
+        Images = savedImages.Select(img => $"/assets/{img}"),
       };
 
       var meta = JsonSerializer.Serialize(postMeta, new JsonSerializerOptions { WriteIndented = true });
@@ -333,19 +333,20 @@ public class BlogPostService : IBlogPostService
         request.Title,
         request.Description,
         request.Body,
-        AuthorUsername = authorUsername,
+        Author = author,
         request.Tags,
         request.Categories,
         PublishedDate = date,
         request.IsPublished,
         request.ScheduledDate,
-        Images = savedImages.Select(img => $"/{date:yyyy-MM-dd}-{slug}{img}")
+        Images = savedImages.Select(img => $"/assets/{img}")
       };
     }
     catch (Exception ex)
     {
       Console.WriteLine($"Error creating post: {ex.Message}");
-      throw new Exception("An error occurred while creating the post.");
+      Console.WriteLine(ex.StackTrace);
+      throw new Exception($"An error occurred while creating the post: {ex.Message}", ex);
     }
   }
   public async Task<(bool Success, string Message)> ModifyPostAsync(string slug, CreatePostRequest updatedData, string currentUsername)
@@ -442,7 +443,7 @@ public class BlogPostService : IBlogPostService
       // Now use the safe accessors
       var authorUsername = GetSafeString("author");
       if (string.IsNullOrEmpty(authorUsername))
-        authorUsername = GetSafeString("authorUsername");
+        authorUsername = GetSafeString("author");
 
       var publishedDate = GetSafeDateTime("publishedDate", DateTime.UtcNow);
       var existingLikes = GetSafeStringArray("likes");
@@ -457,12 +458,13 @@ public class BlogPostService : IBlogPostService
       // Clear existing images - we'll replace them completely
       var newImages = new List<string>();
 
-      if (updatedData.Images != null && updatedData.Images.Count > 0)
+      if (updatedData.Images != null)
       {
+        // If there are any images, handle saving and deleting
         if (!Directory.Exists(assetsDirectory))
           Directory.CreateDirectory(assetsDirectory);
 
-        // Delete all existing image files
+        // Always clear all existing image files if updating images (even if empty)
         foreach (var file in Directory.GetFiles(assetsDirectory))
         {
           try { File.Delete(file); }
@@ -472,12 +474,14 @@ public class BlogPostService : IBlogPostService
           }
         }
 
+        // Save new images if any
         foreach (var image in updatedData.Images)
         {
           var savedPath = await ImageService.SaveAndCompressAsync(image, assetsDirectory);
           if (savedPath != null)
             newImages.Add(savedPath);
         }
+        // If updatedData.Images is empty, newImages will be empty
       }
       else
       {
@@ -513,7 +517,7 @@ public class BlogPostService : IBlogPostService
         slug = slug,
         isPublished = isPublished,
         scheduledDate = (DateTime?)null,
-        images = newImages, // Use the new images list
+        images = newImages.Select(img => $"/assets/{img}"),
         likes = existingLikes,
         commentCount = commentCount
       };
@@ -582,7 +586,7 @@ public class BlogPostService : IBlogPostService
       using var doc = JsonDocument.Parse(metaJson);
       var root = doc.RootElement;
 
-      var authorUsername = root.GetProperty("AuthorUsername").GetString();
+      var authorUsername = root.GetProperty("Author").GetString();
       if (!string.Equals(authorUsername, currentUsername, StringComparison.OrdinalIgnoreCase))
         return (false, "Unauthorized: only the author can publish this post.");
 
@@ -603,12 +607,12 @@ public class BlogPostService : IBlogPostService
 
       var updatedMeta = new
       {
-        Title = root.GetProperty("title").GetString(),
-        Description = root.GetProperty("description").GetString(),
-        CustomUrl = root.GetProperty("customUrl").GetString(),
-        AuthorUsername = authorUsername,
-        Tags = root.GetProperty("tags").EnumerateArray().Select(t => t.GetString() ?? "").ToList(),
-        Categories = root.GetProperty("categories").EnumerateArray().Select(c => c.GetString() ?? "").ToList(),
+        Title = root.GetProperty("Title").GetString(),
+        Description = root.GetProperty("Description").GetString(),
+        CustomUrl = root.GetProperty("CustomUrl").GetString(),
+        Author = authorUsername,
+        Tags = root.GetProperty("Tags").EnumerateArray().Select(t => t.GetString() ?? "").ToList(),
+        Categories = root.GetProperty("Categories").EnumerateArray().Select(c => c.GetString() ?? "").ToList(),
         PublishedDate = publishedDate,
         ModifiedDate = DateTime.UtcNow,
         Slug = slug,
@@ -729,7 +733,6 @@ public class BlogPostService : IBlogPostService
     return slug;
   }
 
-  // ...existing code...
   public IResult LikePost(string slug, string likerUsername, NotificationService notificationService)
   {
     var postDir = GetPostDirectoryBySlug(slug);

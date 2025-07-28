@@ -1,95 +1,110 @@
 <!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Management - Blog System</title>
+    <link rel="stylesheet" href="/css/admin.css" />
+  </head>
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - Blog System</title>
-    <link rel="stylesheet" href="/css/admin.css">
-</head>
-
-<body>
+  <body>
     <nav class="navbar">
-        <div class="nav-container">
-            <div class="nav-brand">
-                <h1>Aether & Ink Admin Panel</h1>
-            </div>
-            <div class="nav-menu">
-                <a href="/blog" class="nav-link">Home</a>
-                <button id="backToProfileBtn" class="btn btn-secondary">Profile</button>
-                <button id="logoutBtn" class="logout-btn">Logout</button>
-            </div>
+      <div class="nav-container">
+        <div class="nav-brand">
+          <h1>Aether & Ink</h1>
         </div>
+        <div class="nav-name">
+          <h2>Admin Panel</h2>
+        </div>
+        <div class="nav-menu">
+          <button class="btn" onclick="window.location.href='/blog'">
+            Home
+          </button>
+          <button id="backToProfileBtn" class="btn">Profile</button>
+          <button id="logoutBtn" class="btn">Logout</button>
+        </div>
+      </div>
     </nav>
 
     <div id="modeToggle" data-theme="light">☀️</div>
 
     <div class="container">
-        <div class="admin-header">
-            <h2>User Management</h2>
-            <p>Manage users and their permissions</p>
+      <div class="admin-header">
+        <h1
+          style="
+            font-family: var(--font-cursive);
+            color: #a05a2c;
+            font-size: 2.3rem;
+            text-align: center;
+            margin-bottom: 0.5rem;
+          "
+        ></h1>
+        <h2>User Management</h2>
+        <p>Manage users and their permissions</p>
+      </div>
+
+      <div class="loading-spinner" id="loadingSpinner">
+        <div class="spinner"></div>
+        <p>Loading users...</p>
+      </div>
+
+      <div class="error-message" id="errorMessage" style="display: none">
+        <p></p>
+      </div>
+
+      <div class="users-container" id="usersContainer" style="display: none">
+        <div class="users-stats">
+          <div class="stat-card">
+            <h3 id="totalUsers">0</h3>
+            <p>Total Users</p>
+          </div>
+          <div class="stat-card">
+            <h3 id="totalAdmins">0</h3>
+            <p>Admins</p>
+          </div>
+          <div class="stat-card">
+            <h3 id="totalAuthors">0</h3>
+            <p>Authors</p>
+          </div>
         </div>
 
-        <div class="loading-spinner" id="loadingSpinner">
-            <div class="spinner"></div>
-            <p>Loading users...</p>
+        <div class="users-table-container">
+          <table class="users-table">
+            <thead>
+              <tr>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Created</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody">
+              <!-- Users will be populated here -->
+            </tbody>
+          </table>
         </div>
-
-        <div class="error-message" id="errorMessage" style="display: none;">
-            <p></p>
-        </div>
-
-        <div class="users-container" id="usersContainer" style="display: none;">
-            <div class="users-stats">
-                <div class="stat-card">
-                    <h3 id="totalUsers">0</h3>
-                    <p>Total Users</p>
-                </div>
-                <div class="stat-card">
-                    <h3 id="totalAdmins">0</h3>
-                    <p>Admins</p>
-                </div>
-                <div class="stat-card">
-                    <h3 id="totalAuthors">0</h3>
-                    <p>Authors</p>
-                </div>
-            </div>
-
-            <div class="users-table-container">
-                <table class="users-table">
-                    <thead>
-                        <tr>
-                            <th>Username</th>
-                            <th>Email</th>
-                            <th>Role</th>
-                            <th>Created</th>
-                            <th>Last Login</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="usersTableBody">
-                        <!-- Users will be populated here -->
-                    </tbody>
-                </table>
-            </div>
-        </div>
+      </div>
     </div>
 
     <!-- Confirmation Modal -->
     <div class="modal" id="confirmModal">
-        <div class="modal-content">
-            <h3>Confirm Action</h3>
-            <p id="confirmMessage">Are you sure you want to promote this user to admin?</p>
-            <div class="modal-actions">
-                <button id="confirmYes" class="btn btn-danger">Yes, Promote</button>
-                <button id="confirmNo" class="btn btn-secondary">Cancel</button>
-            </div>
+      <div class="modal-content">
+        <div class="modal-heading">Confirm Action</div>
+        <div class="modal-message" id="confirmMessage">
+          Are you sure you want to promote this user to admin?
         </div>
+        <div class="modal-actions">
+          <button id="confirmYes" class="modal-btn confirm">
+            Yes, Promote
+          </button>
+          <button id="confirmNo" class="modal-btn cancel">Cancel</button>
+        </div>
+      </div>
     </div>
 
     <script src="/js/utils/auth.js"></script>
     <script type="module" src="/js/admin.js"></script>
-</body>
-
+  </body>
 </html>

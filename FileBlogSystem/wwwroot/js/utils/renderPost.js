@@ -248,7 +248,7 @@ export function renderPosts(posts, containerId, options = {}) {
       const authorUrl =
         post.Author === currentUsername
           ? `/profile/${currentUsername}`
-          : `/profile/${post.author}`;
+          : `/profile/${post.Author}`;
       console.log("Author URL:", authorUrl);
       authorHtml = `<small>By <a href="${authorUrl}" class="author-link">${
         post.Author
@@ -284,9 +284,18 @@ export function renderPosts(posts, containerId, options = {}) {
     const likeCount = post.Likes?.length || 0;
     const commentCount = post.CommentCount || 0;
 
+    // If viewing a profile, make heart icon look clickable
+    let likeToggleStyle = "";
+    if (
+      containerId === "profilePostsContainer" ||
+      window.location.pathname.startsWith("/profile")
+    ) {
+      likeToggleStyle = "cursor:pointer;transition:transform 0.1s;";
+    }
+
     const interactionBarHtml = `
       <div class="interaction-bar">
-        <span class="like-toggle" data-slug="${post.Slug}" data-liked="${post.LikedByCurrentUser}">
+        <span class="like-toggle" data-slug="${post.Slug}" data-liked="${post.LikedByCurrentUser}" style="${likeToggleStyle}">
           ${likeIcon}
         </span>
         <span class="like-count" data-slug="${post.Slug}">${likeCount} Likes</span>

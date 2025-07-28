@@ -4,7 +4,7 @@ public class ScheduledPostPublisher : BackgroundService
 {
   private readonly IServiceScopeFactory _scopeFactory;
   private readonly ILogger<ScheduledPostPublisher> _logger;
-  private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(1); // Check every 1 minute
+  private readonly TimeSpan _checkInterval = TimeSpan.FromMinutes(0.5); // Check every 30 seconds
 
   public ScheduledPostPublisher(IServiceScopeFactory scopeFactory, ILogger<ScheduledPostPublisher> logger)
   {

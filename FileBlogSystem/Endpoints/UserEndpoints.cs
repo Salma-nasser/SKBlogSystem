@@ -47,7 +47,14 @@ public static class UserEndpoints
   var username = ctx.User.Identity?.Name;
   if (username == null) return Results.Unauthorized();
 
-  var notifications = await notificationService.GetUnreadAsync(username);
+  // Check for ?all=true query parameter
+  var allParam = ctx.Request.Query["all"].ToString();
+  bool getAll = !string.IsNullOrEmpty(allParam) && allParam.ToLower() == "true";
+  List<Notification> notifications;
+  if (getAll)
+    notifications = await notificationService.GetAllAsync(username);
+  else
+    notifications = await notificationService.GetUnreadAsync(username);
   return Results.Ok(notifications);
 });
 
@@ -59,20 +66,20 @@ public static class UserEndpoints
       await service.MarkAsReadAsync(username, id);
       return Results.Ok();
     });
-    app.MapPost("/api/users/forgot-password", async (FileBlogSystem.Models.ForgotPasswordRequest request, IUserService userService) =>
+    app.MapPost("/api/users/forgot-password", async (Models.ForgotPasswordRequest request, IUserService userService, EmailService emailService) =>
     {
       if (string.IsNullOrEmpty(request.Username))
         return Results.BadRequest("Username is required.");
 
-      var result = await userService.ForgotPassword(request.Username, request.Email);
+      var result = await userService.ForgotPassword(request.Username, request.Email, emailService);
       return result;
     });
-    app.MapPost("/api/users/reset-password", async (FileBlogSystem.Models.ResetPasswordRequest request, IUserService userService) =>
+    app.MapPost("/api/users/reset-password", async (Models.ResetPasswordRequest request, IUserService userService) =>
     {
-      if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.NewPassword))
-        return Results.BadRequest("Username and new password are required.");
+      if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.NewPassword) || string.IsNullOrEmpty(request.OTPCode))
+        return Results.BadRequest("Username, new password, and OTP code are required.");
 
-      var result = await userService.ResetPassword(request.Username, request.NewPassword);
+      var result = await userService.ResetPassword(request.Username, request.NewPassword, request.OTPCode);
       return result;
     });
   }

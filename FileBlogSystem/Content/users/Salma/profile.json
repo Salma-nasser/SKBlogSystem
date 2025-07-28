@@ -1,11 +1,13 @@
 {
   "Username": "Salma",
   "Email": "salma.naser1020@yahoo.com",
-  "PasswordHash": "ZjCsDQabbEH8OmjJFWcCFRj0KcI74EJjTKRtViyq60h74dUN/37W0jFaImGFL33N",
+  "PasswordHash": "dfH03udufsaYYyN8RYVPypmzWhPQKE5vE8hIdXZNs0eVJj8VbGnAdCleDWlUtna2",
   "Role": "Admin",
   "CreatedAt": "2025-06-18T18:31:07.0133676Z",
   "ProfilePictureUrl": "/Content/users/Salma/assets/Salma_NewProfilePicture.jpeg",
   "Bio": "",
   "LastLoginDate": "0001-01-01T00:00:00",
-  "IsActive": true
+  "IsActive": true,
+  "ResetToken": null,
+  "ResetTokenExpiration": null
 }
