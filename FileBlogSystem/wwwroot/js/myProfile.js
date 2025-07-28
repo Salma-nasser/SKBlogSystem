@@ -14,6 +14,7 @@ window.addEventListener("DOMContentLoaded", () => {
   if (!profileUsername) {
     const pathMatch = window.location.pathname.match(/^\/profile\/(.+)$/);
     if (pathMatch && pathMatch[1] && pathMatch[1] !== "profile") {
+
       profileUsername = pathMatch[1];
     }
   }
@@ -32,6 +33,7 @@ window.addEventListener("DOMContentLoaded", () => {
     isOwnProfile = profileUsername === currentUsername;
     targetUsername = isOwnProfile ? currentUsername : profileUsername;
   }
+
 
   const ProfileTitle = document.getElementById("ProfileTitle");
   // Update page title and header

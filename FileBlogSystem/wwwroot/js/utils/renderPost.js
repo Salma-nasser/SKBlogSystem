@@ -249,6 +249,7 @@ export function renderPosts(posts, containerId, options = {}) {
         post.Author === currentUsername
           ? `/profile/${currentUsername}`
           : `/profile/${post.Author}`;
+
       console.log("Author URL:", authorUrl);
       authorHtml = `<small>By <a href="${authorUrl}" class="author-link">${
         post.Author
