@@ -19,6 +19,133 @@ document.addEventListener("DOMContentLoaded", () => {
   const raw = sessionStorage.getItem("postData");
   token = localStorage.getItem("jwtToken");
   username = localStorage.getItem("username");
+  // Unified image preview container for both existing and new images
+  const imagesInput = document.getElementById("images");
+  let unifiedPreview = document.getElementById("unifiedImagePreview");
+  if (!unifiedPreview) {
+    unifiedPreview = document.createElement("div");
+    unifiedPreview.id = "unifiedImagePreview";
+    unifiedPreview.style.display = "flex";
+    unifiedPreview.style.flexWrap = "wrap";
+    unifiedPreview.style.gap = "16px";
+    unifiedPreview.style.marginBottom = "16px";
+    imagesInput?.parentNode?.insertBefore(
+      unifiedPreview,
+      imagesInput.nextSibling
+    );
+  }
+
+  imagesInput?.addEventListener("change", function () {
+    renderUnifiedPreview();
+    enableUpdateButton();
+  });
+
+  function renderUnifiedPreview() {
+    unifiedPreview.innerHTML = "";
+    // Existing images
+    imagesToKeep.forEach((img, idx) => {
+      const wrapper = document.createElement("div");
+      wrapper.className = "image-thumb-wrapper";
+      wrapper.style.display = "flex";
+      wrapper.style.flexDirection = "column";
+      wrapper.style.alignItems = "center";
+      wrapper.style.width = "120px";
+      // Image
+      const imgEl = document.createElement("img");
+      imgEl.src = `https://localhost:7189/Content/posts/${dateOnly}-${postSlug}${img}`;
+      imgEl.alt = "Post image";
+      imgEl.className = "preview-thumb";
+      imgEl.style.width = "120px";
+      imgEl.style.height = "120px";
+      imgEl.style.objectFit = "cover";
+      // Remove button
+      const removeBtn = document.createElement("button");
+      removeBtn.className = "remove-image-btn btn";
+      removeBtn.type = "button";
+      removeBtn.innerHTML = "✖";
+      removeBtn.title = "Remove this image";
+      removeBtn.style.marginTop = "8px";
+      removeBtn.style.background = "#a05a1c";
+      removeBtn.style.color = "#fff";
+      removeBtn.style.border = "none";
+      removeBtn.style.borderRadius = "50%";
+      removeBtn.style.width = "36px";
+      removeBtn.style.height = "36px";
+      removeBtn.style.fontSize = "1.5rem";
+      removeBtn.style.display = "flex";
+      removeBtn.style.alignItems = "center";
+      removeBtn.style.justifyContent = "center";
+      removeBtn.style.cursor = "pointer";
+      removeBtn.onclick = () => {
+        imagesToKeep = imagesToKeep.filter((i) => i !== img);
+        renderUnifiedPreview();
+        enableUpdateButton();
+      };
+      wrapper.appendChild(imgEl);
+      wrapper.appendChild(removeBtn);
+      unifiedPreview.appendChild(wrapper);
+    });
+    // New images
+    const files = imagesInput?.files;
+    if (files && files.length > 0) {
+      Array.from(files).forEach((file, idx) => {
+        if (!file.type.startsWith("image/")) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const wrapper = document.createElement("div");
+          wrapper.className = "image-thumb-wrapper new-upload";
+          wrapper.style.display = "flex";
+          wrapper.style.flexDirection = "column";
+          wrapper.style.alignItems = "center";
+          wrapper.style.width = "120px";
+          const img = document.createElement("img");
+          img.src = e.target.result;
+          img.alt = file.name;
+          img.className = "preview-thumb";
+          img.style.width = "120px";
+          img.style.height = "120px";
+          img.style.objectFit = "cover";
+          const removeBtn = document.createElement("button");
+          removeBtn.className = "remove-image-btn btn";
+          removeBtn.type = "button";
+          removeBtn.innerHTML = "✖";
+          removeBtn.title = "Remove this image";
+          removeBtn.style.marginTop = "8px";
+          removeBtn.style.background = "#a05a1c";
+          removeBtn.style.color = "#fff";
+          removeBtn.style.border = "none";
+          removeBtn.style.borderRadius = "50%";
+          removeBtn.style.width = "36px";
+          removeBtn.style.height = "36px";
+          removeBtn.style.fontSize = "1.5rem";
+          removeBtn.style.display = "flex";
+          removeBtn.style.alignItems = "center";
+          removeBtn.style.justifyContent = "center";
+          removeBtn.style.cursor = "pointer";
+          removeBtn.onclick = () => {
+            removeNewImage(idx);
+          };
+          wrapper.appendChild(img);
+          wrapper.appendChild(removeBtn);
+          unifiedPreview.appendChild(wrapper);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  }
+
+  function removeNewImage(idx) {
+    const imagesInput = document.getElementById("images");
+    if (!imagesInput || !imagesInput.files) return;
+    const dt = new DataTransfer();
+    Array.from(imagesInput.files).forEach((file, i) => {
+      if (i !== idx) dt.items.add(file);
+    });
+    imagesInput.files = dt.files;
+    renderUnifiedPreview();
+    enableUpdateButton();
+  }
+
   if (raw) {
     const post = JSON.parse(raw);
 
@@ -45,15 +172,39 @@ document.addEventListener("DOMContentLoaded", () => {
     postSlug = post.Slug;
     console.log("Date ", post.PublishedDate);
     easyMDE.value(post.Body || "");
-    if (post.scheduledDate) {
+    // Hide schedule option if post is already published
+    const scheduleSection =
+      document.getElementById("scheduleSection") ||
+      document.getElementById("scheduleInput");
+    if (post.PublishedDate) {
+      // Hide the schedule section/checkbox if published
+      if (scheduleSection) scheduleSection.style.display = "none";
+    } else if (post.ScheduledDate) {
       document.getElementById("schedulePost").checked = true;
       document.getElementById("scheduleInput").style.display = "block";
-      document.getElementById("scheduledDate").value = post.ScheduledDate.slice(
-        0,
-        16
-      );
+      // Convert UTC or ISO string to local datetime-local format
+      let dt = post.ScheduledDate;
+      let localValue = "";
+      if (dt) {
+        const dateObj = new Date(dt);
+        if (!isNaN(dateObj.getTime())) {
+          // yyyy-MM-ddTHH:mm
+          localValue =
+            dateObj.getFullYear() +
+            "-" +
+            String(dateObj.getMonth() + 1).padStart(2, "0") +
+            "-" +
+            String(dateObj.getDate()).padStart(2, "0") +
+            "T" +
+            String(dateObj.getHours()).padStart(2, "0") +
+            ":" +
+            String(dateObj.getMinutes()).padStart(2, "0");
+        }
+      }
+      document.getElementById("scheduledDate").value = localValue;
     }
-    postImages = post.Images || [];
+    // Always initialize imagesToKeep from the post's images (handle both Images and images)
+    postImages = post.Images || post.images || [];
     imagesToKeep = [...postImages];
     // Listen for changes to enable update button
     ["title", "description", "customUrl", "tags", "categories"].forEach(
@@ -75,20 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       dateOnly = "";
     }
-    showImages();
-    if (post.images?.length) {
-      const previewContainer = document.getElementById("imagePreview");
-      previewContainer.innerHTML = "";
-      post.images.forEach((img) => {
-        const imgEl = document.createElement("img");
-        imgEl.src = `https://localhost:7189/Content/posts/${dateOnly}-${postSlug}${img}`;
-        imgEl.alt = "Post image";
-        imgEl.classList.add("preview-thumb");
-        previewContainer.appendChild(imgEl);
-      });
-
-      imagesToKeep = [...post.images];
-    }
+    renderUnifiedPreview();
   } else {
     showMessage("No post data available to load", "warning");
   }
@@ -128,7 +266,20 @@ async function submitModification() {
   formData.append("Categories", categories);
   formData.append("IsPublished", "true");
 
-  // Add kept images (images that weren't removed)
+  // If scheduling is enabled, add the scheduled date
+  const scheduleCheckbox = document.getElementById("schedulePost");
+  if (scheduleCheckbox && scheduleCheckbox.checked) {
+    const scheduledDateInput = document.getElementById("scheduledDate");
+    if (scheduledDateInput && scheduledDateInput.value) {
+      // Convert local time to ISO string for backend
+      const localDate = new Date(scheduledDateInput.value);
+      if (!isNaN(localDate.getTime())) {
+        formData.append("ScheduledDate", localDate.toISOString());
+      }
+    }
+  }
+
+  // Always add kept images (images that weren't removed or unchanged)
   if (imagesToKeep && imagesToKeep.length > 0) {
     imagesToKeep.forEach((imagePath) => {
       formData.append("KeptImages", imagePath);
@@ -191,37 +342,14 @@ addEventListener("submit", (e) => {
   submitModification();
 });
 
-function showImages() {
-  const previewContainer = document.getElementById("imagePreview");
-  previewContainer.innerHTML = "";
-  imagesToKeep.forEach((img) => {
-    const wrapper = document.createElement("div");
-    wrapper.className = "image-thumb-wrapper";
-    const imgEl = document.createElement("img");
-    imgEl.src = `https://localhost:7189/Content/posts/${dateOnly}-${postSlug}${img}`;
-    imgEl.alt = "Post image";
-    imgEl.classList.add("preview-thumb");
-    const removeBtn = document.createElement("button");
-    removeBtn.className = "remove-image-btn btn"; // Add .btn class here
-    removeBtn.type = "button";
-    removeBtn.innerHTML = "✖";
-    removeBtn.title = "Remove this image";
-    removeBtn.onclick = () => {
-      imagesToKeep = imagesToKeep.filter((i) => i !== img);
-      showImages();
-      enableUpdateButton();
-    };
-    wrapper.appendChild(imgEl);
-    wrapper.appendChild(removeBtn);
-    previewContainer.appendChild(wrapper);
-  });
-}
-
 const cancelBtn = document.getElementById("cancelBtn");
 if (cancelBtn) {
   cancelBtn.addEventListener("click", () => {
-    const username =
-      document.getElementById("username")?.textContent || "Guest";
+    const username = localStorage.getItem("username");
+    if (!username) {
+      showMessage("You must be logged in to cancel modifications", "warning");
+      return;
+    }
     window.location.href = `/profile/${username}`;
   });
 }

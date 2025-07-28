@@ -42,6 +42,9 @@ public class BlogPostService : IBlogPostService
 
       if (post != null && post.IsPublished && post.Categories.Contains(category, StringComparer.OrdinalIgnoreCase))
       {
+        // Check if author is active
+        if (!IsUserActive(post.Author))
+          continue;
         if (!string.IsNullOrEmpty(currentUsername))
         {
           post.LikedByCurrentUser = post.Likes.Contains(currentUsername, StringComparer.OrdinalIgnoreCase);
@@ -69,6 +72,9 @@ public class BlogPostService : IBlogPostService
 
       if (post != null && post.IsPublished && post.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
       {
+        // Check if author is active
+        if (!IsUserActive(post.Author))
+          continue;
         if (!string.IsNullOrEmpty(currentUsername))
         {
           post.LikedByCurrentUser = post.Likes.Contains(currentUsername, StringComparer.OrdinalIgnoreCase);
@@ -89,6 +95,9 @@ public class BlogPostService : IBlogPostService
         var post = LoadPost(dir);
         if (post != null && post.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase))
         {
+          // Check if author is active
+          if (!IsUserActive(post.Author))
+            continue;
           if (!string.IsNullOrEmpty(currentUsername))
           {
             post.LikedByCurrentUser = post.Likes.Contains(currentUsername, StringComparer.OrdinalIgnoreCase);
@@ -122,7 +131,11 @@ public class BlogPostService : IBlogPostService
       }
 
       if (post != null && !post.IsPublished && post.Author.Equals(username, StringComparison.OrdinalIgnoreCase))
+      {
+        if (!IsUserActive(post.Author))
+          continue;
         yield return post;
+      }
     }
   }
 
@@ -144,6 +157,8 @@ public class BlogPostService : IBlogPostService
 
       if (post != null && post.Author.Equals(username, StringComparison.OrdinalIgnoreCase) && post.IsPublished)
       {
+        if (!IsUserActive(post.Author))
+          continue;
         if (!string.IsNullOrEmpty(username))
         {
           post.LikedByCurrentUser = post.Likes.Contains(username, StringComparer.OrdinalIgnoreCase);
@@ -226,7 +241,7 @@ public class BlogPostService : IBlogPostService
       var description = GetSafeString("description");
       var author = GetSafeString("author");
       if (string.IsNullOrEmpty(author))
-        author = GetSafeString("authorUsername");
+        author = GetSafeString("author");
       var slug = GetSafeString("slug");
 
       var publishedDate = GetSafeDateTime("publishedDate", DateTime.UtcNow);
@@ -256,7 +271,7 @@ public class BlogPostService : IBlogPostService
     }
   }
 
-  public async Task<dynamic> CreatePostAsync(CreatePostRequest request, string authorUsername)
+  public async Task<dynamic> CreatePostAsync(CreatePostRequest request, string author)
   {
     try
     {
@@ -278,28 +293,9 @@ public class BlogPostService : IBlogPostService
       {
         foreach (var image in request.Images)
         {
-          if (image.Length > 0)
-          {
-            var fileName = Path.GetFileName(image.FileName);
-            fileName = string.Join("_", fileName.Split(Path.GetInvalidFileNameChars()));
-
-            string uniqueFileName = fileName;
-            int counter = 1;
-            while (File.Exists(Path.Combine(assetsDirectory, uniqueFileName)))
-            {
-              string fileNameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
-              string extension = Path.GetExtension(fileName);
-              uniqueFileName = $"{fileNameWithoutExt}_{counter++}{extension}";
-            }
-
-            var filePath = Path.Combine(assetsDirectory, uniqueFileName);
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-              await image.CopyToAsync(stream);
-            }
-
-            savedImages.Add($"/assets/{uniqueFileName}");
-          }
+          var savedPath = await ImageService.SaveAndCompressAsync(image, assetsDirectory);
+          if (savedPath != null)
+            savedImages.Add(savedPath);
         }
       }
 
@@ -314,7 +310,7 @@ public class BlogPostService : IBlogPostService
         request.Title,
         request.Description,
         request.CustomUrl,
-        AuthorUsername = authorUsername,
+        Author = author,
         request.Tags,
         request.Categories,
         PublishedDate = date,
@@ -322,7 +318,7 @@ public class BlogPostService : IBlogPostService
         Slug = slug,
         request.IsPublished,
         request.ScheduledDate,
-        Images = savedImages
+        Images = savedImages.Select(img => $"/assets/{img}"),
       };
 
       var meta = JsonSerializer.Serialize(postMeta, new JsonSerializerOptions { WriteIndented = true });
@@ -337,19 +333,20 @@ public class BlogPostService : IBlogPostService
         request.Title,
         request.Description,
         request.Body,
-        AuthorUsername = authorUsername,
+        Author = author,
         request.Tags,
         request.Categories,
         PublishedDate = date,
         request.IsPublished,
         request.ScheduledDate,
-        Images = savedImages.Select(img => $"/{date:yyyy-MM-dd}-{slug}{img}")
+        Images = savedImages.Select(img => $"/assets/{img}")
       };
     }
     catch (Exception ex)
     {
       Console.WriteLine($"Error creating post: {ex.Message}");
-      throw new Exception("An error occurred while creating the post.");
+      Console.WriteLine(ex.StackTrace);
+      throw new Exception($"An error occurred while creating the post: {ex.Message}", ex);
     }
   }
   public async Task<(bool Success, string Message)> ModifyPostAsync(string slug, CreatePostRequest updatedData, string currentUsername)
@@ -446,7 +443,7 @@ public class BlogPostService : IBlogPostService
       // Now use the safe accessors
       var authorUsername = GetSafeString("author");
       if (string.IsNullOrEmpty(authorUsername))
-        authorUsername = GetSafeString("authorUsername");
+        authorUsername = GetSafeString("author");
 
       var publishedDate = GetSafeDateTime("publishedDate", DateTime.UtcNow);
       var existingLikes = GetSafeStringArray("likes");
@@ -461,57 +458,31 @@ public class BlogPostService : IBlogPostService
       // Clear existing images - we'll replace them completely
       var newImages = new List<string>();
 
-      // Only process new images if they are provided
-      if (updatedData.Images != null && updatedData.Images.Count > 0)
+      if (updatedData.Images != null)
       {
+        // If there are any images, handle saving and deleting
         if (!Directory.Exists(assetsDirectory))
           Directory.CreateDirectory(assetsDirectory);
 
-        // Delete all existing image files in the assets directory
-        if (Directory.Exists(assetsDirectory))
+        // Always clear all existing image files if updating images (even if empty)
+        foreach (var file in Directory.GetFiles(assetsDirectory))
         {
-          var existingFiles = Directory.GetFiles(assetsDirectory);
-          foreach (var file in existingFiles)
+          try { File.Delete(file); }
+          catch (Exception ex)
           {
-            try
-            {
-              File.Delete(file);
-            }
-            catch (Exception ex)
-            {
-              Console.WriteLine($"Warning: Could not delete existing image file {file}: {ex.Message}");
-            }
+            Console.WriteLine($"Warning: Could not delete image file {file}: {ex.Message}");
           }
         }
 
-        // Process and save new images
+        // Save new images if any
         foreach (var image in updatedData.Images)
         {
-          if (image.Length > 0)
-          {
-            var fileName = Path.GetFileName(image.FileName);
-            fileName = string.Join("_", fileName.Split(Path.GetInvalidFileNameChars()));
-
-            string uniqueFileName = fileName;
-            int counter = 1;
-            while (File.Exists(Path.Combine(assetsDirectory, uniqueFileName)))
-            {
-              string fileNameWithoutExt = Path.GetFileNameWithoutExtension(fileName);
-              string extension = Path.GetExtension(fileName);
-              uniqueFileName = $"{fileNameWithoutExt}_{counter++}{extension}";
-            }
-
-            var filePath = Path.Combine(assetsDirectory, uniqueFileName);
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-              await image.CopyToAsync(stream);
-            }
-
-            newImages.Add($"/assets/{uniqueFileName}");
-          }
+          var savedPath = await ImageService.SaveAndCompressAsync(image, assetsDirectory);
+          if (savedPath != null)
+            newImages.Add(savedPath);
         }
+        // If updatedData.Images is empty, newImages will be empty
       }
-      // If no new images are provided, keep existing images as they are
       else
       {
         newImages = existingImages;
@@ -546,7 +517,7 @@ public class BlogPostService : IBlogPostService
         slug = slug,
         isPublished = isPublished,
         scheduledDate = (DateTime?)null,
-        images = newImages, // Use the new images list
+        images = newImages.Select(img => $"/assets/{img}"),
         likes = existingLikes,
         commentCount = commentCount
       };
@@ -615,7 +586,7 @@ public class BlogPostService : IBlogPostService
       using var doc = JsonDocument.Parse(metaJson);
       var root = doc.RootElement;
 
-      var authorUsername = root.GetProperty("AuthorUsername").GetString();
+      var authorUsername = root.GetProperty("Author").GetString();
       if (!string.Equals(authorUsername, currentUsername, StringComparison.OrdinalIgnoreCase))
         return (false, "Unauthorized: only the author can publish this post.");
 
@@ -636,12 +607,12 @@ public class BlogPostService : IBlogPostService
 
       var updatedMeta = new
       {
-        Title = root.GetProperty("title").GetString(),
-        Description = root.GetProperty("description").GetString(),
-        CustomUrl = root.GetProperty("customUrl").GetString(),
-        AuthorUsername = authorUsername,
-        Tags = root.GetProperty("tags").EnumerateArray().Select(t => t.GetString() ?? "").ToList(),
-        Categories = root.GetProperty("categories").EnumerateArray().Select(c => c.GetString() ?? "").ToList(),
+        Title = root.GetProperty("Title").GetString(),
+        Description = root.GetProperty("Description").GetString(),
+        CustomUrl = root.GetProperty("CustomUrl").GetString(),
+        Author = authorUsername,
+        Tags = root.GetProperty("Tags").EnumerateArray().Select(t => t.GetString() ?? "").ToList(),
+        Categories = root.GetProperty("Categories").EnumerateArray().Select(c => c.GetString() ?? "").ToList(),
         PublishedDate = publishedDate,
         ModifiedDate = DateTime.UtcNow,
         Slug = slug,
@@ -699,7 +670,11 @@ public class BlogPostService : IBlogPostService
       }
 
       if (post != null)
+      {
+        if (!IsUserActive(post.Author))
+          continue;
         yield return post;
+      }
     }
   }
   private bool SlugExists(string slug)
@@ -758,8 +733,7 @@ public class BlogPostService : IBlogPostService
     return slug;
   }
 
-  // ...existing code...
-  public IResult LikePost(string slug, string username)
+  public IResult LikePost(string slug, string likerUsername, NotificationService notificationService)
   {
     var postDir = GetPostDirectoryBySlug(slug);
     if (postDir == null)
@@ -769,14 +743,22 @@ public class BlogPostService : IBlogPostService
     if (post == null)
       return Results.NotFound(new { message = "Post not found" });
 
-    if (post.Likes.Contains(username, StringComparer.OrdinalIgnoreCase))
+    if (post.Likes.Contains(likerUsername, StringComparer.OrdinalIgnoreCase))
       return Results.BadRequest(new { message = "Post already liked" });
 
-    post.Likes.Add(username);
+    post.Likes.Add(likerUsername);
     SavePost(postDir, post);
+
+    // Send notification to the post's author (but not to self)
+    if (!string.Equals(post.Author, likerUsername, StringComparison.OrdinalIgnoreCase))
+    {
+      var message = $"{likerUsername} liked your post: \"{post.Title}\"";
+      notificationService.NotifyAsync(post.Author, message).Wait(); // or use `.GetAwaiter().GetResult()` if preferred
+    }
 
     return Results.Ok(new { message = "Post liked successfully", likeCount = post.Likes.Count });
   }
+
 
   public IResult UnlikePost(string slug, string username)
   {
@@ -886,12 +868,33 @@ public class BlogPostService : IBlogPostService
 
       if (post != null && post.IsPublished)
       {
+        if (!IsUserActive(post.Author))
+          continue;
         if (!string.IsNullOrEmpty(currentUsername))
         {
           post.LikedByCurrentUser = post.Likes.Contains(currentUsername, StringComparer.OrdinalIgnoreCase);
         }
         yield return post;
       }
+    }
+  }
+  // Helper method to check if a user is active
+  private bool IsUserActive(string username)
+  {
+    if (string.IsNullOrWhiteSpace(username))
+      return false;
+    var profilePath = Path.Combine(_usersDirectory, username, "profile.json");
+    if (!File.Exists(profilePath))
+      return false;
+    try
+    {
+      var json = File.ReadAllText(profilePath);
+      var user = JsonSerializer.Deserialize<User>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+      return user != null && user.IsActive;
+    }
+    catch
+    {
+      return false;
     }
   }
 

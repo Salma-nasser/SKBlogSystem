@@ -1,4 +1,5 @@
 using FileBlogSystem.Endpoints;
+using FileBlogSystem.Hubs;
 using FileBlogSystem.Services;
 using FileBlogSystem.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -6,6 +7,9 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.Rewrite;
+using SixLabors.ImageSharp.Web.Middleware;
+using SixLabors.ImageSharp.Web.DependencyInjection;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,7 +31,9 @@ builder.Services.AddScoped<IBlogPostService, BlogPostService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddHostedService<ScheduledPostPublisher>();
-
+builder.Services.AddSingleton<NotificationService>();
+builder.Services.AddSignalR();
+builder.Services.AddImageSharp();
 // Auth
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -46,6 +52,14 @@ builder.Services.AddCors(options =>
             .AllowAnyMethod();
   });
 });
+//email
+builder.Services.AddSingleton(new EmailService(
+    smtpHost: "smtp.gmail.com",       // Or your provider
+    smtpPort: 587,
+    fromAddress: "salma.naser1020@gmail.com",
+    smtpUser: "salma.naser1020@gmail.com",
+    smtpPassword: "msqo gsmd tezi vznp" // Gmail requires an App Password
+));
 
 builder.Services.AddAuthorization();
 builder.Services.Configure<FormOptions>(options =>
@@ -57,7 +71,7 @@ var app = builder.Build();
 
 // URL Rewriting for kebab-case URLs
 var rewriteOptions = new RewriteOptions()
-    .AddRewrite("^$", "login.html", skipRemainingRules: true)
+    .AddRewrite("^$", "welcome.html", skipRemainingRules: true)
     .AddRewrite("^login/?$", "login.html", skipRemainingRules: true)
     .AddRewrite("^register/?$", "register.html", skipRemainingRules: true)
     .AddRewrite("^blog/?$", "blog.html", skipRemainingRules: true)
@@ -65,7 +79,6 @@ var rewriteOptions = new RewriteOptions()
     .AddRewrite("^admin/?$", "admin.html", skipRemainingRules: true)
     .AddRewrite("^create-post/?$", "createPost.html", skipRemainingRules: true)
     .AddRewrite("^post/([^/?]+)/?$", "post.html?slug=$1", skipRemainingRules: true)
-    .AddRewrite("^welcome/?$", "welcome.html", skipRemainingRules: true)
     .AddRewrite("^modify-post/([^/?]+)/?$", "modifyPost.html?slug=$1", skipRemainingRules: true);
 
 app.UseRewriter(rewriteOptions);
@@ -76,7 +89,7 @@ app.UseHttpsRedirection();
 // Static Files for wwwroot
 app.UseDefaultFiles(new DefaultFilesOptions
 {
-  DefaultFileNames = { "login.html" }
+  DefaultFileNames = { "welcome.html" }
 });
 app.UseStaticFiles();
 
@@ -87,7 +100,7 @@ app.UseStaticFiles(new StaticFileOptions
         Path.Combine(builder.Environment.ContentRootPath, "Content")),
   RequestPath = "/Content"
 });
-
+app.UseImageSharp();
 app.UseRouting();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
@@ -98,11 +111,12 @@ app.MapBlogPostEndpoints();
 app.MapAuthEndpoints();
 app.MapUserEndpoints();
 app.MapAdminEndpoints();
+app.MapHub<NotificationHub>("/notificationHub");
 
 // Only in development, open browser
 if (app.Environment.IsDevelopment())
 {
-  var url = "https://localhost:7189/login";
+  var url = "https://localhost:7189";
   try
   {
     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo

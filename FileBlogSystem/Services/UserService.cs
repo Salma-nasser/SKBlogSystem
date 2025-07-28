@@ -55,10 +55,15 @@ public class UserService : IUserService
         return Results.Problem("Invalid user profile data", statusCode: StatusCodes.Status500InternalServerError);
       }
 
+      if (!user.IsActive)
+      {
+        return Results.Problem("Account is deleted", statusCode: 403);
+      }
+
       bool isPasswordValid = _passwordService.VerifyPassword(password, user.PasswordHash);
       if (!isPasswordValid)
       {
-        return Results.Unauthorized();
+        return Results.Problem("Invalid username or password");
       }
 
       await File.WriteAllTextAsync(profileFilePath, JsonSerializer.Serialize(user, new JsonSerializerOptions { WriteIndented = true }));
@@ -183,6 +188,11 @@ public class UserService : IUserService
         return Results.Problem("Invalid user profile data", statusCode: StatusCodes.Status500InternalServerError);
       }
 
+      if (!user.IsActive)
+      {
+        return Results.Problem("Account is deleted", statusCode: 403);
+      }
+
       bool isOwnProfile = !string.IsNullOrEmpty(requestingUser) && username.Equals(requestingUser, StringComparison.OrdinalIgnoreCase);
 
       if (isOwnProfile)
@@ -236,6 +246,8 @@ public class UserService : IUserService
       var user = await LoadUserProfile(profilePath);
       if (user == null)
         return Results.Problem("Invalid user profile data", statusCode: 500);
+      if (!user.IsActive)
+        return Results.Problem("Account is deleted", statusCode: 403);
 
       if (request.ConfirmPassword != null && !string.IsNullOrWhiteSpace(request.ConfirmPassword))
       {
@@ -301,6 +313,8 @@ public class UserService : IUserService
       var user = await LoadUserProfile(profilePath);
       if (user == null)
         return Results.Problem("Invalid user profile data", statusCode: 500);
+      if (!user.IsActive)
+        return Results.Problem("Account is deleted", statusCode: 403);
 
       // Verify current password
       bool isPasswordValid = _passwordService.VerifyPassword(currentPassword, user.PasswordHash);
@@ -342,16 +356,17 @@ public class UserService : IUserService
     string sanitizedUsername = SanitizeDirectoryName(username);
     string userDir = Path.Combine(_usersDirectory.FullName, sanitizedUsername);
     string assetsDir = Path.Combine(userDir, "assets");
-    Directory.CreateDirectory(assetsDir);
 
-    string cleanFileName = $"{username}_{Path.GetFileName(originalFileName)}";
-    string filePath = Path.Combine(assetsDir, cleanFileName);
+    var savedFileName = await ImageService.SaveAndCompressFromBase64Async(
+        base64Image,
+        originalFileName,
+        assetsDir,
+        filePrefix: $"{sanitizedUsername}_"
+    );
 
-    byte[] imageBytes = Convert.FromBase64String(base64Image);
-    await File.WriteAllBytesAsync(filePath, imageBytes);
-
-    return $"/Content/users/{username}/assets/{cleanFileName}";
+    return $"/Content/users/{sanitizedUsername}/assets/{savedFileName}";
   }
+
 
   private int GetUserPostsCount(string sanitizedUsername)
   {
@@ -415,6 +430,119 @@ public class UserService : IUserService
     {
       Console.WriteLine($"Error getting user posts count: {ex.Message}");
       return 0;
+    }
+  }
+  public async Task<IResult> DeleteUser(string username)
+  {
+    try
+    {
+      if (!UserDirectoryExists(username))
+        return await Task.FromResult(Results.NotFound(new { message = "User not found" }));
+
+      string sanitizedUsername = SanitizeDirectoryName(username);
+      string userDir = Path.Combine(_usersDirectory.FullName, sanitizedUsername);
+      string profilePath = Path.Combine(userDir, "profile.json");
+
+      if (File.Exists(profilePath))
+      {
+        var user = await LoadUserProfile(profilePath);
+        if (user == null)
+          return Results.Problem("Invalid user profile data", statusCode: 500);
+
+        if (!user.IsActive)
+        {
+          return Results.Problem("Account is deleted", statusCode: 403);
+        }
+
+        user.IsActive = false;
+        await SaveUserProfile(profilePath, user);
+      }
+
+      return Results.Ok(new { message = "User deleted successfully" });
+    }
+    catch (Exception ex)
+    {
+      return Results.Problem($"An error occurred: {ex.Message}", statusCode: StatusCodes.Status500InternalServerError);
+    }
+  }
+  public async Task<IResult> ResetPassword(string username, string newPassword, string otpCode)
+  {
+    try
+    {
+      if (!UserDirectoryExists(username))
+        return Results.NotFound(new { message = "User not found" });
+
+      string sanitizedUsername = SanitizeDirectoryName(username);
+      string userDir = Path.Combine(_usersDirectory.FullName, sanitizedUsername);
+      string profilePath = Path.Combine(userDir, "profile.json");
+
+      if (!File.Exists(profilePath))
+        return Results.NotFound(new { message = "User profile not found" });
+
+      var user = await LoadUserProfile(profilePath);
+      if (user == null)
+        return Results.Problem("Invalid user profile data", statusCode: 500);
+
+      if (!user.IsActive)
+        return Results.Problem("Account is deleted", statusCode: 403);
+
+      // Check OTP code and expiration
+      if (string.IsNullOrEmpty(user.ResetToken) || user.ResetTokenExpiration == null)
+        return Results.BadRequest(new { message = "No OTP code found. Please request a new one." });
+
+      if (user.ResetTokenExpiration < DateTime.UtcNow)
+        return Results.BadRequest(new { message = "OTP code has expired. Please request a new one." });
+
+      if (user.ResetToken != otpCode)
+        return Results.BadRequest(new { message = "Invalid OTP code." });
+
+      // OTP is valid, reset password
+      user.PasswordHash = _passwordService.HashPassword(newPassword);
+      user.ResetToken = null;
+      user.ResetTokenExpiration = null;
+
+      await SaveUserProfile(profilePath, user);
+
+      return Results.Ok(new { message = "Password reset successfully" });
+    }
+    catch (Exception ex)
+    {
+      return Results.Problem($"An error occurred: {ex.Message}", statusCode: StatusCodes.Status500InternalServerError);
+    }
+  }
+  public async Task<IResult> ForgotPassword(string username, string email, EmailService emailService)
+  {
+    try
+    {
+      if (!UserDirectoryExists(username))
+        return Results.NotFound(new { message = "User not found" });
+      string sanitizedUsername = SanitizeDirectoryName(username);
+      string userDir = Path.Combine(_usersDirectory.FullName, sanitizedUsername);
+      string profilePath = Path.Combine(userDir, "profile.json");
+
+      if (!File.Exists(profilePath))
+        return Results.NotFound(new { message = "User profile not found" });
+
+      var user = await LoadUserProfile(profilePath);
+      if (user == null)
+        return Results.Problem("Invalid user profile data", statusCode: 500);
+
+      if (!user.IsActive)
+        return Results.Problem("Account is deleted", statusCode: 403);
+
+      if (user.Email != email)
+        return Results.BadRequest(new { message = "Email does not match the registered email for this user" });
+
+      string resetToken = _passwordService.GenerateAndStoreResetToken(user);
+      await SaveUserProfile(profilePath, user); // Make sure token is persisted
+
+      await emailService.SendOtpEmail(user.Email, user.Username, resetToken);
+
+      return Results.Ok(new { message = "OTP code sent to your email" });
+    }
+    catch (Exception ex)
+    {
+      return Results.Problem($"An error occurred: {ex.Message}", statusCode: StatusCodes.Status500InternalServerError);
     }
   }
 }

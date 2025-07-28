@@ -1,0 +1,61 @@
+/* --- Notification Bell --- */
+.notification-bell {
+    position: relative;
+    cursor: pointer;
+    font-size: 24px; /* Adjust size as needed */
+    color: var(--text-color);
+    margin-right: 15px;
+}
+
+.notification-bell .count-badge {
+    position: absolute;
+    top: -5px;
+    right: -10px;
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+    font-weight: bold;
+    border: 2px solid var(--background-color);
+    display: none; /* Hidden by default */
+}
+
+.notification-bell .count-badge.visible {
+    display: block;
+}
+
+/* --- Toast Notifications Container --- */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* --- Individual Toast --- */
+.toast {
+    background-color: #333;
+    color: #fff;
+    padding: 15px 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    min-width: 250px;
+    max-width: 350px;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.toast-message {
+    font-size: 14px;
+    line-height: 1.4;
+}

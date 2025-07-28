@@ -538,6 +538,22 @@ main {
   background-color: rgba(255, 255, 255, 0.1);
 }
 
+/* Notifications Panel Styling */
+.notifications-panel {
+  position: static;
+  margin-top: 0;
+  margin-left: 0;
+  width: 340px;
+  max-height: 70vh;
+  overflow-y: auto;
+  background: #fff8e1;
+  border: 1px solid #d4c4b0;
+  border-radius: 12px;
+  box-shadow: 0 2px 16px rgba(139, 69, 19, 0.1);
+  padding: 18px 18px 8px 18px;
+  z-index: 100;
+}
+
 /* Utilities */
 .text-accent-secondary {
   color: var(--accent-secondary);

@@ -3,15 +3,22 @@
   "description": "exploring the fascinating history of the Nile river",
   "customUrl": "",
   "author": "Salma",
-  "tags": [],
-  "categories": [],
+  "tags": [
+    "nile river",
+    "travel",
+    "tourism"
+  ],
+  "categories": [
+    "Egypt",
+    "nile"
+  ],
   "publishedDate": "2025-06-25T22:41:17.917373Z",
-  "lastModified": "2025-07-14T08:32:43.3993097Z",
+  "lastModified": "2025-07-28T08:39:10.0001596Z",
   "slug": "testttting",
   "isPublished": true,
   "scheduledDate": null,
   "images": [
-    "/assets/nile.jpeg"
+    "/assets/travel.jpg"
   ],
   "likes": [
     "Salma",

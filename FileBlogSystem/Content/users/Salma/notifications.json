@@ -1,0 +1,23 @@
+[
+  {
+    "Id": 1,
+    "RecipientUsername": "Salma",
+    "Message": "Henry liked your post: \u0022Software Engineering: Building the Future\u0022",
+    "IsRead": true,
+    "CreatedAt": "2025-07-27T22:48:11.7212415Z"
+  },
+  {
+    "Id": 2,
+    "RecipientUsername": "Salma",
+    "Message": "Henry liked your post: \u0022Sustainable Technology: Innovating for a Greener Future\u0022",
+    "IsRead": true,
+    "CreatedAt": "2025-07-28T00:06:29.937324Z"
+  },
+  {
+    "Id": 3,
+    "RecipientUsername": "Salma",
+    "Message": "Mohammed liked your post: \u0022Software Engineering: Building the Future\u0022",
+    "IsRead": true,
+    "CreatedAt": "2025-07-28T07:08:42.6757919Z"
+  }
+]

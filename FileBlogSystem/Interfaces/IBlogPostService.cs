@@ -1,5 +1,5 @@
 using FileBlogSystem.Models;
-
+using FileBlogSystem.Services;
 namespace FileBlogSystem.Interfaces
 {
     public interface IBlogPostService
@@ -16,7 +16,7 @@ namespace FileBlogSystem.Interfaces
         IEnumerable<Post> GetAllPostsIncludingDrafts();
         IEnumerable<Post> GetPostsByUser(string username, string? currentUsername = null);
         // Like methods
-        IResult LikePost(string slug, string currentUsername);
+        IResult LikePost(string slug, string currentUsername, NotificationService notificationService);
         IResult UnlikePost(string slug, string currentUsername);
         IResult GetPostLikes(string slug);
     }

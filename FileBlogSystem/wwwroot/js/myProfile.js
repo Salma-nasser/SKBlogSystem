@@ -13,7 +13,8 @@ window.addEventListener("DOMContentLoaded", () => {
   // If no query param, try to extract from path: /profile/{username}
   if (!profileUsername) {
     const pathMatch = window.location.pathname.match(/^\/profile\/(.+)$/);
-    if (pathMatch && pathMatch[1] && pathMatch[1] !== "my-profile") {
+    if (pathMatch && pathMatch[1] && pathMatch[1] !== "profile") {
+
       profileUsername = pathMatch[1];
     }
   }
@@ -22,11 +23,17 @@ window.addEventListener("DOMContentLoaded", () => {
   const currentUsername = localStorage.getItem("username");
   const token = localStorage.getItem("jwtToken");
 
-  // Determine if this is the user's own profile
-  const isOwnProfile =
-    profileUsername === currentUsername ||
-    (!profileUsername && window.location.pathname === "/profile/my-profile");
-  const targetUsername = isOwnProfile ? currentUsername : profileUsername;
+  // If path is /profile/my-profile, always use localStorage username
+  let isOwnProfile = false;
+  let targetUsername = profileUsername;
+  if (window.location.pathname === "/profile/my-profile") {
+    isOwnProfile = true;
+    targetUsername = currentUsername;
+  } else {
+    isOwnProfile = profileUsername === currentUsername;
+    targetUsername = isOwnProfile ? currentUsername : profileUsername;
+  }
+
 
   const ProfileTitle = document.getElementById("ProfileTitle");
   // Update page title and header
@@ -173,7 +180,15 @@ window.addEventListener("DOMContentLoaded", () => {
     fetchDraftPosts();
   }
   loadUserInfo(targetUsername);
-
+  function deleteAccount() {
+    fetch(`https://localhost:7189/api/users/delete/${currentUsername}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  }
   function setupEditFunctionality() {
     // Edit section toggle buttons
     changeEmailBtn?.addEventListener("click", () => toggleEditSection("email"));
@@ -183,7 +198,15 @@ window.addEventListener("DOMContentLoaded", () => {
     changePictureBtn?.addEventListener("click", () =>
       toggleEditSection("picture")
     );
-
+    deleteAccountBtn?.addEventListener("click", () => {
+      showConfirmation(
+        "Delete Account",
+        "Are you sure you want to delete your account?",
+        () => {
+          deleteAccount();
+        }
+      );
+    });
     // Cancel buttons
     document
       .getElementById("cancelEmailChange")

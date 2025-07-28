@@ -3,598 +3,100 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ather&ink - Where Stories Come to Life</title>
+    <title>Ather & Ink</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Dancing+Script&family=Playfair+Display:wght@400;700&family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
     <link rel="stylesheet" href="css/welcome.css" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
-    />
   </head>
-
   <body>
     <!-- Header -->
-    <header class="header">
-      <div class="container">
-        <div class="header-content">
-          <div class="logo">
-            <h1 class="logo-text">Ather&ink</h1>
-          </div>
-          <nav class="nav">
-            <a href="#" class="nav-link">Home</a>
-            <a href="#" class="nav-link">Explore</a>
-            <a href="#" class="nav-link">About</a>
-            <button
-              class="btn btn-primary"
-              onclick="location.href='register.html'"
-            >
-              Join the Community
-            </button>
-          </nav>
-          <button class="mobile-menu-btn" id="mobileMenuBtn">
-            <i class="fas fa-bars"></i>
-          </button>
-        </div>
-      </div>
+    <header>
+      <div class="logo">Ather & Ink</div>
+      <nav>
+        <ul>
+          <li><a href="/register" class = "cta-button">Join our Community</a></li>
+          <li><a href="/login" class = "cta-button">Sign In</a></li>
+        </ul>
+      </nav>
     </header>
 
-    <!-- Hero Section -->
+    <!-- Hero -->
     <section class="hero">
-      <div class="hero-overlay"></div>
-      <div class="container">
-        <div class="hero-content">
-          <img
-            src="placeholders/assets/hero_background.jpg"
-            alt="Ather&ink Logo"
-            class="logo-image"
-          />
-          <h2 class="hero-title">Where Stories Come to Life</h2>
-          <p class="hero-subtitle">
-            Discover authentic voices, share your journey, and connect with a
-            community that celebrates every story
-          </p>
-          <div class="hero-buttons">
-            <button
-              class="btn btn-primary btn-large"
-              onclick="location.href='register.html'"
-            >
-              Start Your Journey
-              <i class="fas fa-arrow-right"></i>
-            </button>
-            <button
-              class="btn btn-outline btn-large"
-              onclick="location.href='blog.html'"
-            >
-              Explore Stories
-            </button>
-          </div>
-        </div>
+    </section>
+
+    <!-- Featured Post -->
+    <section id="featured" class="featured">
+      <h2>Featured Story</h2>
+      <p>
+        “How a Single Book Changed My World” – dive into a memoir of curiosity
+        and endless discovery.
+      </p>
+      <a href="#">Read the full post →</a>
+    </section>
+
+    <!-- Browse Categories -->
+    <section id="categories" class="categories">
+      <div class="cat-card">
+        <h3>Design</h3>
+        <p>UI/UX, typography & branding</p>
+      </div>
+      <div class="cat-card">
+        <h3>Dev</h3>
+        <p>CSS tips, JavaScript tricks</p>
+      </div>
+      <div class="cat-card">
+        <h3>Life</h3>
+        <p>Reflections & personal essays</p>
+      </div>
+      <div class="cat-card">
+        <h3>Bookshelf</h3>
+        <p>Reviews & recommendations</p>
       </div>
     </section>
 
-    <!-- Featured Stories -->
-    <section class="featured-stories">
-      <div class="container">
-        <div class="section-header">
-          <h3 class="section-title">Featured Stories from Our Community</h3>
-          <p class="section-subtitle">
-            Discover the voices that inspire, challenge, and connect us all
+    <!-- Latest Posts -->
+    <section id="latest" class="latest">
+      <div class="post-list">
+        <article class="post">
+          <h4>Debugging a Flexbox Mystery</h4>
+          <p>
+            How I tracked down a subtle CSS quirk and restored pixel-perfect
+            alignment.
           </p>
-        </div>
-
-        <div class="featured-story-list">
-          <!-- Story 1 -->
-          <article class="featured-story">
-            <div class="story-image">
-              <img
-                src="placeholders/assets/post_1.jpg"
-                alt="Finding My Voice After Years of Silence"
-              />
-            </div>
-            <div class="story-content">
-              <div class="story-author">
-                <img
-                  src="placeholders/assets/avatar_1.jpg"
-                  alt="Maya Chen"
-                  class="author-avatar"
-                />
-                <div class="author-info">
-                  <p class="author-name">Maya Chen</p>
-                  <div class="story-meta">
-                    <span class="category-tag">Personal Growth</span>
-                    <span class="read-time">
-                      <i class="fas fa-clock"></i>
-                      5 min
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <h4 class="story-title">
-                Finding My Voice After Years of Silence
-              </h4>
-              <p class="story-excerpt">
-                For twenty-seven years, I believed my thoughts weren't worth
-                sharing. Then one rainy Tuesday, everything changed when I
-                discovered the power of putting pen to paper.
-              </p>
-              <div class="story-footer">
-                <div class="story-stats">
-                  <span class="stat">
-                    <i class="fas fa-heart"></i>
-                    127
-                  </span>
-                  <span class="stat">
-                    <i class="fas fa-comment"></i>
-                    23
-                  </span>
-                </div>
-                <button class="btn btn-ghost">
-                  Read More
-                  <i class="fas fa-arrow-right"></i>
-                </button>
-              </div>
-            </div>
-          </article>
-
-          <!-- Story 2 -->
-          <article class="featured-story reverse">
-            <div class="story-image">
-              <img
-                src="placeholders/assets/post_2.jpg"
-                alt="The Art of Slow Storytelling"
-              />
-            </div>
-            <div class="story-content">
-              <div class="story-author">
-                <img
-                  src="placeholders/assets/avatar_2.jpg"
-                  alt="David Rodriguez"
-                  class="author-avatar"
-                />
-                <div class="author-info">
-                  <p class="author-name">David Rodriguez</p>
-                  <div class="story-meta">
-                    <span class="category-tag">Creative Writing</span>
-                    <span class="read-time">
-                      <i class="fas fa-clock"></i>
-                      7 min
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <h4 class="story-title">The Art of Slow Storytelling</h4>
-              <p class="story-excerpt">
-                In our fast-paced digital world, there's something revolutionary
-                about taking time to craft a story. Join me as I explore the
-                forgotten art of slow storytelling.
-              </p>
-              <div class="story-footer">
-                <div class="story-stats">
-                  <span class="stat">
-                    <i class="fas fa-heart"></i>
-                    89
-                  </span>
-                  <span class="stat">
-                    <i class="fas fa-comment"></i>
-                    15
-                  </span>
-                </div>
-                <button class="btn btn-ghost">
-                  Read More
-                  <i class="fas fa-arrow-right"></i>
-                </button>
-              </div>
-            </div>
-          </article>
-
-          <!-- Story 3 -->
-          <article class="featured-story">
-            <div class="story-image">
-              <img
-                src="placeholders/assets/post_3.jpg"
-                alt="Building Bridges Through Shared Stories"
-              />
-            </div>
-            <div class="story-content">
-              <div class="story-author">
-                <img
-                  src="placeholders/assets/avatar_3.jpg"
-                  alt="Zara Williams"
-                  class="author-avatar"
-                />
-                <div class="author-info">
-                  <p class="author-name">Zara Williams</p>
-                  <div class="story-meta">
-                    <span class="category-tag">Community</span>
-                    <span class="read-time">
-                      <i class="fas fa-clock"></i>
-                      4 min
-                    </span>
-                  </div>
-                </div>
-              </div>
-              <h4 class="story-title">
-                Building Bridges Through Shared Stories
-              </h4>
-              <p class="story-excerpt">
-                What happens when strangers gather to share their most
-                vulnerable moments? In our monthly storytelling circle, I've
-                witnessed the incredible power of narrative.
-              </p>
-              <div class="story-footer">
-                <div class="story-stats">
-                  <span class="stat">
-                    <i class="fas fa-heart"></i>
-                    156
-                  </span>
-                  <span class="stat">
-                    <i class="fas fa-comment"></i>
-                    31
-                  </span>
-                </div>
-                <button class="btn btn-ghost">
-                  Read More
-                  <i class="fas fa-arrow-right"></i>
-                </button>
-              </div>
-            </div>
-          </article>
-        </div>
+        </article>
+        <article class="post">
+          <h4>Choosing the Right Color Palette</h4>
+          <p>Balancing emotion, readability & brand integrity in UI design.</p>
+        </article>
+        <article class="post">
+          <h4>The Magic of SessionStorage</h4>
+          <p>
+            Passing state between pages without polluting your URL or query
+            params.
+          </p>
+        </article>
       </div>
     </section>
 
-    <!-- Community Showcase -->
-    <section class="community-showcase">
-      <div class="container">
-        <div class="section-header">
-          <h3 class="section-title">Voices of Our Community</h3>
-          <p class="section-subtitle">
-            Every story matters, every voice deserves to be heard
-          </p>
-        </div>
-
-        <div class="community-grid">
-          <!-- Post 1 -->
-          <article class="community-post">
-            <div class="post-header">
-              <div class="post-author">
-                <img
-                  src="placeholders/assets/avatar_1.jpg"
-                  alt="Emma Thompson"
-                  class="author-avatar-small"
-                />
-                <div class="author-info-small">
-                  <p class="author-name-small">Emma Thompson</p>
-                  <span class="category-tag-small">Life Stories</span>
-                </div>
-              </div>
-            </div>
-            <h4 class="post-title">The Coffee Shop Chronicles</h4>
-            <p class="post-excerpt">
-              Every morning at 7:15 AM, I watch the same cast of characters
-              enter my local coffee shop...
-            </p>
-            <div class="post-footer">
-              <div class="post-stats">
-                <span class="stat-small">
-                  <i class="fas fa-heart"></i>
-                  45
-                </span>
-                <span class="stat-small">
-                  <i class="fas fa-comment"></i>
-                  8
-                </span>
-              </div>
-              <button class="btn btn-ghost-small">Read More</button>
-            </div>
-          </article>
-
-          <!-- Post 2 -->
-          <article class="community-post">
-            <div class="post-header">
-              <div class="post-author">
-                <img
-                  src="placeholders/assets/avatar_2.jpg"
-                  alt="Marcus Johnson"
-                  class="author-avatar-small"
-                />
-                <div class="author-info-small">
-                  <p class="author-name-small">Marcus Johnson</p>
-                  <span class="category-tag-small">Reflection</span>
-                </div>
-              </div>
-            </div>
-            <h4 class="post-title">Letters to My Younger Self</h4>
-            <p class="post-excerpt">
-              If I could go back and tell my 16-year-old self just three things,
-              they would be these...
-            </p>
-            <div class="post-footer">
-              <div class="post-stats">
-                <span class="stat-small">
-                  <i class="fas fa-heart"></i>
-                  72
-                </span>
-                <span class="stat-small">
-                  <i class="fas fa-comment"></i>
-                  12
-                </span>
-              </div>
-              <button class="btn btn-ghost-small">Read More</button>
-            </div>
-          </article>
-
-          <!-- Post 3 -->
-          <article class="community-post">
-            <div class="post-header">
-              <div class="post-author">
-                <img
-                  src="placeholders/assets/avatar_3.jpg"
-                  alt="Priya Patel"
-                  class="author-avatar-small"
-                />
-                <div class="author-info-small">
-                  <p class="author-name-small">Priya Patel</p>
-                  <span class="category-tag-small">Poetry</span>
-                </div>
-              </div>
-            </div>
-            <h4 class="post-title">The Language of Flowers</h4>
-            <p class="post-excerpt">
-              My grandmother taught me that every flower has a story to tell. In
-              her garden, I learned...
-            </p>
-            <div class="post-footer">
-              <div class="post-stats">
-                <span class="stat-small">
-                  <i class="fas fa-heart"></i>
-                  38
-                </span>
-                <span class="stat-small">
-                  <i class="fas fa-comment"></i>
-                  6
-                </span>
-              </div>
-              <button class="btn btn-ghost-small">Read More</button>
-            </div>
-          </article>
-
-          <!-- Post 4 -->
-          <article class="community-post">
-            <div class="post-header">
-              <div class="post-author">
-                <img
-                  src="placeholders/assets/avatar_1.jpg"
-                  alt="Alex Rivera"
-                  class="author-avatar-small"
-                />
-                <div class="author-info-small">
-                  <p class="author-name-small">Alex Rivera</p>
-                  <span class="category-tag-small">Travel</span>
-                </div>
-              </div>
-            </div>
-            <h4 class="post-title">Midnight Train Thoughts</h4>
-            <p class="post-excerpt">
-              There's something magical about night trains that brings out the
-              philosopher in everyone...
-            </p>
-            <div class="post-footer">
-              <div class="post-stats">
-                <span class="stat-small">
-                  <i class="fas fa-heart"></i>
-                  91
-                </span>
-                <span class="stat-small">
-                  <i class="fas fa-comment"></i>
-                  18
-                </span>
-              </div>
-              <button class="btn btn-ghost-small">Read More</button>
-            </div>
-          </article>
-
-          <!-- Post 5 -->
-          <article class="community-post">
-            <div class="post-header">
-              <div class="post-author">
-                <img
-                  src="placeholders/assets/avatar_2.jpg"
-                  alt="Sarah Kim"
-                  class="author-avatar-small"
-                />
-                <div class="author-info-small">
-                  <p class="author-name-small">Sarah Kim</p>
-                  <span class="category-tag-small">Relationships</span>
-                </div>
-              </div>
-            </div>
-            <h4 class="post-title">The Recipe for Forgiveness</h4>
-            <p class="post-excerpt">
-              It took me three years and one burnt lasagna to understand what my
-              mother was really trying...
-            </p>
-            <div class="post-footer">
-              <div class="post-stats">
-                <span class="stat-small">
-                  <i class="fas fa-heart"></i>
-                  134
-                </span>
-                <span class="stat-small">
-                  <i class="fas fa-comment"></i>
-                  25
-                </span>
-              </div>
-              <button class="btn btn-ghost-small">Read More</button>
-            </div>
-          </article>
-
-          <!-- Post 6 -->
-          <article class="community-post">
-            <div class="post-header">
-              <div class="post-author">
-                <img
-                  src="placeholders/assets/avatar_3.jpg"
-                  alt="Jordan Blake"
-                  class="author-avatar-small"
-                />
-                <div class="author-info-small">
-                  <p class="author-name-small">Jordan Blake</p>
-                  <span class="category-tag-small">Lifestyle</span>
-                </div>
-              </div>
-            </div>
-            <h4 class="post-title">Digital Detox Diary</h4>
-            <p class="post-excerpt">
-              Day 1 without social media: I've already checked my phone 47
-              times. Day 30: I've rediscovered...
-            </p>
-            <div class="post-footer">
-              <div class="post-stats">
-                <span class="stat-small">
-                  <i class="fas fa-heart"></i>
-                  67
-                </span>
-                <span class="stat-small">
-                  <i class="fas fa-comment"></i>
-                  14
-                </span>
-              </div>
-              <button class="btn btn-ghost-small">Read More</button>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <!-- Community Stats -->
-    <section class="community-stats">
-      <div class="container">
-        <div class="stats-grid">
-          <div class="stat-item">
-            <i class="fas fa-book-open stat-icon"></i>
-            <div class="stat-number">2,847</div>
-            <p class="stat-label">Stories Shared</p>
-          </div>
-          <div class="stat-item">
-            <i class="fas fa-users stat-icon"></i>
-            <div class="stat-number">1,203</div>
-            <p class="stat-label">Active Writers</p>
-          </div>
-          <div class="stat-item">
-            <i class="fas fa-heart stat-icon"></i>
-            <div class="stat-number">15,692</div>
-            <p class="stat-label">Monthly Readers</p>
-          </div>
-          <div class="stat-item">
-            <i class="fas fa-globe stat-icon"></i>
-            <div class="stat-number">89</div>
-            <p class="stat-label">Countries</p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- Call to Action -->
-    <section class="cta-section">
-      <div class="container">
-        <div class="cta-content">
-          <h3 class="cta-title">Ready to Share Your Story?</h3>
-          <p class="cta-subtitle">
-            Join a community where every voice matters, every story has value,
-            and every writer finds their home.
-          </p>
-
-          <div class="benefits-card">
-            <h4 class="benefits-title">What you get when you join:</h4>
-            <div class="benefits-grid">
-              <div class="benefit-item">
-                <i class="fas fa-star benefit-icon"></i>
-                <span>A supportive community of fellow storytellers</span>
-              </div>
-              <div class="benefit-item">
-                <i class="fas fa-star benefit-icon"></i>
-                <span>Weekly writing prompts and challenges</span>
-              </div>
-              <div class="benefit-item">
-                <i class="fas fa-star benefit-icon"></i>
-                <span>Feedback from experienced writers</span>
-              </div>
-              <div class="benefit-item">
-                <i class="fas fa-star benefit-icon"></i>
-                <span>Featured story opportunities</span>
-              </div>
-              <div class="benefit-item">
-                <i class="fas fa-star benefit-icon"></i>
-                <span>Access to exclusive writing workshops</span>
-              </div>
-              <div class="benefit-item">
-                <i class="fas fa-star benefit-icon"></i>
-                <span>A safe space to share your authentic voice</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="cta-buttons">
-            <button class="btn btn-primary btn-large">
-              Join Ather&ink Today
-              <i class="fas fa-arrow-right"></i>
-            </button>
-            <button class="btn btn-outline btn-large">
-              Learn More About Us
-            </button>
-          </div>
-        </div>
-      </div>
+    <!-- Newsletter / Contact -->
+    <section id="contact" class="newsletter">
+      <h2>Hear from me</h2>
+      <p>
+        Get new posts, resources & behind-the-scenes updates delivered to your
+        inbox.
+      </p>
+      <form>
+        <input type="email" placeholder="Your email address" required />
+        <button type="submit">Subscribe</button>
+      </form>
     </section>
 
     <!-- Footer -->
-    <footer class="footer">
-      <div class="container">
-        <div class="footer-content">
-          <div class="footer-section">
-            <h5 class="footer-title">Ather&ink</h5>
-            <p class="footer-text">
-              Where stories come to life and every voice finds its home.
-            </p>
-          </div>
-          <div class="footer-section">
-            <h6 class="footer-heading">Community</h6>
-            <ul class="footer-links">
-              <li><a href="#" class="footer-link">Featured Stories</a></li>
-              <li><a href="#" class="footer-link">Writing Challenges</a></li>
-              <li><a href="#" class="footer-link">Author Spotlights</a></li>
-            </ul>
-          </div>
-          <div class="footer-section">
-            <h6 class="footer-heading">Resources</h6>
-            <ul class="footer-links">
-              <li><a href="#" class="footer-link">Writing Tips</a></li>
-              <li><a href="#" class="footer-link">Workshops</a></li>
-              <li><a href="#" class="footer-link">Community Guidelines</a></li>
-            </ul>
-          </div>
-          <div class="footer-section">
-            <h6 class="footer-heading">Connect</h6>
-            <ul class="footer-links">
-              <li><a href="#" class="footer-link">About Us</a></li>
-              <li><a href="#" class="footer-link">Contact</a></li>
-              <li><a href="#" class="footer-link">Privacy Policy</a></li>
-            </ul>
-          </div>
-        </div>
-        <div class="footer-bottom">
-          <p>
-            &copy; 2025 Ather&ink. All rights reserved. Made with ❤️ for
-            storytellers everywhere.
-          </p>
-        </div>
-      </div>
+    <footer>
+      <p>© 2025 Ather & Ink. Crafted with care & a dash of russet.</p>
+      <p><a href="#">Privacy Policy</a> · <a href="#">Terms of Use</a></p>
     </footer>
-
-    <script src="js/welcome.js"></script>
   </body>
 </html>

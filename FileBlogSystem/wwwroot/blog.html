@@ -1,48 +1,85 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Aether & Ink</title>
-  <link rel="stylesheet" href="css/blog.css" />
-  <link rel="alternate" type="application/rss+xml" title="RSS" href="https://localhost:7189/feed.xml" />
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-</head>
-<body>
-  <header>
-    <h1>Aether & Ink</h1>
-    <span class="welcome-message">Welcome back, <span id="username">Guest</span>!</span>
-    <div>
-      <button id="profileBtn">Profile</button>
-      <button id="adminBtn" style="display: none;">Admin</button>
-      <button id="newPostBtn">Write a New Post</button>
-      <button id="logoutBtn">Logout</button>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Aether & Ink</title>
+    <link rel="stylesheet" href="css/notifications.css" />
+    <link rel="stylesheet" href="css/blog.css" />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title="RSS"
+      href="https://localhost:7189/feed.xml"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  </head>
+  <body>
+    <header>
+      <h1>Aether & Ink</h1>
+      <span class="welcome-message"
+        >Welcome back, <span id="username">Guest</span>!</span
+      >
+      <div style="display: flex; align-items: center; gap: 12px">
+        <div
+          id="notificationBell"
+          style="position: relative; cursor: pointer; margin-right: 8px"
+        >
+          <span style="font-size: 1.7em; color: #8b4513">&#128276;</span>
+          <span
+            id="bellUnreadCount"
+            style="
+              position: absolute;
+              top: -6px;
+              right: -6px;
+              background: #8b4513;
+              color: #fff;
+              border-radius: 50%;
+              padding: 2px 7px;
+              font-size: 0.9em;
+              display: none;
+            "
+          ></span>
+        </div>
+        <button id="profileBtn">Profile</button>
+        <button id="adminBtn" style="display: none">Admin</button>
+        <button id="newPostBtn">Write a New Post</button>
+        <button id="logoutBtn">Logout</button>
+      </div>
+    </header>
+    <div id="modeToggle" data-theme="light">☀️</div>
+    <div id="messageBanner" class="hidden"></div>
+
+    <div class="search-container">
+      <div class="input-wrapper">
+        <label for="searchInput" class="sr-only">Search blog posts</label>
+        <input
+          type="text"
+          id="searchInput"
+          placeholder="Search posts..."
+          aria-label="Search blog posts"
+        />
+      </div>
+      <div class="button-wrapper">
+        <button id="clearFilterBtn" style="visibility: hidden">
+          Show All Posts
+        </button>
+      </div>
     </div>
-  </header>
-  <div id="modeToggle" data-theme="light">☀️</div>
-  <div id="messageBanner" class="hidden"></div>
 
-  <div class="search-container">
-    <div class="input-wrapper">
-      <label for="searchInput" class="sr-only">Search blog posts</label>
-      <input type="text" id="searchInput" placeholder="Search posts..." aria-label="Search blog posts">
+    <main id="postsContainer">
+      <h2 class="sr-only">Blog Posts</h2>
+      <!-- Posts will be rendered here -->
+    </main>
+
+    <div id="paginationControls" style="margin-top: 20px; text-align: center">
+      <button id="prevPage">Previous</button>
+      <span id="pageInfo">Page 1</span>
+      <button id="nextPage">Next</button>
     </div>
-    <div class="button-wrapper">
-      <button id="clearFilterBtn" style="visibility: hidden;">Show All Posts</button>
-    </div>
-  </div>
 
-  <main id="postsContainer">
-    <h2 class="sr-only">Blog Posts</h2>
-    <!-- Posts will be rendered here -->
-  </main>
-
-  <div id="paginationControls" style="margin-top: 20px; text-align: center;">
-    <button id="prevPage">Previous</button>
-    <span id="pageInfo">Page 1</span>
-    <button id="nextPage">Next</button>
-  </div>
-
-  <script type="module" src="js/blog.js"></script>
-</body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script type="module" src="js/blog.js"></script>
+    <script src="js/utils/notification-client.js"></script>
+  </body>
 </html>
