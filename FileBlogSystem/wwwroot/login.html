@@ -19,28 +19,55 @@
           <h2>Login</h2>
           <form id="LoginForm">
             <label for="username">Username</label>
-            <input type="text" id="username" placeholder="Enter your username" required />
-            
+            <input
+              type="text"
+              id="username"
+              placeholder="Enter your username"
+              required
+            />
+
             <div class="password-wrapper">
               <label for="loginPassword">Password</label>
-              <input type="password" id="loginPassword" placeholder="Enter your password" required />
+              <input
+                type="password"
+                id="loginPassword"
+                placeholder="Enter your password"
+                required
+              />
               <span id="toggleLoginPassword">👁️</span>
             </div>
 
             <button type="submit">Login</button>
+            <div style="text-align: center; margin-top: 10px">
+              <a
+                href="forgot-password.html"
+                id="forgotPasswordLink"
+                style="
+                  color: #a05a1c;
+                  text-decoration: underline;
+                  font-size: 1rem;
+                "
+                >Forgot Password?</a
+              >
+            </div>
             <p id="loginSuccess" class="success-message">Login successful!</p>
           </form>
           <p class="account-switch">
-          Don't have an account?
-          <a href="register.html">Register Now</a>
+            Don't have an account?
+            <a href="register.html">Register Now</a>
           </p>
-          <p id="successMessage" style="display: none; color: green; text-align: center;">
-          Registration successful!
+          <p
+            id="successMessage"
+            style="display: none; color: green; text-align: center"
+          >
+            Registration successful!
           </p>
-          <p id="errorMessage" style="display: none; color: red; text-align: center;"></p>
+          <p
+            id="errorMessage"
+            style="display: none; color: red; text-align: center"
+          ></p>
         </div>
       </main>
-
     </div>
   </body>
 </html>

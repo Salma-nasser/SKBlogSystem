@@ -465,7 +465,8 @@ public class UserService : IUserService
       return Results.Problem($"An error occurred: {ex.Message}", statusCode: StatusCodes.Status500InternalServerError);
     }
   }
-  public async Task<IResult> ResetPassword(string username, string newPassword, string otpCode)
+  // Step 1: Verify OTP
+  public async Task<IResult> VerifyOtp(string username, string otpCode)
   {
     try
     {
@@ -496,10 +497,49 @@ public class UserService : IUserService
       if (user.ResetToken != otpCode)
         return Results.BadRequest(new { message = "Invalid OTP code." });
 
-      // OTP is valid, reset password
+      // OTP is valid, mark as verified
+      user.ResetTokenVerified = true;
+      await SaveUserProfile(profilePath, user);
+
+      return Results.Ok(new { message = "OTP verified. You may now reset your password." });
+    }
+    catch (Exception ex)
+    {
+      return Results.Problem($"An error occurred: {ex.Message}", statusCode: StatusCodes.Status500InternalServerError);
+    }
+  }
+
+  // Step 2: Reset Password (after OTP verified)
+  public async Task<IResult> ResetPassword(string username, string newPassword)
+  {
+    try
+    {
+      if (!UserDirectoryExists(username))
+        return Results.NotFound(new { message = "User not found" });
+
+      string sanitizedUsername = SanitizeDirectoryName(username);
+      string userDir = Path.Combine(_usersDirectory.FullName, sanitizedUsername);
+      string profilePath = Path.Combine(userDir, "profile.json");
+
+      if (!File.Exists(profilePath))
+        return Results.NotFound(new { message = "User profile not found" });
+
+      var user = await LoadUserProfile(profilePath);
+      if (user == null)
+        return Results.Problem("Invalid user profile data", statusCode: 500);
+
+      if (!user.IsActive)
+        return Results.Problem("Account is deleted", statusCode: 403);
+
+      // Check that OTP was verified
+      if (user.ResetTokenVerified != true)
+        return Results.BadRequest(new { message = "OTP not verified. Please verify OTP first." });
+
+      // Reset password
       user.PasswordHash = _passwordService.HashPassword(newPassword);
       user.ResetToken = null;
       user.ResetTokenExpiration = null;
+      user.ResetTokenVerified = null;
 
       await SaveUserProfile(profilePath, user);
 

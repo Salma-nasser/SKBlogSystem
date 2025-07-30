@@ -12,11 +12,13 @@
     "Development"
   ],
   "publishedDate": "2025-06-23T22:06:02.0870055Z",
-  "lastModified": "2025-07-28T08:44:42.5039761Z",
+  "lastModified": "2025-07-30T00:09:46.5446126Z",
   "slug": "core-principles-software-engineering",
   "isPublished": true,
   "scheduledDate": null,
-  "images": [],
+  "images": [
+    "/assets/software_1.jpg"
+  ],
   "likes": [
     "Salma",
     "Henry",

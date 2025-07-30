@@ -74,12 +74,21 @@ public static class UserEndpoints
       var result = await userService.ForgotPassword(request.Username, request.Email, emailService);
       return result;
     });
+    app.MapPost("/api/users/verify-otp", async (Models.VerifyOtpRequest request, IUserService userService) =>
+    {
+      if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.OTPCode))
+        return Results.BadRequest("Username and OTP code are required.");
+
+      var result = await userService.VerifyOtp(request.Username, request.OTPCode);
+      return result;
+    });
+
     app.MapPost("/api/users/reset-password", async (Models.ResetPasswordRequest request, IUserService userService) =>
     {
-      if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.NewPassword) || string.IsNullOrEmpty(request.OTPCode))
-        return Results.BadRequest("Username, new password, and OTP code are required.");
+      if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.NewPassword))
+        return Results.BadRequest("Username and new password are required.");
 
-      var result = await userService.ResetPassword(request.Username, request.NewPassword, request.OTPCode);
+      var result = await userService.ResetPassword(request.Username, request.NewPassword);
       return result;
     });
   }

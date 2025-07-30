@@ -36,10 +36,12 @@ public class ImageService
     using var stream = image.OpenReadStream();
     using var imageSharp = await Image.LoadAsync(stream);
 
+    // Enforce 1200x630 pixels (3:2 aspect ratio)
     imageSharp.Mutate(x => x.Resize(new ResizeOptions
     {
-      Mode = ResizeMode.Max,
-      Size = new Size(1200, 900)
+      Size = new Size(1200, 630),
+      Mode = ResizeMode.Crop,
+      Sampler = KnownResamplers.Lanczos3
     }));
 
     await SaveWithFormatAsync(imageSharp, filePath, extension);
@@ -70,10 +72,12 @@ public class ImageService
     using var ms = new MemoryStream(imageBytes);
     using var imageSharp = await Image.LoadAsync(ms);
 
+    // Enforce 1200x630 pixels (3:2 aspect ratio)
     imageSharp.Mutate(x => x.Resize(new ResizeOptions
     {
-      Mode = ResizeMode.Max,
-      Size = new Size(500, 0) // Smaller size for profile pics
+      Size = new Size(945, 630),
+      Mode = ResizeMode.Crop,
+      Sampler = KnownResamplers.Lanczos3
     }));
 
     await SaveWithFormatAsync(imageSharp, filePath, extension);

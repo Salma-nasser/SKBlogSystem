@@ -8,6 +8,7 @@
   "Bio": "",
   "LastLoginDate": "0001-01-01T00:00:00",
   "IsActive": true,
-  "ResetToken": null,
-  "ResetTokenExpiration": null
+  "ResetToken": "769511",
+  "ResetTokenExpiration": "2025-07-30T02:29:28.8550549Z",
+  "ResetTokenVerified": null
 }

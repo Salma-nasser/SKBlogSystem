@@ -454,18 +454,30 @@ public class BlogPostService : IBlogPostService
 
       // Get existing images first
       var existingImages = GetSafeStringArray("images");
-
-      // Clear existing images - we'll replace them completely
+      var keptImages = updatedData.KeptImages ?? new List<string>();
       var newImages = new List<string>();
 
-      if (updatedData.Images != null)
-      {
-        // If there are any images, handle saving and deleting
-        if (!Directory.Exists(assetsDirectory))
-          Directory.CreateDirectory(assetsDirectory);
+      if (!Directory.Exists(assetsDirectory))
+        Directory.CreateDirectory(assetsDirectory);
 
-        // Always clear all existing image files if updating images (even if empty)
-        foreach (var file in Directory.GetFiles(assetsDirectory))
+      // Save new images if any
+      if (updatedData.Images != null && updatedData.Images.Count > 0)
+      {
+        foreach (var image in updatedData.Images)
+        {
+          var savedPath = await ImageService.SaveAndCompressAsync(image, assetsDirectory);
+          if (savedPath != null)
+            newImages.Add(savedPath);
+        }
+      }
+
+      // Determine which files to keep (from KeptImages)
+      var keptFileNames = new HashSet<string>(keptImages.Select(img => Path.GetFileName(img)), StringComparer.OrdinalIgnoreCase);
+      // Remove files not in KeptImages or newImages
+      foreach (var file in Directory.GetFiles(assetsDirectory))
+      {
+        var fileName = Path.GetFileName(file);
+        if (!keptFileNames.Contains(fileName) && !newImages.Contains(fileName))
         {
           try { File.Delete(file); }
           catch (Exception ex)
@@ -473,20 +485,12 @@ public class BlogPostService : IBlogPostService
             Console.WriteLine($"Warning: Could not delete image file {file}: {ex.Message}");
           }
         }
+      }
 
-        // Save new images if any
-        foreach (var image in updatedData.Images)
-        {
-          var savedPath = await ImageService.SaveAndCompressAsync(image, assetsDirectory);
-          if (savedPath != null)
-            newImages.Add(savedPath);
-        }
-        // If updatedData.Images is empty, newImages will be empty
-      }
-      else
-      {
-        newImages = existingImages;
-      }
+      // Final image list: kept + new
+      var finalImages = new List<string>();
+      finalImages.AddRange(keptFileNames.Select(f => f));
+      finalImages.AddRange(newImages);
 
       // Use updated data or fall back to existing data using safe accessors
       var title = string.IsNullOrWhiteSpace(updatedData.Title) ? GetSafeString("title") : updatedData.Title;
@@ -503,7 +507,7 @@ public class BlogPostService : IBlogPostService
 
       var isPublished = updatedData.IsPublished ?? GetSafeBool("isPublished");
 
-      // Create the updated metadata - use the new images list
+      // Create the updated metadata - use the final images list (kept + new)
       var updatedMeta = new
       {
         title = title,
@@ -517,7 +521,7 @@ public class BlogPostService : IBlogPostService
         slug = slug,
         isPublished = isPublished,
         scheduledDate = (DateTime?)null,
-        images = newImages.Select(img => $"/assets/{img}"),
+        images = finalImages.Select(img => $"/assets/{img}"),
         likes = existingLikes,
         commentCount = commentCount
       };

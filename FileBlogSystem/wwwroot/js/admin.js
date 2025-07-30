@@ -207,7 +207,7 @@ class AdminDashboard {
     }
 
     return `
-    <button class="btn btn-primary promote-btn" data-username="${user.Username}">
+    <button class="btn" data-username="${user.Username}">
       Promote to Admin
     </button>
   `;

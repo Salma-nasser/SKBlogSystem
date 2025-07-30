@@ -274,7 +274,6 @@
 /* Buttons */
 
 /* Unified Button Styles */
-.btn,
 .btn-primary,
 .btn-secondary,
 .logout-btn,
@@ -293,7 +292,6 @@
   text-decoration: none;
   display: inline-block;
 }
-.btn:hover,
 .btn-primary:hover,
 .btn-secondary:hover,
 .logout-btn:hover,

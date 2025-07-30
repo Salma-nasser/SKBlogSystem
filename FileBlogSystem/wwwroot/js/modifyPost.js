@@ -172,16 +172,20 @@ document.addEventListener("DOMContentLoaded", () => {
     postSlug = post.Slug;
     console.log("Date ", post.PublishedDate);
     easyMDE.value(post.Body || "");
-    // Hide schedule option if post is already published
-    const scheduleSection =
-      document.getElementById("scheduleSection") ||
-      document.getElementById("scheduleInput");
-    if (post.PublishedDate) {
-      // Hide the schedule section/checkbox if published
+    // Hide schedule input and checkbox if post is already published
+    const scheduleSection = document.getElementById("scheduleSection");
+    const scheduleInput = document.getElementById("scheduleInput");
+    const scheduleCheckbox = document.getElementById("schedulePost");
+    if (post.isPublished) {
       if (scheduleSection) scheduleSection.style.display = "none";
+      if (scheduleInput) scheduleInput.style.display = "none";
+      if (scheduleCheckbox) {
+        scheduleCheckbox.style.display = "none";
+        scheduleCheckbox.checked = false;
+      }
     } else if (post.ScheduledDate) {
-      document.getElementById("schedulePost").checked = true;
-      document.getElementById("scheduleInput").style.display = "block";
+      if (scheduleCheckbox) scheduleCheckbox.checked = true;
+      if (scheduleInput) scheduleInput.style.display = "block";
       // Convert UTC or ISO string to local datetime-local format
       let dt = post.ScheduledDate;
       let localValue = "";
@@ -201,7 +205,9 @@ document.addEventListener("DOMContentLoaded", () => {
             String(dateObj.getMinutes()).padStart(2, "0");
         }
       }
-      document.getElementById("scheduledDate").value = localValue;
+      if (document.getElementById("scheduledDate")) {
+        document.getElementById("scheduledDate").value = localValue;
+      }
     }
     // Always initialize imagesToKeep from the post's images (handle both Images and images)
     postImages = post.Images || post.images || [];
@@ -233,7 +239,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 async function submitModification() {
-  const form = document.getElementById("modifyPostForm");
   const formData = new FormData();
   const slug = document.getElementById("customUrl").value;
 
@@ -264,11 +269,28 @@ async function submitModification() {
   formData.append("Body", body);
   formData.append("Tags", tags);
   formData.append("Categories", categories);
-  formData.append("IsPublished", "true");
+  formData.append("CustomUrl", slug);
+  // Only set IsPublished to true if the post is already published
+  const raw = sessionStorage.getItem("postData");
+  let post = {};
+  if (raw) {
+    post = JSON.parse(raw);
+  }
+  if (post.isPublished) {
+    formData.append("IsPublished", "true");
+  }
+  if (post.PublishedDate) {
+    formData.append("PublishedDate", post.PublishedDate);
+  }
 
-  // If scheduling is enabled, add the scheduled date
+  // Always hide schedule checkbox if post is published
   const scheduleCheckbox = document.getElementById("schedulePost");
-  if (scheduleCheckbox && scheduleCheckbox.checked) {
+  if (post.isPublished && scheduleCheckbox) {
+    scheduleCheckbox.style.display = "none";
+    scheduleCheckbox.checked = false;
+  }
+  // If scheduling is enabled, add the scheduled date
+  if (!post.isPublished && scheduleCheckbox && scheduleCheckbox.checked) {
     const scheduledDateInput = document.getElementById("scheduledDate");
     if (scheduledDateInput && scheduledDateInput.value) {
       // Convert local time to ISO string for backend
