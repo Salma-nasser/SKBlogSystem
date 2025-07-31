@@ -16,6 +16,16 @@ function enableUpdateButton() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Logout button handler: remove jwtToken and username from localStorage
+  const logoutBtn = document.querySelector(
+    'a[href="/logout"], .header-buttons .btn[href="/logout"]'
+  );
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", function (e) {
+      localStorage.removeItem("jwtToken");
+      localStorage.removeItem("username");
+    });
+  }
   const raw = sessionStorage.getItem("postData");
   token = localStorage.getItem("jwtToken");
   username = localStorage.getItem("username");
@@ -172,41 +182,77 @@ document.addEventListener("DOMContentLoaded", () => {
     postSlug = post.Slug;
     console.log("Date ", post.PublishedDate);
     easyMDE.value(post.Body || "");
-    // Hide schedule input and checkbox if post is already published
-    const scheduleSection = document.getElementById("scheduleSection");
-    const scheduleInput = document.getElementById("scheduleInput");
-    const scheduleCheckbox = document.getElementById("schedulePost");
-    if (post.isPublished) {
-      if (scheduleSection) scheduleSection.style.display = "none";
-      if (scheduleInput) scheduleInput.style.display = "none";
-      if (scheduleCheckbox) {
-        scheduleCheckbox.style.display = "none";
-        scheduleCheckbox.checked = false;
+    // Inject schedule group only for unpublished posts
+    const form = document.getElementById("modifyPostForm");
+    // Remove any previously injected schedule group
+    const prevScheduleGroup = document.getElementById("scheduleGroupContainer");
+    if (prevScheduleGroup) {
+      prevScheduleGroup.remove();
+    }
+    // Inject only for unpublished posts
+    if (!post.isPublished && form) {
+      const scheduleGroupHTML = `
+        <div class="form-group" id="scheduleGroupContainer">
+          <div class="schedule-group">
+            <label class="checkbox-label">
+              <input type="checkbox" id="schedulePost" name="schedulePost" />
+              Schedule this post for later
+            </label>
+            <div
+              id="scheduleInput"
+              class="schedule-input"
+              style="display: none"
+            >
+              <label for="scheduledDate">Publish Date & Time:</label>
+              <input
+                type="datetime-local"
+                id="scheduledDate"
+                name="scheduledDate"
+              />
+            </div>
+          </div>
+        </div>
+      `;
+      // Insert before form actions
+      const actions = document.querySelector(".form-actions");
+      if (actions) {
+        actions.insertAdjacentHTML("beforebegin", scheduleGroupHTML);
       }
-    } else if (post.ScheduledDate) {
-      if (scheduleCheckbox) scheduleCheckbox.checked = true;
-      if (scheduleInput) scheduleInput.style.display = "block";
-      // Convert UTC or ISO string to local datetime-local format
-      let dt = post.ScheduledDate;
-      let localValue = "";
-      if (dt) {
-        const dateObj = new Date(dt);
-        if (!isNaN(dateObj.getTime())) {
-          // yyyy-MM-ddTHH:mm
-          localValue =
-            dateObj.getFullYear() +
-            "-" +
-            String(dateObj.getMonth() + 1).padStart(2, "0") +
-            "-" +
-            String(dateObj.getDate()).padStart(2, "0") +
-            "T" +
-            String(dateObj.getHours()).padStart(2, "0") +
-            ":" +
-            String(dateObj.getMinutes()).padStart(2, "0");
+      // Setup checkbox and input
+      const scheduleCheckbox = document.getElementById("schedulePost");
+      const scheduleInput = document.getElementById("scheduleInput");
+      if (post.ScheduledDate) {
+        if (scheduleCheckbox) scheduleCheckbox.checked = true;
+        if (scheduleInput) scheduleInput.style.display = "block";
+        let dt = post.ScheduledDate;
+        let localValue = "";
+        if (dt) {
+          const dateObj = new Date(dt);
+          if (!isNaN(dateObj.getTime())) {
+            localValue =
+              dateObj.getFullYear() +
+              "-" +
+              String(dateObj.getMonth() + 1).padStart(2, "0") +
+              "-" +
+              String(dateObj.getDate()).padStart(2, "0") +
+              "T" +
+              String(dateObj.getHours()).padStart(2, "0") +
+              ":" +
+              String(dateObj.getMinutes()).padStart(2, "0");
+          }
         }
+        if (document.getElementById("scheduledDate")) {
+          document.getElementById("scheduledDate").value = localValue;
+        }
+      } else {
+        if (scheduleInput) scheduleInput.style.display = "none";
+        if (scheduleCheckbox) scheduleCheckbox.checked = false;
       }
-      if (document.getElementById("scheduledDate")) {
-        document.getElementById("scheduledDate").value = localValue;
+      // Add event listener for checkbox to toggle input
+      if (scheduleCheckbox && scheduleInput) {
+        scheduleCheckbox.addEventListener("change", function () {
+          scheduleInput.style.display = this.checked ? "block" : "none";
+        });
       }
     }
     // Always initialize imagesToKeep from the post's images (handle both Images and images)
@@ -283,13 +329,8 @@ async function submitModification() {
     formData.append("PublishedDate", post.PublishedDate);
   }
 
-  // Always hide schedule checkbox if post is published
-  const scheduleCheckbox = document.getElementById("schedulePost");
-  if (post.isPublished && scheduleCheckbox) {
-    scheduleCheckbox.style.display = "none";
-    scheduleCheckbox.checked = false;
-  }
   // If scheduling is enabled, add the scheduled date
+  const scheduleCheckbox = document.getElementById("schedulePost");
   if (!post.isPublished && scheduleCheckbox && scheduleCheckbox.checked) {
     const scheduledDateInput = document.getElementById("scheduledDate");
     if (scheduledDateInput && scheduledDateInput.value) {
@@ -299,8 +340,13 @@ async function submitModification() {
         formData.append("ScheduledDate", localDate.toISOString());
       }
     }
+  } else if (
+    !post.isPublished &&
+    scheduleCheckbox &&
+    !scheduleCheckbox.checked
+  ) {
+    formData.append("ScheduledDate", post.ScheduledDate || "");
   }
-
   // Always add kept images (images that weren't removed or unchanged)
   if (imagesToKeep && imagesToKeep.length > 0) {
     imagesToKeep.forEach((imagePath) => {

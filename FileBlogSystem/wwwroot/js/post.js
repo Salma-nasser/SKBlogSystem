@@ -14,7 +14,15 @@ window.addEventListener("DOMContentLoaded", () => {
   // Initialize components
   initializeImageModal();
   initializeThemeToggle();
-
+  const logoutBtn1 = document.querySelector(
+    'a[href="/logout"], .header-buttons .btn[href="/logout"]'
+  );
+  if (logoutBtn1) {
+    logoutBtn1.addEventListener("click", function (e) {
+      localStorage.removeItem("jwtToken");
+      localStorage.removeItem("username");
+    });
+  }
   // Get the post slug from URL path
   const slug = getSlugFromPath();
 

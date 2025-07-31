@@ -36,7 +36,15 @@ window.addEventListener("DOMContentLoaded", () => {
   if (!token) {
     return (window.location.href = "login");
   }
-
+  const logoutBtn = document.querySelector(
+    'a[href="/logout"], .header-buttons .btn[href="/logout"]'
+  );
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", function (e) {
+      localStorage.removeItem("jwtToken");
+      localStorage.removeItem("username");
+    });
+  }
   // Initialize page from URL
   initializePageFromURL();
 

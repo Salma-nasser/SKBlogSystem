@@ -10,6 +10,15 @@ window.addEventListener("DOMContentLoaded", () => {
     window.location.href = "/login";
     return;
   }
+  const logoutBtn = document.querySelector(
+    'a[href="/logout"], .header-buttons .btn[href="/logout"]'
+  );
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", function (e) {
+      localStorage.removeItem("jwtToken");
+      localStorage.removeItem("username");
+    });
+  }
 
   initializeThemeToggle();
   initializeMarkdownEditor();

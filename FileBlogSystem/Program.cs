@@ -79,7 +79,8 @@ var rewriteOptions = new RewriteOptions()
     .AddRewrite("^admin/?$", "admin.html", skipRemainingRules: true)
     .AddRewrite("^create-post/?$", "createPost.html", skipRemainingRules: true)
     .AddRewrite("^post/([^/?]+)/?$", "post.html?slug=$1", skipRemainingRules: true)
-    .AddRewrite("^modify-post/([^/?]+)/?$", "modifyPost.html?slug=$1", skipRemainingRules: true);
+    .AddRewrite("^modify-post/([^/?]+)/?$", "modifyPost.html?slug=$1", skipRemainingRules: true)
+    .AddRewrite("^forgot-password/?$", "forgot-password.html", skipRemainingRules: true);
 
 app.UseRewriter(rewriteOptions);
 

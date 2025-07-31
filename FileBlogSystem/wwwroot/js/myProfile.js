@@ -9,12 +9,19 @@ window.addEventListener("DOMContentLoaded", () => {
   // Get username from query parameter or URL path
   const urlParams = new URLSearchParams(window.location.search);
   let profileUsername = urlParams.get("username");
-
+  const logoutBtn1 = document.querySelector(
+    'a[href="/logout"], .header-buttons .btn[href="/logout"]'
+  );
+  if (logoutBtn1) {
+    logoutBtn1.addEventListener("click", function (e) {
+      localStorage.removeItem("jwtToken");
+      localStorage.removeItem("username");
+    });
+  }
   // If no query param, try to extract from path: /profile/{username}
   if (!profileUsername) {
     const pathMatch = window.location.pathname.match(/^\/profile\/(.+)$/);
     if (pathMatch && pathMatch[1] && pathMatch[1] !== "profile") {
-
       profileUsername = pathMatch[1];
     }
   }
@@ -33,7 +40,6 @@ window.addEventListener("DOMContentLoaded", () => {
     isOwnProfile = profileUsername === currentUsername;
     targetUsername = isOwnProfile ? currentUsername : profileUsername;
   }
-
 
   const ProfileTitle = document.getElementById("ProfileTitle");
   // Update page title and header

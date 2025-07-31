@@ -9,5 +9,6 @@
   "LastLoginDate": "0001-01-01T00:00:00",
   "IsActive": true,
   "ResetToken": null,
-  "ResetTokenExpiration": null
+  "ResetTokenExpiration": null,
+  "ResetTokenVerified": null
 }

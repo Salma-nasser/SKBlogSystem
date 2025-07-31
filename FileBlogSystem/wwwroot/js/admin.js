@@ -365,4 +365,13 @@ class AdminDashboard {
 window.adminDashboard; // Make it globally accessible
 document.addEventListener("DOMContentLoaded", () => {
   window.adminDashboard = new AdminDashboard();
+  const logoutBtn = document.querySelector(
+    'a[href="/logout"], .header-buttons .btn[href="/logout"]'
+  );
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", function (e) {
+      localStorage.removeItem("jwtToken");
+      localStorage.removeItem("username");
+    });
+  }
 });
