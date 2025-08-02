@@ -1,5 +1,6 @@
 import { showMessage, showConfirmation } from "./utils/notifications.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
+import { authenticatedFetch, HttpError } from "./utils/api.js";
 
 let easyMDE;
 let imagesToKeep = [];
@@ -184,20 +185,18 @@ document.addEventListener("DOMContentLoaded", () => {
     easyMDE.value(post.Body || "");
     // Inject schedule group only for unpublished posts
     const form = document.getElementById("modifyPostForm");
-    // Remove any previously injected schedule group
-    const prevScheduleGroup = document.getElementById("scheduleGroupContainer");
-    if (prevScheduleGroup) {
-      prevScheduleGroup.remove();
-    }
+
     // Inject only for unpublished posts
-    if (!post.isPublished && form) {
+    console.log("Post is published: ", post.IsPublished || post.isPublished);
+    if (!(post.IsPublished || post.isPublished)) {
       const scheduleGroupHTML = `
         <div class="form-group" id="scheduleGroupContainer">
           <div class="schedule-group">
-            <label class="checkbox-label">
-              <input type="checkbox" id="schedulePost" name="schedulePost" />
-              Schedule this post for later
-            </label>
+            <!-- Using an explicit label for better rendering reliability -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <input type="checkbox" id="schedulePost" name="schedulePost" style="margin: 0; width: auto; flex-shrink: 0;"/>
+              <label for="schedulePost" class="checkbox-label" style="margin: 0;">Schedule this post for later</label>
+            </div>
             <div
               id="scheduleInput"
               class="schedule-input"
@@ -322,30 +321,32 @@ async function submitModification() {
   if (raw) {
     post = JSON.parse(raw);
   }
-  if (post.isPublished) {
+  const isPublished = post.IsPublished || post.isPublished;
+  if (isPublished) {
     formData.append("IsPublished", "true");
   }
   if (post.PublishedDate) {
     formData.append("PublishedDate", post.PublishedDate);
   }
 
-  // If scheduling is enabled, add the scheduled date
-  const scheduleCheckbox = document.getElementById("schedulePost");
-  if (!post.isPublished && scheduleCheckbox && scheduleCheckbox.checked) {
+  // If the post is a draft, handle scheduling options
+  if (!isPublished) {
+    const scheduleCheckbox = document.getElementById("schedulePost");
     const scheduledDateInput = document.getElementById("scheduledDate");
-    if (scheduledDateInput && scheduledDateInput.value) {
-      // Convert local time to ISO string for backend
+
+    if (scheduleCheckbox && scheduleCheckbox.checked && scheduledDateInput && scheduledDateInput.value) {
+      // If scheduling is checked and a valid date is provided, send it
       const localDate = new Date(scheduledDateInput.value);
       if (!isNaN(localDate.getTime())) {
         formData.append("ScheduledDate", localDate.toISOString());
+      } else {
+        // If the date is invalid, clear any existing schedule on the backend
+        formData.append("ScheduledDate", "");
       }
+    } else {
+      // If scheduling is unchecked or no date is provided, clear any existing schedule
+      formData.append("ScheduledDate", "");
     }
-  } else if (
-    !post.isPublished &&
-    scheduleCheckbox &&
-    !scheduleCheckbox.checked
-  ) {
-    formData.append("ScheduledDate", post.ScheduledDate || "");
   }
   // Always add kept images (images that weren't removed or unchanged)
   if (imagesToKeep && imagesToKeep.length > 0) {
@@ -369,23 +370,24 @@ async function submitModification() {
       `/api/posts/modify/${postSlug}`,
       {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
         body: formData,
       }
     );
 
-    if (response.ok) {
-      const result = await response.json();
-      showMessage("Post updated successfully!", "success");
-      setTimeout(() => {
-        window.location.href = "/blog";
-      }, 1200);
-    } else {
-      const errorText = await response.text();
+    const result = await response.json();
+    showMessage("Post updated successfully!", "success");
+    setTimeout(() => {
+      window.location.href = "/blog";
+    }, 1200);
+  } catch (error) {
+    if (error instanceof HttpError) {
+      if (error.message === "Session expired") {
+        // Message and redirect are handled by authenticatedFetch
+        return; // Stop further execution
+      }
+      // Handle other HTTP errors
+      const errorText = await error.response.text();
       console.error("Server response:", errorText);
-
       try {
         const errorJson = JSON.parse(errorText);
         showMessage(
@@ -393,15 +395,12 @@ async function submitModification() {
           "error"
         );
       } catch {
-        showMessage(
-          `Error updating post (${response.status}): ${errorText}`,
-          "error"
-        );
+        showMessage(`Error updating post: ${errorText}`, "error");
       }
+    } else {
+      console.error("Network error:", error);
+      showMessage("Network error occurred while updating the post", "error");
     }
-  } catch (error) {
-    console.error("Network error:", error);
-    showMessage("Network error occurred while updating the post", "error");
   }
 }
 

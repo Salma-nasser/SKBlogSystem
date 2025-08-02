@@ -352,11 +352,6 @@ body.dark-mode .btn-danger:hover {
   color: var(--text-muted);
 }
 
-/* Schedule Group */
-.checkbox-label input[type="checkbox"] {
-  /* Hide checkbox if JS sets display:none */
-  display: none !important;
-}
 .schedule-group {
   background: var(--card-background);
   padding: 1rem;

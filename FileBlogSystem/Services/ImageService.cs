@@ -36,11 +36,10 @@ public class ImageService
     using var stream = image.OpenReadStream();
     using var imageSharp = await Image.LoadAsync(stream);
 
-    // Enforce 1200x630 pixels (3:2 aspect ratio)
     imageSharp.Mutate(x => x.Resize(new ResizeOptions
     {
       Size = new Size(1200, 630),
-      Mode = ResizeMode.Crop,
+      Mode = ResizeMode.Max,
       Sampler = KnownResamplers.Lanczos3
     }));
 
@@ -72,11 +71,11 @@ public class ImageService
     using var ms = new MemoryStream(imageBytes);
     using var imageSharp = await Image.LoadAsync(ms);
 
-    // Enforce 1200x630 pixels (3:2 aspect ratio)
+    // Resize profile pictures to fit within a 400x400 square, preserving aspect ratio
     imageSharp.Mutate(x => x.Resize(new ResizeOptions
     {
-      Size = new Size(945, 630),
-      Mode = ResizeMode.Crop,
+      Size = new Size(400, 400),
+      Mode = ResizeMode.Max,
       Sampler = KnownResamplers.Lanczos3
     }));
 

@@ -259,6 +259,7 @@ public class BlogPostService : IBlogPostService
       var body = File.ReadAllText(bodyPath);
       var post = new Post(title, description, body ?? string.Empty, author, publishedDate, lastModified, tags, categories, slug, isPublished, scheduledDate);
 
+      post.Id = Path.GetFileName(folder);
       post.Images = images;
       post.Likes = likes;
       post.CommentCount = commentCount;
@@ -269,6 +270,21 @@ public class BlogPostService : IBlogPostService
       Console.WriteLine($"Error reading post from {folder}: {ex.Message}");
       return null;
     }
+  }
+
+  public Task<Post?> GetPostByIdAsync(string postId)
+  {
+    // The postId is the directory name (e.g., "2023-10-27-my-post-slug")
+    var postDirectory = Path.Combine(_rootPath, postId);
+    if (!Directory.Exists(postDirectory))
+    {
+      return Task.FromResult<Post?>(null);
+    }
+
+    // Use the existing LoadPost method which handles reading meta.json and content.md
+    var post = LoadPost(postDirectory);
+
+    return Task.FromResult(post);
   }
 
   public async Task<dynamic> CreatePostAsync(CreatePostRequest request, string author)
@@ -307,18 +323,20 @@ public class BlogPostService : IBlogPostService
 
       var postMeta = new
       {
-        request.Title,
-        request.Description,
-        request.CustomUrl,
-        Author = author,
-        request.Tags,
-        request.Categories,
-        PublishedDate = date,
-        ModifiedDate = (DateTime?)null,
-        Slug = slug,
-        request.IsPublished,
-        request.ScheduledDate,
-        Images = savedImages.Select(img => $"/assets/{img}"),
+        title = request.Title,
+        description = request.Description,
+        customUrl = request.CustomUrl,
+        author = author,
+        tags = request.Tags,
+        categories = request.Categories,
+        publishedDate = date,
+        lastModified = (DateTime?)null,
+        slug = slug,
+        isPublished = request.IsPublished,
+        scheduledDate = request.ScheduledDate,
+        images = savedImages.Select(img => $"/assets/{img}"),
+        likes = new List<string>(),
+        commentCount = 0
       };
 
       var meta = JsonSerializer.Serialize(postMeta, new JsonSerializerOptions { WriteIndented = true });
@@ -506,6 +524,15 @@ public class BlogPostService : IBlogPostService
           : updatedData.Categories;
 
       var isPublished = updatedData.IsPublished ?? GetSafeBool("isPublished");
+      var scheduledDate = updatedData.ScheduledDate;
+
+      // If a post is being scheduled (or re-scheduled), it must be a draft.
+      // The frontend sends a null/empty date to clear it.
+      if (scheduledDate.HasValue)
+      {
+        isPublished = false;
+        scheduledDate = scheduledDate.Value.ToUniversalTime();
+      }
 
       // Create the updated metadata - use the final images list (kept + new)
       var updatedMeta = new
@@ -520,7 +547,7 @@ public class BlogPostService : IBlogPostService
         lastModified = DateTime.UtcNow,
         slug = slug,
         isPublished = isPublished,
-        scheduledDate = (DateTime?)null,
+        scheduledDate = scheduledDate,
         images = finalImages.Select(img => $"/assets/{img}"),
         likes = existingLikes,
         commentCount = commentCount
@@ -588,41 +615,68 @@ public class BlogPostService : IBlogPostService
 
       var metaJson = await File.ReadAllTextAsync(metaPath);
       using var doc = JsonDocument.Parse(metaJson);
-      var root = doc.RootElement;
+      var root = doc.RootElement.Clone(); // Clone to allow use after 'using' block
 
-      var authorUsername = root.GetProperty("Author").GetString();
+      // Add safe property accessors to handle casing inconsistencies (camelCase vs PascalCase)
+      string GetSafeString(string propertyName)
+      {
+        if (root.TryGetProperty(propertyName, out var prop))
+          return prop.GetString() ?? "";
+        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
+          return upperProp.GetString() ?? "";
+        return "";
+      }
+
+      List<string> GetSafeStringArray(string propertyName)
+      {
+        if (root.TryGetProperty(propertyName, out var prop))
+          return prop.EnumerateArray().Select(t => t.GetString() ?? "").ToList();
+        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
+          return upperProp.EnumerateArray().Select(t => t.GetString() ?? "").ToList();
+        return new List<string>();
+      }
+
+      int GetSafeInt(string propertyName, int defaultValue = 0)
+      {
+        if (root.TryGetProperty(propertyName, out var prop))
+          return prop.GetInt32();
+        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
+          return upperProp.GetInt32();
+        return defaultValue;
+      }
+
+      var authorUsername = GetSafeString("author");
       if (!string.Equals(authorUsername, currentUsername, StringComparison.OrdinalIgnoreCase))
         return (false, "Unauthorized: only the author can publish this post.");
 
-      if (root.TryGetProperty("ScheduledDate", out var schedProp) && schedProp.ValueKind != JsonValueKind.Null)
-      {
-        var scheduledDate = schedProp.GetDateTime();
-        if (scheduledDate.ToUniversalTime() > DateTime.UtcNow)
-        {
-          return (false, "Cannot publish a scheduled post before its scheduled time.");
-        }
-      }
+      // Preserve existing metadata
+      var title = GetSafeString("title");
+      var description = GetSafeString("description");
+      var customUrl = GetSafeString("customUrl");
+      var tags = GetSafeStringArray("tags");
+      var categories = GetSafeStringArray("categories");
+      var existingImages = GetSafeStringArray("images");
+      var existingLikes = GetSafeStringArray("likes");
+      var commentCount = GetSafeInt("commentCount");
 
-      var publishedDate = root.GetProperty("PublishedDate").GetDateTime();
-
-      var existingImages = root.TryGetProperty("Images", out var imagesProp)
-          ? imagesProp.EnumerateArray().Select(i => i.GetString() ?? "").Where(i => !string.IsNullOrEmpty(i)).ToList()
-          : new List<string>();
-
+      // Create the updated metadata object, ensuring all fields are preserved
+      // and casing is consistent (camelCase) with ModifyPostAsync and SavePost.
       var updatedMeta = new
       {
-        Title = root.GetProperty("Title").GetString(),
-        Description = root.GetProperty("Description").GetString(),
-        CustomUrl = root.GetProperty("CustomUrl").GetString(),
-        Author = authorUsername,
-        Tags = root.GetProperty("Tags").EnumerateArray().Select(t => t.GetString() ?? "").ToList(),
-        Categories = root.GetProperty("Categories").EnumerateArray().Select(c => c.GetString() ?? "").ToList(),
-        PublishedDate = publishedDate,
-        ModifiedDate = DateTime.UtcNow,
-        Slug = slug,
-        IsPublished = true,
-        ScheduledDate = null as DateTime?,
-        Images = existingImages
+        title = title,
+        description = description,
+        customUrl = customUrl,
+        author = authorUsername,
+        tags = tags,
+        categories = categories,
+        publishedDate = DateTime.UtcNow, // Set the publish date to now
+        lastModified = DateTime.UtcNow,
+        slug = slug,
+        isPublished = true,
+        scheduledDate = (DateTime?)null, // Clear the scheduled date
+        images = existingImages,
+        likes = existingLikes,
+        commentCount = commentCount
       };
 
       var newMeta = JsonSerializer.Serialize(updatedMeta, new JsonSerializerOptions { WriteIndented = true });
@@ -633,6 +687,7 @@ public class BlogPostService : IBlogPostService
     catch (Exception ex)
     {
       Console.WriteLine($"Error publishing post {slug}: {ex.Message}");
+      Console.WriteLine($"Stack trace: {ex.StackTrace}");
       return (false, "An error occurred while publishing the post.");
     }
   }
@@ -756,8 +811,9 @@ public class BlogPostService : IBlogPostService
     // Send notification to the post's author (but not to self)
     if (!string.Equals(post.Author, likerUsername, StringComparison.OrdinalIgnoreCase))
     {
-      var message = $"{likerUsername} liked your post: \"{post.Title}\"";
-      notificationService.NotifyAsync(post.Author, message).Wait(); // or use `.GetAwaiter().GetResult()` if preferred
+        var message = $"{likerUsername} liked your post: \"{post.Title}\"";
+        var link = $"/posts/{slug}";
+        notificationService.SendNotificationAsync(post.Author, message, link).Wait();
     }
 
     return Results.Ok(new { message = "Post liked successfully", likeCount = post.Likes.Count });

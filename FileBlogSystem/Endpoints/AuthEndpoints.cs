@@ -11,6 +11,8 @@ public static class AuthEndpoints
   {
     app.MapPost("/api/auth/login", async (LoginRequest request, IUserService userService) =>
     {
+      if (request == null)
+        return Results.BadRequest(new { message = "Invalid login data." });
       var validationResult = ValidateLoginRequest(request);
       if (validationResult != null)
         return Results.BadRequest(new { message = validationResult });
@@ -24,6 +26,8 @@ public static class AuthEndpoints
 
     app.MapPost("/api/auth/register", async (RegisterRequest request, IUserService userService) =>
     {
+      if (request == null)
+        return Results.BadRequest(new { message = "Invalid registration data." });
       var validationResult = ValidateRegisterRequest(request);
       if (validationResult != null)
         return Results.BadRequest(new { message = validationResult });
@@ -44,6 +48,9 @@ public static class AuthEndpoints
         IUserService userService,
         ChangePasswordRequest request) =>
     {
+      // Validate path parameter
+      if (string.IsNullOrWhiteSpace(username) || username.Length < 3 || username.Length > 20)
+        return Results.BadRequest(new { message = "Invalid username." });
       var currentUser = context.User.Identity?.Name;
       if (currentUser == null || !string.Equals(currentUser, username, StringComparison.OrdinalIgnoreCase))
         return Results.Forbid();

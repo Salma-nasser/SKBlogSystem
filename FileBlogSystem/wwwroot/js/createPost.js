@@ -1,5 +1,6 @@
 import { initializeThemeToggle } from "./utils/themeToggle.js";
 import { showMessage } from "./utils/notifications.js";
+import { authenticatedFetch, HttpError } from "./utils/api.js";
 
 let easyMDE;
 let selectedFiles = [];
@@ -401,8 +402,7 @@ async function submitPost(isPublished) {
       } catch {
         errorMessage = `HTTP error! status: ${response.status}`;
       }
-      throw new Error(errorMessage);
-    }
+    );
 
     const result = await response.json();
 
@@ -434,11 +434,23 @@ async function submitPost(isPublished) {
       window.location.href = "/blog";
     }, 1500);
   } catch (error) {
-    console.error("Error submitting post:", error);
-    showMessage(
-      error.message || "Failed to submit post. Please try again.",
-      "error"
-    );
+    if (error instanceof HttpError) {
+      if (error.message === "Session expired") {
+        return;
+      }
+      const errorData = await error.response.json();
+      const errorMessage =
+        errorData.message ||
+        errorData.title ||
+        `HTTP error! status: ${error.response.status}`;
+      showMessage(errorMessage, "error");
+    } else {
+      console.error("Error submitting post:", error);
+      showMessage(
+        error.message || "Failed to submit post. Please try again.",
+        "error"
+      );
+    }
   } finally {
     // Re-enable buttons
     publishBtn.disabled = false;
