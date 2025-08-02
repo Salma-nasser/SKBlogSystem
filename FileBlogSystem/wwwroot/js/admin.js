@@ -1,6 +1,7 @@
 // Admin Dashboard JavaScript
 
 import { initializeThemeToggle } from "./utils/themeToggle.js";
+import { authenticatedFetch, HttpError } from "./utils/api.js";
 
 class AdminDashboard {
   constructor() {
@@ -25,13 +26,6 @@ class AdminDashboard {
 
   async checkAdminAccess() {
     try {
-      const token = localStorage.getItem("jwtToken");
-      if (!token) {
-        console.log("DEBUG: No JWT token found");
-        this.redirectToLogin();
-        return;
-      }
-
       // Debug: Parse and log JWT token contents
       try {
         const base64Url = token.split(".")[1];
@@ -65,35 +59,20 @@ class AdminDashboard {
         console.error("DEBUG: Error parsing JWT token:", parseError);
       }
 
-      const response = await fetch("/api/admin/check", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await authenticatedFetch("/api/admin/check");
 
       console.log("DEBUG: Admin check response status:", response.status);
-
-      if (!response.ok) {
-        const responseText = await response.text();
-        console.log("DEBUG: Admin check failed response body:", responseText);
-
-        if (response.status === 401 || response.status === 403) {
-          console.log(
-            "DEBUG: Access denied - not an admin or not authenticated"
-          );
-          this.showAccessDenied();
-          return;
-        }
-        throw new Error("Failed to verify admin access");
-      }
 
       const data = await response.json();
       console.log("DEBUG: Admin check successful:", data);
       this.currentUser = data.username;
     } catch (error) {
-      console.error("Error checking admin access:", error);
-      this.redirectToLogin();
+      if (error instanceof HttpError && (error.response.status === 401 || error.response.status === 403)) {
+        this.showAccessDenied();
+      } else {
+        console.error("Error checking admin access:", error);
+        this.redirectToLogin();
+      }
     }
   }
 
@@ -127,26 +106,17 @@ class AdminDashboard {
   async loadUsers() {
     try {
       this.showLoading();
-
-      const token = localStorage.getItem("jwtToken");
-      const response = await fetch("/api/admin/users", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to load users");
-      }
+      const response = await authenticatedFetch("/api/admin/users");
 
       this.users = await response.json();
       this.renderUsers();
       this.updateStats();
       this.hideLoading();
     } catch (error) {
-      console.error("Error loading users:", error);
-      this.showError("Failed to load users. Please try again.");
+      if (error.message !== "Session expired") {
+        console.error("Error loading users:", error);
+        this.showError("Failed to load users. Please try again.");
+      }
     }
   }
 
@@ -244,34 +214,27 @@ class AdminDashboard {
     if (!this.selectedUser) return;
 
     try {
-      const token = localStorage.getItem("jwtToken");
-      const response = await fetch(
+      const response = await authenticatedFetch(
         `/api/admin/users/promote/${this.selectedUser}`,
         {
           method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
         }
       );
 
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to promote user");
-      }
-
       this.showSuccess(data.message);
       this.closeModal();
 
       // Reload users to reflect changes
       await this.loadUsers();
     } catch (error) {
-      console.error("Error promoting user:", error);
-      this.showError(
-        error.message || "Failed to promote user. Please try again."
-      );
+      if (error instanceof HttpError && error.message !== "Session expired") {
+        const data = await error.response.json();
+        this.showError(data.message || "Failed to promote user");
+      } else if (error.message !== "Session expired") {
+        console.error("Error promoting user:", error);
+        this.showError("Failed to promote user. Please try again.");
+      }
       this.closeModal();
     }
   }

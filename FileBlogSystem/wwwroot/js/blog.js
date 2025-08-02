@@ -2,6 +2,7 @@ import { renderPosts } from "./utils/renderPost.js";
 import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
 import { showMessage } from "./utils/notifications.js";
+import { authenticatedFetch } from "./utils/api.js";
 let currentPage = 1;
 const pageSize = 5;
 let allPosts = [];
@@ -205,26 +206,27 @@ window.addEventListener("DOMContentLoaded", () => {
 
 // ---------- SHARED HELPERS ----------
 
-function getAuthHeaders() {
-  const token = localStorage.getItem("jwtToken");
-  return { Authorization: `Bearer ${token}` };
-}
-
 async function reloadPosts() {
   let posts;
 
-  if (!activeFilter) {
-    const res = await fetch("https://localhost:7189/api/posts", {
-      headers: getAuthHeaders(),
-    });
-    posts = await res.json();
-    allPosts = posts;
-  } else {
-    const urlBase = `https://localhost:7189/api/posts/${
-      activeFilter.type
-    }/${encodeURIComponent(activeFilter.value)}`;
-    const res = await fetch(urlBase, { headers: getAuthHeaders() });
-    posts = await res.json();
+  try {
+    if (!activeFilter) {
+      const res = await authenticatedFetch("https://localhost:7189/api/posts");
+      posts = await res.json();
+      allPosts = posts;
+    } else {
+      const urlBase = `https://localhost:7189/api/posts/${
+        activeFilter.type
+      }/${encodeURIComponent(activeFilter.value)}`;
+      const res = await authenticatedFetch(urlBase);
+      posts = await res.json();
+    }
+  } catch (error) {
+    if (error.message !== "Session expired") {
+      console.error("Failed to reload posts:", error);
+      showMessage("Could not load posts.", "error");
+    }
+    return; // Stop execution if fetch fails
   }
 
   // apply client‐side search, publish & schedule filters
@@ -317,13 +319,7 @@ function createNotificationsDropdown() {
 
 async function getAllNotifications() {
   try {
-    const res = await fetch("/notifications?all=true", {
-      headers: {
-        "Content-Type": "application/json",
-        ...getAuthHeaders(),
-      },
-    });
-    if (!res.ok) return;
+    const res = await authenticatedFetch("/notifications?all=true");
     const notifications = await res.json();
     renderNotificationsDropdown(notifications);
     // Update unread count badge
@@ -338,7 +334,9 @@ async function getAllNotifications() {
       }
     }
   } catch (e) {
-    // Optionally log or ignore
+    if (e.message !== "Session expired") {
+      console.error("Failed to get notifications:", e);
+    }
   }
 }
 
@@ -373,10 +371,7 @@ function renderNotificationsDropdown(notifications) {
       notif.addEventListener("click", async (e) => {
         e.stopPropagation();
         notif.style.pointerEvents = "none";
-        await fetch(`/notifications/read/${n.Id}`, {
-          method: "POST",
-          headers: getAuthHeaders(),
-        });
+        await authenticatedFetch(`/notifications/read/${n.Id}`, { method: "POST" });
         getAllNotifications();
       });
     }

@@ -2,6 +2,7 @@ import { renderPosts, safeBase64Decode } from "./utils/renderPost.js";
 import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
 import { showMessage, showConfirmation } from "./utils/notifications.js";
+import { authenticatedFetch, HttpError } from "./utils/api.js";
 
 let imagesToKeep = [];
 
@@ -187,13 +188,19 @@ window.addEventListener("DOMContentLoaded", () => {
   }
   loadUserInfo(targetUsername);
   function deleteAccount() {
-    fetch(`https://localhost:7189/api/users/delete/${currentUsername}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-    });
+    try {
+      authenticatedFetch(
+        `https://localhost:7189/api/users/delete/${currentUsername}`,
+        {
+          method: "PUT",
+        }
+      );
+    } catch (error) {
+      if (error.message !== "Session expired") {
+        console.error("Error deleting account:", error);
+        showMessage("Failed to delete account.", "error");
+      }
+    }
   }
   function setupEditFunctionality() {
     // Edit section toggle buttons
@@ -352,16 +359,9 @@ window.addEventListener("DOMContentLoaded", () => {
       const endpoint = `https://localhost:7189/api/posts/user/${username}`;
       console.log(`Fetching posts from: ${endpoint}`);
 
-      const response = await fetch(endpoint, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await authenticatedFetch(endpoint);
 
       console.log(`Response status: ${response.status}`);
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`Error response: ${errorText}`);
-        throw new Error(`Failed to fetch posts: ${response.status}`);
-      }
 
       const posts = await response.json();
       console.log(`Fetched ${posts.length} posts for user: ${username}`, posts);
@@ -375,18 +375,20 @@ window.addEventListener("DOMContentLoaded", () => {
         showActions: true,
       });
     } catch (error) {
-      console.error("Error fetching published posts:", error);
-      document.getElementById("publishedContainer").innerHTML =
-        '<p class="error-message">Failed to load posts</p>';
-      showMessage("Failed to load published posts", "error");
+      if (error.message !== "Session expired") {
+        console.error("Error fetching published posts:", error);
+        document.getElementById("publishedContainer").innerHTML =
+          '<p class="error-message">Failed to load posts</p>';
+        showMessage("Failed to load published posts", "error");
+      }
     }
   }
 
   async function fetchDraftPosts() {
     try {
-      const response = await fetch("https://localhost:7189/api/posts/drafts", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const response = await authenticatedFetch(
+        "https://localhost:7189/api/posts/drafts"
+      );
       const posts = await response.json();
 
       // Store posts for modify functionality
@@ -398,21 +400,18 @@ window.addEventListener("DOMContentLoaded", () => {
         showActions: true,
       });
     } catch (error) {
-      console.error("Error fetching draft posts:", error);
-      showMessage("Failed to load draft posts", "error");
+      if (error.message !== "Session expired") {
+        console.error("Error fetching draft posts:", error);
+        showMessage("Failed to load draft posts", "error");
+      }
     }
   }
 
   async function loadUserInfo(username = currentUsername) {
     try {
-      const response = await fetch(
-        `https://localhost:7189/api/users/${username}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+      const response = await authenticatedFetch(
+        `https://localhost:7189/api/users/${username}`
       );
-
-      if (!response.ok) throw new Error("Failed to fetch user info");
 
       const user = await response.json();
 
@@ -451,13 +450,15 @@ window.addEventListener("DOMContentLoaded", () => {
         userProfilePic.classList.remove("hidden");
       }
     } catch (err) {
-      console.error("Error loading user info:", err);
-      userUsername.textContent = username;
-      userRole.textContent = "User";
-      userMemberSince.textContent = "";
-      userPostsCount.textContent = "0";
-      userProfilePic.src = "/placeholders/profile.png";
-      showMessage("Failed to load user information", "error");
+      if (err.message !== "Session expired") {
+        console.error("Error loading user info:", err);
+        userUsername.textContent = username;
+        userRole.textContent = "User";
+        userMemberSince.textContent = "";
+        userPostsCount.textContent = "0";
+        userProfilePic.src = "/placeholders/profile.png";
+        showMessage("Failed to load user information", "error");
+      }
     }
   }
 
@@ -718,14 +719,10 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const response = await fetch(
+      const response = await authenticatedFetch(
         `https://localhost:7189/api/users/${currentUsername}`,
         {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
           body: JSON.stringify({
             Email: newEmail,
             ConfirmPassword: currentPassword,
@@ -733,17 +730,17 @@ window.addEventListener("DOMContentLoaded", () => {
         }
       );
 
-      if (response.ok) {
-        showMessage("Email updated successfully!", "success");
-        toggleEditSection("email", false);
-        loadUserInfo(targetUsername);
-      } else {
-        const error = await response.json();
-        showError("newEmail", error.message || "Failed to update email.");
-      }
+      showMessage("Email updated successfully!", "success");
+      toggleEditSection("email", false);
+      loadUserInfo(targetUsername);
     } catch (err) {
-      showError("newEmail", "Network error. Please try again.");
-      showMessage("Network error occurred while updating email", "error");
+      if (err instanceof HttpError && err.message !== "Session expired") {
+        const error = await err.response.json();
+        showError("newEmail", error.message || "Failed to update email.");
+      } else if (err.message !== "Session expired") {
+        showError("newEmail", "Network error. Please try again.");
+        showMessage("Network error occurred while updating email", "error");
+      }
     }
   }
 
@@ -776,14 +773,10 @@ window.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      const response = await fetch(
+      const response = await authenticatedFetch(
         `https://localhost:7189/api/users/${currentUsername}/password`,
         {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
           body: JSON.stringify({
             CurrentPassword: current,
             NewPassword: newPass,
@@ -791,19 +784,19 @@ window.addEventListener("DOMContentLoaded", () => {
         }
       );
 
-      if (response.ok) {
-        showMessage("Password updated successfully!", "success");
-        toggleEditSection("password", false);
-        currentPasswordInput.value = "";
-        newPasswordInput.value = "";
-        confirmPasswordInput.value = "";
-      } else {
-        const error = await response.json();
-        showError("currentPassword", error.message || "Update failed.");
-      }
+      showMessage("Password updated successfully!", "success");
+      toggleEditSection("password", false);
+      currentPasswordInput.value = "";
+      newPasswordInput.value = "";
+      confirmPasswordInput.value = "";
     } catch (err) {
-      showError("currentPassword", "Network error. Please try again.");
-      showMessage("Network error occurred while updating password", "error");
+      if (err instanceof HttpError && err.message !== "Session expired") {
+        const error = await err.response.json();
+        showError("currentPassword", error.message || "Update failed.");
+      } else if (err.message !== "Session expired") {
+        showError("currentPassword", "Network error. Please try again.");
+        showMessage("Network error occurred while updating password", "error");
+      }
     }
   }
 
@@ -831,14 +824,10 @@ window.addEventListener("DOMContentLoaded", () => {
     try {
       const base64Image = await convertFileToBase64(file);
 
-      const response = await fetch(
+      const response = await authenticatedFetch(
         `https://localhost:7189/api/users/${currentUsername}`,
         {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
           body: JSON.stringify({
             ProfilePictureBase64: base64Image.split(",")[1],
             ProfilePictureFileName: file.name,
@@ -846,21 +835,21 @@ window.addEventListener("DOMContentLoaded", () => {
         }
       );
 
-      if (response.ok) {
-        showMessage("Profile picture updated successfully!", "success");
-        toggleEditSection("picture", false);
-        loadUserInfo(targetUsername);
-      } else {
-        const error = await response.json();
-        errorEl.textContent = error.message || "Failed to update.";
-      }
+      showMessage("Profile picture updated successfully!", "success");
+      toggleEditSection("picture", false);
+      loadUserInfo(targetUsername);
     } catch (err) {
-      errorEl.textContent = "Network error. Please try again.";
-      showMessage(
-        "Network error occurred while updating profile picture",
-        "error"
-      );
-      console.error(err);
+      if (err instanceof HttpError && err.message !== "Session expired") {
+        const error = await err.response.json();
+        errorEl.textContent = error.message || "Failed to update.";
+      } else if (err.message !== "Session expired") {
+        errorEl.textContent = "Network error. Please try again.";
+        showMessage(
+          "Network error occurred while updating profile picture",
+          "error"
+        );
+        console.error(err);
+      }
     }
   }
 
@@ -916,27 +905,24 @@ window.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("confirmDelete").onclick = async () => {
       try {
-        const response = await fetch(
+        await authenticatedFetch(
           `https://localhost:7189/api/posts/${slug}`,
           {
             method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
           }
         );
 
-        if (response.ok) {
-          showMessage("Post deleted successfully", "success");
-          // Refresh both lists
-          fetchPublishedPosts(targetUsername);
-          if (isOwnProfile) {
-            fetchDraftPosts();
-          }
-        } else {
-          showMessage("Failed to delete post", "error");
+        showMessage("Post deleted successfully", "success");
+        // Refresh both lists
+        fetchPublishedPosts(targetUsername);
+        if (isOwnProfile) {
+          fetchDraftPosts();
         }
       } catch (error) {
-        console.error("Error deleting post:", error);
-        showMessage("Error occurred while deleting post", "error");
+        if (error.message !== "Session expired") {
+          console.error("Error deleting post:", error);
+          showMessage("Error occurred while deleting post", "error");
+        }
       }
       confirmDialog.remove();
     };
@@ -1068,30 +1054,26 @@ async function deletePost(slug, isDraft) {
       try {
         showMessage("Deleting post...", "info");
 
-        const response = await fetch(
+        await authenticatedFetch(
           `https://localhost:7189/api/posts/delete/${slug}`,
           {
             method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
           }
         );
 
-        if (response.ok) {
-          showMessage("Post deleted successfully!", "success");
-          if (isDraft) {
-            document.querySelector("#draftsContainer").innerHTML = "";
-            fetchDraftPosts();
-          } else {
-            document.querySelector("#publishedContainer").innerHTML = "";
-            fetchPublishedPosts();
-          }
+        showMessage("Post deleted successfully!", "success");
+        if (isDraft) {
+          document.querySelector("#draftsContainer").innerHTML = "";
+          fetchDraftPosts();
         } else {
-          const errorText = await response.text();
-          showMessage(`Error deleting post: ${errorText}`, "error");
+          document.querySelector("#publishedContainer").innerHTML = "";
+          fetchPublishedPosts();
         }
       } catch (error) {
-        console.error("Network error:", error);
-        showMessage("Network error occurred while deleting the post", "error");
+        if (error.message !== "Session expired") {
+          console.error("Network error:", error);
+          showMessage("Network error occurred while deleting the post", "error");
+        }
       }
     }
   );

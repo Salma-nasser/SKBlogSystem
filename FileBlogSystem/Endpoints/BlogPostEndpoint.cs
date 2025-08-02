@@ -3,11 +3,21 @@ using FileBlogSystem.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using System.Xml.Linq;
 using FileBlogSystem.Services;
+using System.Text.RegularExpressions;
 
 namespace FileBlogSystem.Endpoints;
 
 public static class BlogPostEndpoints
 {
+    // Validation patterns
+    private const string SlugPattern = @"^[a-z0-9\-]+$";
+    private const string CategoryPattern = @"^[\w\s\-]{1,50}$";
+    private const string TagPattern = @"^[\w\s\-]{1,50}$";
+    private const string UsernamePattern = @"^[a-zA-Z0-9_]{3,20}$";
+    private static bool IsValidSlug(string s) => Regex.IsMatch(s ?? string.Empty, SlugPattern);
+    private static bool IsValidCategory(string s) => Regex.IsMatch(s ?? string.Empty, CategoryPattern);
+    private static bool IsValidTag(string s) => Regex.IsMatch(s ?? string.Empty, TagPattern);
+    private static bool IsValidUsername(string u) => Regex.IsMatch(u ?? string.Empty, UsernamePattern);
     public static void MapBlogPostEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet("/api/posts/published", (IBlogPostService service) =>
@@ -25,6 +35,8 @@ public static class BlogPostEndpoints
 
         app.MapGet("/api/posts/category/{category}", [Authorize] (string category, IBlogPostService service, HttpContext ctx) =>
         {
+            if (!IsValidCategory(category))
+                return Results.BadRequest(new { message = "Invalid category parameter." });
             var currentUsername = ctx.User.Identity?.Name;
             if (string.IsNullOrEmpty(currentUsername))
                 return Results.Unauthorized();
@@ -33,6 +45,8 @@ public static class BlogPostEndpoints
 
         app.MapGet("/api/posts/tag/{tag}", [Authorize] (string tag, IBlogPostService service, HttpContext ctx) =>
         {
+            if (!IsValidTag(tag))
+                return Results.BadRequest(new { message = "Invalid tag parameter." });
             var currentUsername = ctx.User.Identity?.Name;
             if (string.IsNullOrEmpty(currentUsername))
                 return Results.Unauthorized();
@@ -41,9 +55,13 @@ public static class BlogPostEndpoints
 
         app.MapGet("/api/posts/{slug}", (string slug, IBlogPostService service, HttpContext ctx) =>
         {
+            if (!IsValidSlug(slug))
+                return Results.BadRequest(new { message = "Invalid post identifier." });
             var currentUsername = ctx.User.Identity?.Name;
             var post = service.GetPostBySlug(slug, currentUsername);
-            return post != null ? Results.Ok(post) : Results.NotFound(new { message = "Post not found." });
+            return post != null
+                ? Results.Ok(post)
+                : Results.NotFound(new { message = "Post not found." });
         });
 
         app.MapGet("/api/posts/drafts", [Authorize] (HttpContext ctx, IBlogPostService service) =>
@@ -79,8 +97,9 @@ public static class BlogPostEndpoints
 
         app.MapPut("/api/posts/modify/{slug}", [Authorize] async (string slug, HttpContext ctx, IBlogPostService service) =>
         {
+            if (!IsValidSlug(slug))
+                return Results.BadRequest(new { message = "Invalid post identifier." });
             var userName = ctx.User.Identity?.Name;
-
             if (string.IsNullOrEmpty(userName))
                 return Results.Unauthorized();
 
@@ -96,8 +115,9 @@ public static class BlogPostEndpoints
 
         app.MapPut("/api/posts/publish/{slug}", [Authorize] async (string slug, HttpContext ctx, IBlogPostService service) =>
         {
+            if (!IsValidSlug(slug))
+                return Results.BadRequest(new { message = "Invalid post identifier." });
             var username = ctx.User.Identity?.Name;
-
             if (string.IsNullOrEmpty(username))
                 return Results.Unauthorized();
 
@@ -108,8 +128,12 @@ public static class BlogPostEndpoints
 
         app.MapDelete("/api/posts/{slug}", [Authorize(Roles = "Admin")] async (string slug, IBlogPostService service) =>
         {
+            if (!IsValidSlug(slug))
+                return Results.BadRequest(new { message = "Invalid post identifier." });
             var deleted = await service.DeletePostAsync(slug);
-            return deleted ? Results.Ok(new { message = "Post deleted successfully." }) : Results.NotFound(new { message = "Post not found." });
+            return deleted
+                ? Results.Ok(new { message = "Post deleted successfully." })
+                : Results.NotFound(new { message = "Post not found." });
         });
 
         app.MapGet("/feed.xml", (IBlogPostService blogService) =>
@@ -147,28 +171,33 @@ public static class BlogPostEndpoints
         });
         app.MapGet("/api/posts/user/{username}", [Authorize] (string username, HttpContext ctx, IBlogPostService service) =>
         {
+            if (!IsValidUsername(username))
+                return Results.BadRequest(new { message = "Invalid username parameter." });
             var currentUsername = ctx.User.Identity?.Name;
             if (string.IsNullOrEmpty(currentUsername))
                 return Results.Unauthorized();
-
             var posts = service.GetPostsByUser(username, currentUsername);
             return Results.Ok(posts);
         });
         app.MapDelete("/api/posts/delete/{slug}", [Authorize] async (string slug, HttpContext ctx, IBlogPostService service) =>
         {
+            if (!IsValidSlug(slug))
+                return Results.BadRequest(new { message = "Invalid post identifier." });
             var username = ctx.User.Identity?.Name;
             if (string.IsNullOrEmpty(username))
                 return Results.Unauthorized();
-
             var deleted = await service.DeletePostAsync(slug);
-            return deleted ? Results.Ok(new { message = "Post deleted successfully." }) : Results.NotFound(new { message = "Post not found." });
+            return deleted
+                ? Results.Ok(new { message = "Post deleted successfully." })
+                : Results.NotFound(new { message = "Post not found." });
         });
 
         // Like endpoints
-        app.MapPost("/api/posts/{slug}/like", [Authorize] (string slug, HttpContext ctx, IBlogPostService service,NotificationService notificationService) =>
+        app.MapPost("/api/posts/{slug}/like", [Authorize] (string slug, HttpContext ctx, IBlogPostService service, NotificationService notificationService) =>
         {
+            if (!IsValidSlug(slug))
+                return Results.BadRequest(new { message = "Invalid post identifier." });
             var userName = ctx.User.Identity?.Name;
-
             if (string.IsNullOrEmpty(userName))
                 return Results.Unauthorized();
 
@@ -179,8 +208,9 @@ public static class BlogPostEndpoints
 
         app.MapDelete("/api/posts/{slug}/like", [Authorize] (string slug, HttpContext ctx, IBlogPostService service) =>
         {
+            if (!IsValidSlug(slug))
+                return Results.BadRequest(new { message = "Invalid post identifier." });
             var userName = ctx.User.Identity?.Name;
-
             if (string.IsNullOrEmpty(userName))
                 return Results.Unauthorized();
 
@@ -189,6 +219,8 @@ public static class BlogPostEndpoints
 
         app.MapGet("/api/posts/{slug}/likes", [Authorize] (string slug, IBlogPostService service) =>
         {
+            if (!IsValidSlug(slug))
+                return Results.BadRequest(new { message = "Invalid post identifier." });
             return service.GetPostLikes(slug);
         });
 

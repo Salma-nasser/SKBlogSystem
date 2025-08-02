@@ -2,6 +2,7 @@ import { renderPosts } from "./utils/renderPost.js";
 import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
 import { showMessage } from "./utils/notifications.js";
+import { authenticatedFetch } from "./utils/api.js";
 
 // Extract slug from URL path (e.g., /post/Palestine -> Palestine)
 function getSlugFromPath() {
@@ -56,22 +57,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
 async function loadPost(slug) {
   try {
-    const token = localStorage.getItem("jwtToken");
-
     showMessage("Loading post...", "info");
 
-    const response = await fetch(`https://localhost:7189/api/posts/${slug}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error("Post not found");
-      }
-      throw new Error(`Failed to load post: ${response.status}`);
-    }
+    const response = await authenticatedFetch(
+      `https://localhost:7189/api/posts/${slug}`
+    );
 
     const post = await response.json();
 
@@ -87,23 +77,25 @@ async function loadPost(slug) {
       messageContainer.remove();
     }
   } catch (error) {
-    console.error("Error loading post:", error);
+    if (error.message !== "Session expired") {
+      console.error("Error loading post:", error);
 
-    // Show error in the post container
-    const container = document.getElementById("postContainer");
-    if (container) {
-      container.innerHTML = `
-        <div class="error-container">
-          <h2>Post Not Found</h2>
-          <p>${error.message}</p>
-          <button onclick="window.location.href='/blog'" class="btn btn-primary">
-            Back to Blog
-          </button>
-        </div>
-      `;
+      // Show error in the post container
+      const container = document.getElementById("postContainer");
+      if (container) {
+        container.innerHTML = `
+          <div class="error-container">
+            <h2>Post Not Found</h2>
+            <p>${error.message}</p>
+            <button onclick="window.location.href='/blog'" class="btn btn-primary">
+              Back to Blog
+            </button>
+          </div>
+        `;
+      }
+
+      showMessage(error.message, "error");
     }
-
-    showMessage(error.message, "error");
   }
 }
 
@@ -220,7 +212,73 @@ function renderSinglePost(post) {
       
       ${interactionBarHtml}
     </article>
+  <!-- Comments Section -->
+  <section class="comments-section">
+    <h3>Comments (<span id="commentsCountDisplay">${
+      post.CommentCount
+    }</span>)</h3>
+    <div id="commentsList">Loading comments...</div>
+    <form id="addCommentForm">
+      <textarea id="commentContent" rows="3" placeholder="Write your comment..." required></textarea>
+      <button type="submit">Submit</button>
+    </form>
+  </section>
   `;
+  // After injecting HTML, load existing comments and bind form
+  const postId = post.Id;
+  async function loadComments(id) {
+    try {
+      const res = await authenticatedFetch(`/api/posts/${id}/comments`);
+      if (!res.ok) throw new Error("Failed to load comments");
+      const comments = await res.json();
+      const list = document.getElementById("commentsList");
+      if (comments.length === 0) {
+        list.innerHTML = "<p>No comments yet.</p>";
+      } else {
+        list.innerHTML = comments
+          .map(
+            (c) =>
+              `<div class="comment-item">
+             <div class="comment-meta"><strong>${
+               c.Author
+             }</strong> at ${new Date(c.CreatedAt).toLocaleString()}</div>
+             <p>${c.Content}</p>
+           </div>`
+          )
+          .join("");
+      }
+      document.getElementById("commentsCountDisplay").textContent =
+        comments.length;
+    } catch (err) {
+      console.error(err);
+      showMessage(err.message, "error");
+    }
+  }
+  loadComments(postId);
+  const form = document.getElementById("addCommentForm");
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const contentEl = document.getElementById("commentContent");
+    const content = contentEl.value.trim();
+    if (!content) {
+      showMessage("Comment cannot be empty", "error");
+      return;
+    }
+    try {
+      const res = await authenticatedFetch(`/api/posts/${postId}/comments`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+      if (!res.ok) throw new Error("Failed to submit comment");
+      showMessage("Comment added", "success");
+      contentEl.value = "";
+      await loadComments(postId);
+    } catch (err) {
+      console.error(err);
+      showMessage(err.message, "error");
+    }
+  });
 
   // Add event listeners for likes functionality
   setupLikesInteraction(post.Slug);
@@ -262,23 +320,12 @@ function setupLikesInteraction(slug) {
         likeToggle.textContent = liked ? "🤍" : "❤️";
         likeToggle.dataset.liked = (!liked).toString();
 
-        const response = await fetch(
+        const response = await authenticatedFetch(
           `https://localhost:7189/api/posts/${slug}/like`,
           {
             method: liked ? "DELETE" : "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
-            },
           }
         );
-
-        if (!response.ok) {
-          // Revert visual change if request failed
-          likeToggle.textContent = liked ? "❤️" : "🤍";
-          likeToggle.dataset.liked = liked.toString();
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
 
         const result = await response.json();
 
@@ -292,11 +339,13 @@ function setupLikesInteraction(slug) {
 
         showMessage(liked ? "Like removed" : "Post liked!", "success");
       } catch (error) {
-        console.error("Error toggling like:", error);
-        // Revert visual change on error
-        likeToggle.textContent = liked ? "❤️" : "🤍";
-        likeToggle.dataset.liked = liked.toString();
-        showMessage("Failed to update like status", "error");
+        if (error.message !== "Session expired") {
+          console.error("Error toggling like:", error);
+          // Revert visual change on error
+          likeToggle.textContent = liked ? "❤️" : "🤍";
+          likeToggle.dataset.liked = liked.toString();
+          showMessage("Failed to update like status", "error");
+        }
       }
     });
   }
@@ -306,18 +355,9 @@ function setupLikesInteraction(slug) {
   if (likeCount) {
     likeCount.addEventListener("click", async () => {
       try {
-        const response = await fetch(
-          `https://localhost:7189/api/posts/${slug}/likes`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
-            },
-          }
+        const response = await authenticatedFetch(
+          `https://localhost:7189/api/posts/${slug}/likes`
         );
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
 
         const likers = await response.json();
 
@@ -435,7 +475,7 @@ function setupLikesInteraction(slug) {
                           : ""
                       }
                     </div>
-                    <a href="my-profile?username=${user.username}" style="
+                    <a href="profile/${user.username}" style="
                       padding: 5px 12px;
                       background: var(--accent-color, #c89b7b);
                       color: white;
@@ -490,8 +530,10 @@ function setupLikesInteraction(slug) {
           if (e.target === modal) modal.remove();
         });
       } catch (error) {
-        console.error("Error fetching likes:", error);
-        showMessage("Failed to load likes. Please try again.", "error");
+        if (error.message !== "Session expired") {
+          console.error("Error fetching likes:", error);
+          showMessage("Failed to load likes. Please try again.", "error");
+        }
       }
     });
   }

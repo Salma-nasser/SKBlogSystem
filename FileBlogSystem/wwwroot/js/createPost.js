@@ -1,5 +1,6 @@
 import { initializeThemeToggle } from "./utils/themeToggle.js";
 import { showMessage } from "./utils/notifications.js";
+import { authenticatedFetch, HttpError } from "./utils/api.js";
 
 let easyMDE;
 let selectedFiles = [];
@@ -374,35 +375,13 @@ async function submitPost(isPublished) {
       formData.append("Images", file);
     });
 
-    const token = localStorage.getItem("jwtToken");
-    const response = await fetch("https://localhost:7189/api/posts/create", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      let errorMessage;
-      try {
-        // Clone the response so we can try different parsing methods
-        const responseClone = response.clone();
-        try {
-          const errorData = await response.json();
-          errorMessage =
-            errorData.message ||
-            errorData.title ||
-            `HTTP error! status: ${response.status}`;
-        } catch {
-          const errorText = await responseClone.text();
-          errorMessage = errorText || `HTTP error! status: ${response.status}`;
-        }
-      } catch {
-        errorMessage = `HTTP error! status: ${response.status}`;
+    const response = await authenticatedFetch(
+      "https://localhost:7189/api/posts/create",
+      {
+        method: "POST",
+        body: formData,
       }
-      throw new Error(errorMessage);
-    }
+    );
 
     const result = await response.json();
 
@@ -434,11 +413,23 @@ async function submitPost(isPublished) {
       window.location.href = "/blog";
     }, 1500);
   } catch (error) {
-    console.error("Error submitting post:", error);
-    showMessage(
-      error.message || "Failed to submit post. Please try again.",
-      "error"
-    );
+    if (error instanceof HttpError) {
+      if (error.message === "Session expired") {
+        return;
+      }
+      const errorData = await error.response.json();
+      const errorMessage =
+        errorData.message ||
+        errorData.title ||
+        `HTTP error! status: ${error.response.status}`;
+      showMessage(errorMessage, "error");
+    } else {
+      console.error("Error submitting post:", error);
+      showMessage(
+        error.message || "Failed to submit post. Please try again.",
+        "error"
+      );
+    }
   } finally {
     // Re-enable buttons
     publishBtn.disabled = false;
