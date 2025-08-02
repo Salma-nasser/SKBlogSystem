@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
       wrapper.style.width = "120px";
       // Image
       const imgEl = document.createElement("img");
-      imgEl.src = `https://localhost:7189/Content/posts/${dateOnly}-${postSlug}${img}`;
+      imgEl.src = `/Content/posts/${dateOnly}-${postSlug}${img}`;
       imgEl.alt = "Post image";
       imgEl.className = "preview-thumb";
       imgEl.style.width = "120px";
@@ -366,8 +366,8 @@ async function submitModification() {
   try {
     showMessage("Updating post...", "info");
 
-    const response = await authenticatedFetch(
-      `https://localhost:7189/api/posts/modify/${postSlug}`,
+    const response = await fetch(
+      `/api/posts/modify/${postSlug}`,
       {
         method: "PUT",
         body: formData,
