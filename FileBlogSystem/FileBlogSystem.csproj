@@ -7,11 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.6" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.7" />
     <PackageReference Include="SixLabors.ImageSharp.Web" Version="3.1.5" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.12.0" />
   </ItemGroup>
   <PropertyGroup>
+  <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+  <SelfContained>true</SelfContained>
+  <PublishTrimmed>false</PublishTrimmed>
   <EnableCompressionInStaticWebAssets>false</EnableCompressionInStaticWebAssets>
+  <InvariantGlobalization>true</InvariantGlobalization>
 </PropertyGroup>
 </Project>

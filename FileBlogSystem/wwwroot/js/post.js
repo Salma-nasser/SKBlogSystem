@@ -60,7 +60,7 @@ async function loadPost(slug) {
 
     showMessage("Loading post...", "info");
 
-    const response = await fetch(`https://localhost:7189/api/posts/${slug}`, {
+    const response = await fetch(`/api/posts/${slug}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -143,7 +143,7 @@ function renderSinglePost(post) {
         ${post.Images.map(
           (imagePath, index) =>
             `<img 
-             src="https://localhost:7189/Content/posts/${dateOnly}-${
+             src="/Content/posts/${dateOnly}-${
               post.Slug
             }${imagePath}" 
              alt="Post Image ${index + 1}" 
@@ -263,7 +263,7 @@ function setupLikesInteraction(slug) {
         likeToggle.dataset.liked = (!liked).toString();
 
         const response = await fetch(
-          `https://localhost:7189/api/posts/${slug}/like`,
+          `/api/posts/${slug}/like`,
           {
             method: liked ? "DELETE" : "POST",
             headers: {
@@ -307,7 +307,7 @@ function setupLikesInteraction(slug) {
     likeCount.addEventListener("click", async () => {
       try {
         const response = await fetch(
-          `https://localhost:7189/api/posts/${slug}/likes`,
+          `/api/posts/${slug}/likes`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,

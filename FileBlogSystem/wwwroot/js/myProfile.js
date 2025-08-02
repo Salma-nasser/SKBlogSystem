@@ -187,7 +187,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
   loadUserInfo(targetUsername);
   function deleteAccount() {
-    fetch(`https://localhost:7189/api/users/delete/${currentUsername}`, {
+    fetch(`/api/users/delete/${currentUsername}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -349,7 +349,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   async function fetchPublishedPosts(username = currentUsername) {
     try {
-      const endpoint = `https://localhost:7189/api/posts/user/${username}`;
+      const endpoint = `/api/posts/user/${username}`;
       console.log(`Fetching posts from: ${endpoint}`);
 
       const response = await fetch(endpoint, {
@@ -384,7 +384,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   async function fetchDraftPosts() {
     try {
-      const response = await fetch("https://localhost:7189/api/posts/drafts", {
+      const response = await fetch("/api/posts/drafts", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const posts = await response.json();
@@ -406,7 +406,7 @@ window.addEventListener("DOMContentLoaded", () => {
   async function loadUserInfo(username = currentUsername) {
     try {
       const response = await fetch(
-        `https://localhost:7189/api/users/${username}`,
+        `/api/users/${username}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -440,7 +440,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
       // Handle profile picture with error handling
       if (user.ProfilePictureUrl && user.ProfilePictureUrl.trim()) {
-        userProfilePic.src = `https://localhost:7189${user.ProfilePictureUrl}`;
+        userProfilePic.src = `${user.ProfilePictureUrl}`;
         userProfilePic.onerror = function () {
           this.src = "/placeholders/profile.png";
           this.onerror = null;
@@ -719,7 +719,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     try {
       const response = await fetch(
-        `https://localhost:7189/api/users/${currentUsername}`,
+        `/api/users/${currentUsername}`,
         {
           method: "PUT",
           headers: {
@@ -777,7 +777,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     try {
       const response = await fetch(
-        `https://localhost:7189/api/users/${currentUsername}/password`,
+        `/api/users/${currentUsername}/password`,
         {
           method: "PUT",
           headers: {
@@ -832,7 +832,7 @@ window.addEventListener("DOMContentLoaded", () => {
       const base64Image = await convertFileToBase64(file);
 
       const response = await fetch(
-        `https://localhost:7189/api/users/${currentUsername}`,
+        `/api/users/${currentUsername}`,
         {
           method: "PUT",
           headers: {
@@ -917,7 +917,7 @@ window.addEventListener("DOMContentLoaded", () => {
     document.getElementById("confirmDelete").onclick = async () => {
       try {
         const response = await fetch(
-          `https://localhost:7189/api/posts/${slug}`,
+          `/api/posts/${slug}`,
           {
             method: "DELETE",
             headers: { Authorization: `Bearer ${token}` },
@@ -974,7 +974,7 @@ function displayCurrentImages(post) {
       imageWrapper.className = "current-image-wrapper";
 
       const img = document.createElement("img");
-      img.src = `https://localhost:7189/Content/posts/${dateOnly}-${post.Slug}${imagePath}`;
+      img.src = `/Content/posts/${dateOnly}-${post.Slug}${imagePath}`;
       img.alt = `Post Image ${index + 1}`;
       img.className = "current-image";
 
@@ -1069,7 +1069,7 @@ async function deletePost(slug, isDraft) {
         showMessage("Deleting post...", "info");
 
         const response = await fetch(
-          `https://localhost:7189/api/posts/delete/${slug}`,
+          `/api/posts/delete/${slug}`,
           {
             method: "DELETE",
             headers: { Authorization: `Bearer ${token}` },

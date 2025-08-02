@@ -214,13 +214,13 @@ async function reloadPosts() {
   let posts;
 
   if (!activeFilter) {
-    const res = await fetch("https://localhost:7189/api/posts", {
+    const res = await fetch("/api/posts", {
       headers: getAuthHeaders(),
     });
     posts = await res.json();
     allPosts = posts;
   } else {
-    const urlBase = `https://localhost:7189/api/posts/${
+    const urlBase = `/api/posts/${
       activeFilter.type
     }/${encodeURIComponent(activeFilter.value)}`;
     const res = await fetch(urlBase, { headers: getAuthHeaders() });

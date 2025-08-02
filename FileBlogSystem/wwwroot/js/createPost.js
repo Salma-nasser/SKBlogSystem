@@ -375,7 +375,7 @@ async function submitPost(isPublished) {
     });
 
     const token = localStorage.getItem("jwtToken");
-    const response = await fetch("https://localhost:7189/api/posts/create", {
+    const response = await fetch("/api/posts/create", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
