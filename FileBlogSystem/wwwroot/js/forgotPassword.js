@@ -18,7 +18,7 @@ forgotForm?.addEventListener("submit", async (e) => {
   fpMessage.textContent = "";
   try {
     const response = await fetch(
-      "/api/users/forgot-password",
+      "https://localhost:7189/api/users/forgot-password",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -44,7 +44,7 @@ otpForm?.addEventListener("submit", async (e) => {
   fpMessage.textContent = "";
   try {
     const response = await fetch(
-      "/api/users/verify-otp",
+      "https://localhost:7189/api/users/verify-otp",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -76,7 +76,7 @@ resetForm?.addEventListener("submit", async (e) => {
   }
   try {
     const response = await fetch(
-      "/api/users/reset-password",
+      "https://localhost:7189/api/users/reset-password",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

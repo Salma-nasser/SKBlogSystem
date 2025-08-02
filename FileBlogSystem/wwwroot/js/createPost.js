@@ -375,32 +375,11 @@ async function submitPost(isPublished) {
       formData.append("Images", file);
     });
 
-    const token = localStorage.getItem("jwtToken");
-    const response = await fetch("/api/posts/create", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-      body: formData,
-    });
-
-    if (!response.ok) {
-      let errorMessage;
-      try {
-        // Clone the response so we can try different parsing methods
-        const responseClone = response.clone();
-        try {
-          const errorData = await response.json();
-          errorMessage =
-            errorData.message ||
-            errorData.title ||
-            `HTTP error! status: ${response.status}`;
-        } catch {
-          const errorText = await responseClone.text();
-          errorMessage = errorText || `HTTP error! status: ${response.status}`;
-        }
-      } catch {
-        errorMessage = `HTTP error! status: ${response.status}`;
+    const response = await authenticatedFetch(
+      "https://localhost:7189/api/posts/create",
+      {
+        method: "POST",
+        body: formData,
       }
     );
 

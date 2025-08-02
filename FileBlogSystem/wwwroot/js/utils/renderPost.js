@@ -112,7 +112,7 @@ function renderMarkdownWithImageHandling(
         // If it's a relative path starting with /assets/, convert to full post path
         if (href.startsWith("/assets/") && postSlug && publishedDate) {
           const dateOnly = new Date(publishedDate).toISOString().split("T")[0];
-          imageSrc = `/Content/posts/${dateOnly}-${postSlug}${href}`;
+          imageSrc = `https://localhost:7189/Content/posts/${dateOnly}-${postSlug}${href}`;
         }
         // If it's already a full URL or absolute path, use as-is
         else if (
@@ -230,7 +230,7 @@ export function renderPosts(posts, containerId, options = {}) {
         <div class="post-images post-images-${post.Images.length}">
           ${post.Images.map(
             (image, index) => `
-            <img src="/Content/posts/${dateOnly}-${
+            <img src="https://localhost:7189/Content/posts/${dateOnly}-${
               post.Slug
             }${image}"
                 alt="Image ${index + 1} for blog post: ${post.Title}"
@@ -398,7 +398,7 @@ export function renderPosts(posts, containerId, options = {}) {
         btn.dataset.liked = (!liked).toString();
 
         const response = await fetch(
-          `/api/posts/${slug}/like`,
+          `https://localhost:7189/api/posts/${slug}/like`,
           {
             method: liked ? "DELETE" : "POST",
             headers: {
@@ -440,7 +440,7 @@ export function renderPosts(posts, containerId, options = {}) {
 
       try {
         const response = await fetch(
-          `/api/posts/${slug}/likes`,
+          `https://localhost:7189/api/posts/${slug}/likes`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,

@@ -59,18 +59,9 @@ async function loadPost(slug) {
   try {
     showMessage("Loading post...", "info");
 
-    const response = await fetch(`/api/posts/${slug}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-
-    if (!response.ok) {
-      if (response.status === 404) {
-        throw new Error("Post not found");
-      }
-      throw new Error(`Failed to load post: ${response.status}`);
-    }
+    const response = await authenticatedFetch(
+      `https://localhost:7189/api/posts/${slug}`
+    );
 
     const post = await response.json();
 
@@ -144,7 +135,7 @@ function renderSinglePost(post) {
         ${post.Images.map(
           (imagePath, index) =>
             `<img 
-             src="/Content/posts/${dateOnly}-${
+             src="https://localhost:7189/Content/posts/${dateOnly}-${
               post.Slug
             }${imagePath}" 
              alt="Post Image ${index + 1}" 
@@ -329,9 +320,8 @@ function setupLikesInteraction(slug) {
         likeToggle.textContent = liked ? "🤍" : "❤️";
         likeToggle.dataset.liked = (!liked).toString();
 
-
-        const response = await fetch(
-          `/api/posts/${slug}/like`,
+        const response = await authenticatedFetch(
+          `https://localhost:7189/api/posts/${slug}/like`,
           {
             method: liked ? "DELETE" : "POST",
           }
@@ -365,13 +355,8 @@ function setupLikesInteraction(slug) {
   if (likeCount) {
     likeCount.addEventListener("click", async () => {
       try {
-        const response = await fetch(
-          `/api/posts/${slug}/likes`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
-            },
-          }
+        const response = await authenticatedFetch(
+          `https://localhost:7189/api/posts/${slug}/likes`
         );
 
         const likers = await response.json();

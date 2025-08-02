@@ -208,18 +208,25 @@ window.addEventListener("DOMContentLoaded", () => {
 
 async function reloadPosts() {
   let posts;
-  if (!activeFilter) {
-    const res = await fetch("/api/posts", {
-      headers: getAuthHeaders(),
-    });
-    posts = await res.json();
-    allPosts = posts;
-  } else {
-    const urlBase = `/api/posts/${
-      activeFilter.type
-    }/${encodeURIComponent(activeFilter.value)}`;
-    const res = await fetch(urlBase, { headers: getAuthHeaders() });
-    posts = await res.json();
+
+  try {
+    if (!activeFilter) {
+      const res = await authenticatedFetch("https://localhost:7189/api/posts");
+      posts = await res.json();
+      allPosts = posts;
+    } else {
+      const urlBase = `https://localhost:7189/api/posts/${
+        activeFilter.type
+      }/${encodeURIComponent(activeFilter.value)}`;
+      const res = await authenticatedFetch(urlBase);
+      posts = await res.json();
+    }
+  } catch (error) {
+    if (error.message !== "Session expired") {
+      console.error("Failed to reload posts:", error);
+      showMessage("Could not load posts.", "error");
+    }
+    return; // Stop execution if fetch fails
   }
 
   // apply client‐side search, publish & schedule filters
