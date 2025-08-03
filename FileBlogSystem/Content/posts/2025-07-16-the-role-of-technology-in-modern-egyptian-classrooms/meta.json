@@ -1,8 +1,9 @@
 {
   "title": "The Role of Technology in Modern Egyptian Classrooms",
   "description": "Explore how digital tools, online platforms, and government initiatives are reshaping the learning experience in Egypt\u2019s schools and universities, bridging gaps and preparing students for a tech-driven future.",
-  "customUrl": "",
   "author": "Salma",
+  "publishedDate": "2025-07-16T12:42:33.708336Z",
+  "lastModified": "2025-07-30T02:31:12.8190364Z",
   "tags": [
     "DigitalLearning",
     "Education"
@@ -10,12 +11,12 @@
   "categories": [
     "EducationInEgypt"
   ],
-  "publishedDate": "2025-07-16T12:42:33.708336Z",
-  "lastModified": "2025-07-30T02:31:12.8190364Z",
   "slug": "the-role-of-technology-in-modern-egyptian-classrooms",
   "isPublished": true,
   "scheduledDate": null,
   "images": [],
-  "likes": [],
+  "likes": [
+    "Salma"
+  ],
   "commentCount": 0
 }

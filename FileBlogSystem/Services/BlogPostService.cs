@@ -292,7 +292,13 @@ public class BlogPostService : IBlogPostService
     try
     {
       var date = DateTime.UtcNow;
-      var baseSlug = string.IsNullOrWhiteSpace(request.CustomUrl) ? GenerateSlugFromTitle(request.Title) : request.CustomUrl;
+      // Clean customUrl input
+      var cleanedCustomUrl = !string.IsNullOrWhiteSpace(request.CustomUrl)
+          ? GenerateSlugFromTitle(request.CustomUrl)
+          : null;
+      var baseSlug = string.IsNullOrWhiteSpace(cleanedCustomUrl)
+          ? GenerateSlugFromTitle(request.Title)
+          : cleanedCustomUrl;
 
       // Generate a unique slug to avoid collisions
       var slug = GenerateUniqueSlug(baseSlug);
@@ -321,14 +327,17 @@ public class BlogPostService : IBlogPostService
         request.ScheduledDate = request.ScheduledDate.Value.ToUniversalTime();
       }
 
+      // Sanitize tags and categories
+      var sanitizedTags = request.Tags?.Select(t => t.Trim()).Where(t => !string.IsNullOrEmpty(t)).ToList() ?? new List<string>();
+      var sanitizedCategories = request.Categories?.Select(c => c.Trim()).Where(c => !string.IsNullOrEmpty(c)).ToList() ?? new List<string>();
       var postMeta = new
       {
         title = request.Title,
         description = request.Description,
-        customUrl = request.CustomUrl,
+        customUrl = cleanedCustomUrl ?? string.Empty,
         author = author,
-        tags = request.Tags,
-        categories = request.Categories,
+        tags = sanitizedTags,
+        categories = sanitizedCategories,
         publishedDate = date,
         lastModified = (DateTime?)null,
         slug = slug,
@@ -347,13 +356,14 @@ public class BlogPostService : IBlogPostService
       {
         Id = folder,
         Slug = slug,
+        CustomUrl = cleanedCustomUrl ?? string.Empty,
         Date = date,
         request.Title,
         request.Description,
         request.Body,
         Author = author,
-        request.Tags,
-        request.Categories,
+        Tags = sanitizedTags,
+        Categories = sanitizedCategories,
         PublishedDate = date,
         request.IsPublished,
         request.ScheduledDate,
@@ -511,17 +521,30 @@ public class BlogPostService : IBlogPostService
       finalImages.AddRange(newImages);
 
       // Use updated data or fall back to existing data using safe accessors
+      // Sanitize and clean customUrl
+      var rawCustomUrl = string.IsNullOrWhiteSpace(updatedData.CustomUrl) ? GetSafeString("customUrl") : updatedData.CustomUrl;
+      var cleanedCustomUrl = GenerateSlugFromTitle(rawCustomUrl);
+      // Rename folder if slug (customUrl) changed
+      var oldFolderName = Path.GetFileName(folder);
+      var datePart = oldFolderName.Length >= 10 ? oldFolderName.Substring(0, 10) : oldFolderName;
+      var newFolderName = $"{datePart}-{cleanedCustomUrl}";
+      var newFolderPath = Path.Combine(_rootPath, newFolderName);
+      if (!folder.Equals(newFolderPath, StringComparison.OrdinalIgnoreCase))
+      {
+        Directory.Move(folder, newFolderPath);
+        folder = newFolderPath;
+        metaPath = Path.Combine(folder, "meta.json");
+        bodyPath = Path.Combine(folder, "content.md");
+        assetsDirectory = Path.Combine(folder, "assets");
+      }
+      // Use updated data or fallback to existing
       var title = string.IsNullOrWhiteSpace(updatedData.Title) ? GetSafeString("title") : updatedData.Title;
       var description = string.IsNullOrWhiteSpace(updatedData.Description) ? GetSafeString("description") : updatedData.Description;
-      var customUrl = string.IsNullOrWhiteSpace(updatedData.CustomUrl) ? GetSafeString("customUrl") : updatedData.CustomUrl;
-
-      var tags = (updatedData.Tags == null || updatedData.Tags.Count == 0)
-          ? GetSafeStringArray("tags")
-          : updatedData.Tags;
-
-      var categories = (updatedData.Categories == null || updatedData.Categories.Count == 0)
-          ? GetSafeStringArray("categories")
-          : updatedData.Categories;
+      // Sanitize tags and categories
+      var rawTags = (updatedData.Tags == null || updatedData.Tags.Count == 0) ? GetSafeStringArray("tags") : updatedData.Tags;
+      var tags = rawTags.Select(t => t.Trim()).Where(t => !string.IsNullOrEmpty(t)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+      var rawCategories = (updatedData.Categories == null || updatedData.Categories.Count == 0) ? GetSafeStringArray("categories") : updatedData.Categories;
+      var categories = rawCategories.Select(c => c.Trim()).Where(c => !string.IsNullOrEmpty(c)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
 
       var isPublished = updatedData.IsPublished ?? GetSafeBool("isPublished");
       var scheduledDate = updatedData.ScheduledDate;
@@ -539,13 +562,13 @@ public class BlogPostService : IBlogPostService
       {
         title = title,
         description = description,
-        customUrl = customUrl,
+        customUrl = cleanedCustomUrl,
         author = authorUsername,
         tags = tags,
         categories = categories,
         publishedDate = publishedDate,
         lastModified = DateTime.UtcNow,
-        slug = slug,
+        slug = cleanedCustomUrl,
         isPublished = isPublished,
         scheduledDate = scheduledDate,
         images = finalImages.Select(img => $"/assets/{img}"),
@@ -604,6 +627,19 @@ public class BlogPostService : IBlogPostService
     {
       var folder = Directory.GetDirectories(_rootPath)
           .FirstOrDefault(dir => dir.EndsWith(slug, StringComparison.OrdinalIgnoreCase));
+      // Rename folder to current date prefix when publishing
+      if (folder != null)
+      {
+        var oldFolderName = Path.GetFileName(folder);
+        var newDatePrefix = DateTime.UtcNow.ToString("yyyy-MM-dd");
+        var newFolderName = $"{newDatePrefix}-{slug}";
+        var newFolderPath = Path.Combine(_rootPath, newFolderName);
+        if (!folder.Equals(newFolderPath, StringComparison.OrdinalIgnoreCase))
+        {
+          Directory.Move(folder, newFolderPath);
+          folder = newFolderPath;
+        }
+      }
 
       if (folder == null)
         return (false, "Post not found.");
@@ -671,7 +707,7 @@ public class BlogPostService : IBlogPostService
         categories = categories,
         publishedDate = DateTime.UtcNow, // Set the publish date to now
         lastModified = DateTime.UtcNow,
-        slug = slug,
+        slug = GetSafeString("customUrl"),
         isPublished = true,
         scheduledDate = (DateTime?)null, // Clear the scheduled date
         images = existingImages,
@@ -811,9 +847,9 @@ public class BlogPostService : IBlogPostService
     // Send notification to the post's author (but not to self)
     if (!string.Equals(post.Author, likerUsername, StringComparison.OrdinalIgnoreCase))
     {
-        var message = $"{likerUsername} liked your post: \"{post.Title}\"";
-        var link = $"/posts/{slug}";
-        notificationService.SendNotificationAsync(post.Author, message, link).Wait();
+      var message = $"{likerUsername} liked your post: \"{post.Title}\"";
+      var link = $"/posts/{slug}";
+      notificationService.SendNotificationAsync(post.Author, message, link).Wait();
     }
 
     return Results.Ok(new { message = "Post liked successfully", likeCount = post.Likes.Count });

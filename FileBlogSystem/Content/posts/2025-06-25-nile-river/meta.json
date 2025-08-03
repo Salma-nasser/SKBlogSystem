@@ -1,9 +1,8 @@
 {
   "title": "the Nile River",
   "description": "exploring the fascinating history of the Nile river",
+  "customUrl": "nile-river",
   "author": "Salma",
-  "publishedDate": "2025-06-25T22:41:17.917373Z",
-  "lastModified": "2025-07-28T08:39:10.0001596Z",
   "tags": [
     "nile river",
     "travel",
@@ -13,7 +12,9 @@
     "Egypt",
     "nile"
   ],
-  "slug": "testttting",
+  "publishedDate": "2025-06-25T22:41:17.917373Z",
+  "lastModified": "2025-08-02T23:57:57.8305999Z",
+  "slug": "nile-river",
   "isPublished": true,
   "scheduledDate": null,
   "images": [

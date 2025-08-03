@@ -60,7 +60,7 @@ async function loadPost(slug) {
     showMessage("Loading post...", "info");
 
     const response = await authenticatedFetch(
-      `https://localhost:7189/api/posts/${slug}`
+      `/api/posts/${slug}`
     );
 
     const post = await response.json();
@@ -135,7 +135,7 @@ function renderSinglePost(post) {
         ${post.Images.map(
           (imagePath, index) =>
             `<img 
-             src="https://localhost:7189/Content/posts/${dateOnly}-${
+             src="/Content/posts/${dateOnly}-${
               post.Slug
             }${imagePath}" 
              alt="Post Image ${index + 1}" 
@@ -212,74 +212,7 @@ function renderSinglePost(post) {
       
       ${interactionBarHtml}
     </article>
-  <!-- Comments Section -->
-  <section class="comments-section">
-    <h3>Comments (<span id="commentsCountDisplay">${
-      post.CommentCount
-    }</span>)</h3>
-    <div id="commentsList">Loading comments...</div>
-    <form id="addCommentForm">
-      <textarea id="commentContent" rows="3" placeholder="Write your comment..." required></textarea>
-      <button type="submit">Submit</button>
-    </form>
-  </section>
   `;
-  // After injecting HTML, load existing comments and bind form
-  const postId = post.Id;
-  async function loadComments(id) {
-    try {
-      const res = await authenticatedFetch(`/api/posts/${id}/comments`);
-      if (!res.ok) throw new Error("Failed to load comments");
-      const comments = await res.json();
-      const list = document.getElementById("commentsList");
-      if (comments.length === 0) {
-        list.innerHTML = "<p>No comments yet.</p>";
-      } else {
-        list.innerHTML = comments
-          .map(
-            (c) =>
-              `<div class="comment-item">
-             <div class="comment-meta"><strong>${
-               c.Author
-             }</strong> at ${new Date(c.CreatedAt).toLocaleString()}</div>
-             <p>${c.Content}</p>
-           </div>`
-          )
-          .join("");
-      }
-      document.getElementById("commentsCountDisplay").textContent =
-        comments.length;
-    } catch (err) {
-      console.error(err);
-      showMessage(err.message, "error");
-    }
-  }
-  loadComments(postId);
-  const form = document.getElementById("addCommentForm");
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const contentEl = document.getElementById("commentContent");
-    const content = contentEl.value.trim();
-    if (!content) {
-      showMessage("Comment cannot be empty", "error");
-      return;
-    }
-    try {
-      const res = await authenticatedFetch(`/api/posts/${postId}/comments`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
-      });
-      if (!res.ok) throw new Error("Failed to submit comment");
-      showMessage("Comment added", "success");
-      contentEl.value = "";
-      await loadComments(postId);
-    } catch (err) {
-      console.error(err);
-      showMessage(err.message, "error");
-    }
-  });
-
   // Add event listeners for likes functionality
   setupLikesInteraction(post.Slug);
 }
@@ -321,7 +254,7 @@ function setupLikesInteraction(slug) {
         likeToggle.dataset.liked = (!liked).toString();
 
         const response = await authenticatedFetch(
-          `https://localhost:7189/api/posts/${slug}/like`,
+          `/api/posts/${slug}/like`,
           {
             method: liked ? "DELETE" : "POST",
           }
@@ -356,7 +289,7 @@ function setupLikesInteraction(slug) {
     likeCount.addEventListener("click", async () => {
       try {
         const response = await authenticatedFetch(
-          `https://localhost:7189/api/posts/${slug}/likes`
+          `/api/posts/${slug}/likes`
         );
 
         const likers = await response.json();

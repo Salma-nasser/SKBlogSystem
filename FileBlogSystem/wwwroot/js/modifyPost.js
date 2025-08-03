@@ -63,7 +63,7 @@ document.addEventListener("DOMContentLoaded", () => {
       wrapper.style.width = "120px";
       // Image
       const imgEl = document.createElement("img");
-      imgEl.src = `https://localhost:7189/Content/posts/${dateOnly}-${postSlug}${img}`;
+      imgEl.src = `/Content/posts/${dateOnly}-${postSlug}${img}`;
       imgEl.alt = "Post image";
       imgEl.className = "preview-thumb";
       imgEl.style.width = "120px";
@@ -162,9 +162,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("title").value = post.Title || "";
     document.getElementById("description").value = post.Description || "";
-    document.getElementById("customUrl").value = post.CustomUrl || "";
-    document.getElementById("tags").value = (post.Tags || []).join(", ");
-    document.getElementById("categories").value = (post.Categories || []).join(
+    document.getElementById("customUrl").value = post.customUrl || "";
+    document.getElementById("tags").value = (post.tags || []).join(", ");
+    document.getElementById("categories").value = (post.categories || []).join(
       ", "
     );
     document.getElementById("slugPreview").textContent = `/post/${post.Slug}`;
@@ -283,6 +283,16 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
+// Update preview when custom URL input changes
+const customUrlInput = document.getElementById("customUrl");
+const slugPreviewElem = document.getElementById("slugPreview");
+if (customUrlInput && slugPreviewElem) {
+  customUrlInput.addEventListener("input", () => {
+    const newSlug = customUrlInput.value.trim() || postSlug;
+    slugPreviewElem.textContent = `/post/${newSlug}`;
+  });
+}
+
 async function submitModification() {
   const formData = new FormData();
   const slug = document.getElementById("customUrl").value;
@@ -334,7 +344,12 @@ async function submitModification() {
     const scheduleCheckbox = document.getElementById("schedulePost");
     const scheduledDateInput = document.getElementById("scheduledDate");
 
-    if (scheduleCheckbox && scheduleCheckbox.checked && scheduledDateInput && scheduledDateInput.value) {
+    if (
+      scheduleCheckbox &&
+      scheduleCheckbox.checked &&
+      scheduledDateInput &&
+      scheduledDateInput.value
+    ) {
       // If scheduling is checked and a valid date is provided, send it
       const localDate = new Date(scheduledDateInput.value);
       if (!isNaN(localDate.getTime())) {
@@ -366,13 +381,10 @@ async function submitModification() {
   try {
     showMessage("Updating post...", "info");
 
-    const response = await authenticatedFetch(
-      `https://localhost:7189/api/posts/modify/${postSlug}`,
-      {
-        method: "PUT",
-        body: formData,
-      }
-    );
+    const response = await authenticatedFetch(`/api/posts/modify/${postSlug}`, {
+      method: "PUT",
+      body: formData,
+    });
 
     const result = await response.json();
     showMessage("Post updated successfully!", "success");

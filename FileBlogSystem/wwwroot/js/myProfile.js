@@ -4,6 +4,26 @@ import { initializeThemeToggle } from "./utils/themeToggle.js";
 import { showMessage, showConfirmation } from "./utils/notifications.js";
 import { authenticatedFetch, HttpError } from "./utils/api.js";
 
+// Helper to display validation errors for form fields
+function showError(fieldId, message) {
+  const errorEl = document.getElementById(fieldId + "Error");
+  if (errorEl) {
+    errorEl.textContent = message;
+  } else {
+    // fallback to message if no error element found
+    showMessage(message, "error");
+  }
+}
+
+function clearErrors(...fieldIds) {
+  fieldIds.forEach((id) => {
+    const errorEl = document.getElementById(id + "Error");
+    if (errorEl) {
+      errorEl.textContent = "";
+    }
+  });
+}
+
 let imagesToKeep = [];
 
 window.addEventListener("DOMContentLoaded", () => {
@@ -189,12 +209,9 @@ window.addEventListener("DOMContentLoaded", () => {
   loadUserInfo(targetUsername);
   function deleteAccount() {
     try {
-      authenticatedFetch(
-        `https://localhost:7189/api/users/delete/${currentUsername}`,
-        {
-          method: "PUT",
-        }
-      );
+      authenticatedFetch(`/api/users/delete/${currentUsername}`, {
+        method: "PUT",
+      });
     } catch (error) {
       if (error.message !== "Session expired") {
         console.error("Error deleting account:", error);
@@ -356,7 +373,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   async function fetchPublishedPosts(username = currentUsername) {
     try {
-      const endpoint = `https://localhost:7189/api/posts/user/${username}`;
+      const endpoint = `/api/posts/user/${username}`;
       console.log(`Fetching posts from: ${endpoint}`);
 
       const response = await authenticatedFetch(endpoint);
@@ -386,9 +403,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   async function fetchDraftPosts() {
     try {
-      const response = await authenticatedFetch(
-        "https://localhost:7189/api/posts/drafts"
-      );
+      const response = await authenticatedFetch("/api/posts/drafts");
       const posts = await response.json();
 
       // Store posts for modify functionality
@@ -409,9 +424,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
   async function loadUserInfo(username = currentUsername) {
     try {
-      const response = await authenticatedFetch(
-        `https://localhost:7189/api/users/${username}`
-      );
+      const response = await authenticatedFetch(`/api/users/${username}`);
 
       const user = await response.json();
 
@@ -439,7 +452,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
       // Handle profile picture with error handling
       if (user.ProfilePictureUrl && user.ProfilePictureUrl.trim()) {
-        userProfilePic.src = `https://localhost:7189${user.ProfilePictureUrl}`;
+        userProfilePic.src = `${user.ProfilePictureUrl}`;
         userProfilePic.onerror = function () {
           this.src = "/placeholders/profile.png";
           this.onerror = null;
@@ -720,7 +733,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     try {
       const response = await authenticatedFetch(
-        `https://localhost:7189/api/users/${currentUsername}`,
+        `/api/users/${currentUsername}`,
         {
           method: "PUT",
           body: JSON.stringify({
@@ -774,7 +787,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     try {
       const response = await authenticatedFetch(
-        `https://localhost:7189/api/users/${currentUsername}/password`,
+        `/api/users/${currentUsername}/password`,
         {
           method: "PUT",
           body: JSON.stringify({
@@ -825,7 +838,7 @@ window.addEventListener("DOMContentLoaded", () => {
       const base64Image = await convertFileToBase64(file);
 
       const response = await authenticatedFetch(
-        `https://localhost:7189/api/users/${currentUsername}`,
+        `/api/users/${currentUsername}`,
         {
           method: "PUT",
           body: JSON.stringify({
@@ -905,12 +918,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("confirmDelete").onclick = async () => {
       try {
-        await authenticatedFetch(
-          `https://localhost:7189/api/posts/${slug}`,
-          {
-            method: "DELETE",
-          }
-        );
+        await authenticatedFetch(`/api/posts/${slug}`, {
+          method: "DELETE",
+        });
 
         showMessage("Post deleted successfully", "success");
         // Refresh both lists
@@ -960,7 +970,7 @@ function displayCurrentImages(post) {
       imageWrapper.className = "current-image-wrapper";
 
       const img = document.createElement("img");
-      img.src = `https://localhost:7189/Content/posts/${dateOnly}-${post.Slug}${imagePath}`;
+      img.src = `/Content/posts/${dateOnly}-${post.Slug}${imagePath}`;
       img.alt = `Post Image ${index + 1}`;
       img.className = "current-image";
 
@@ -1054,12 +1064,9 @@ async function deletePost(slug, isDraft) {
       try {
         showMessage("Deleting post...", "info");
 
-        await authenticatedFetch(
-          `https://localhost:7189/api/posts/delete/${slug}`,
-          {
-            method: "DELETE",
-          }
-        );
+        await authenticatedFetch(`/api/posts/delete/${slug}`, {
+          method: "DELETE",
+        });
 
         showMessage("Post deleted successfully!", "success");
         if (isDraft) {
@@ -1072,7 +1079,10 @@ async function deletePost(slug, isDraft) {
       } catch (error) {
         if (error.message !== "Session expired") {
           console.error("Network error:", error);
-          showMessage("Network error occurred while deleting the post", "error");
+          showMessage(
+            "Network error occurred while deleting the post",
+            "error"
+          );
         }
       }
     }

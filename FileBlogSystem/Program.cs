@@ -31,8 +31,8 @@ builder.Services.AddScoped<IBlogPostService, BlogPostService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddHostedService<ScheduledPostPublisher>();
-builder.Services.AddScoped<ICommentService, CommentService>();
-builder.Services.AddScoped<INotificationService>(sp => sp.GetRequiredService<NotificationService>()); // Forward interface requests to the concrete implementation
+builder.Services.AddSingleton<NotificationService>();
+builder.Services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<NotificationService>());
 builder.Services.AddSignalR();
 builder.Services.AddImageSharp();
 // Auth
@@ -113,7 +113,8 @@ app.MapBlogPostEndpoints();
 app.MapAuthEndpoints();
 app.MapUserEndpoints();
 app.MapAdminEndpoints();
-app.MapCommentsEndpoints();
+// routes for comments disabled
+// app.MapCommentsEndpoints();
 app.MapHub<NotificationHub>("/notificationHub");
 
 // Only in development, open browser

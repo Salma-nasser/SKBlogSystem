@@ -376,7 +376,7 @@ async function submitPost(isPublished) {
     });
 
     const response = await authenticatedFetch(
-      "https://localhost:7189/api/posts/create",
+      "/api/posts/create",
       {
         method: "POST",
         body: formData,

@@ -106,21 +106,23 @@ function renderMarkdownWithImageHandling(
 
       // Custom image renderer to handle both markdown images and existing post images
       renderer.image = function (href, title, text) {
+        // Ensure href is a string
+        const hrefStr = String(href);
         // Handle relative paths for post images
-        let imageSrc = href;
+        let imageSrc = hrefStr;
 
         // If it's a relative path starting with /assets/, convert to full post path
-        if (href.startsWith("/assets/") && postSlug && publishedDate) {
+        if (hrefStr.startsWith("/assets/") && postSlug && publishedDate) {
           const dateOnly = new Date(publishedDate).toISOString().split("T")[0];
-          imageSrc = `https://localhost:7189/Content/posts/${dateOnly}-${postSlug}${href}`;
+          imageSrc = `/Content/posts/${dateOnly}-${postSlug}${hrefStr}`;
         }
         // If it's already a full URL or absolute path, use as-is
         else if (
-          href.startsWith("http://") ||
-          href.startsWith("https://") ||
-          href.startsWith("/Content/")
+          hrefStr.startsWith("http://") ||
+          hrefStr.startsWith("https://") ||
+          hrefStr.startsWith("/Content/")
         ) {
-          imageSrc = href;
+          imageSrc = hrefStr;
         }
 
         return `<img src="${imageSrc}" alt="${
@@ -230,9 +232,7 @@ export function renderPosts(posts, containerId, options = {}) {
         <div class="post-images post-images-${post.Images.length}">
           ${post.Images.map(
             (image, index) => `
-            <img src="https://localhost:7189/Content/posts/${dateOnly}-${
-              post.Slug
-            }${image}"
+            <img src="/Content/posts/${dateOnly}-${post.Slug}${image}"
                 alt="Image ${index + 1} for blog post: ${post.Title}"
                 class="post-image" />
           `
@@ -283,7 +283,6 @@ export function renderPosts(posts, containerId, options = {}) {
     }
     const likeIcon = post.LikedByCurrentUser ? "❤️" : "🤍";
     const likeCount = post.Likes?.length || 0;
-    const commentCount = post.CommentCount || 0;
 
     // If viewing a profile, make heart icon look clickable
     let likeToggleStyle = "";
@@ -300,7 +299,6 @@ export function renderPosts(posts, containerId, options = {}) {
           ${likeIcon}
         </span>
         <span class="like-count" data-slug="${post.Slug}">${likeCount} Likes</span>
-        <span class="comment-count" data-slug="${post.Slug}">${commentCount} Comments</span>
       </div>
     `;
 
@@ -397,16 +395,13 @@ export function renderPosts(posts, containerId, options = {}) {
         btn.textContent = liked ? "🤍" : "❤️";
         btn.dataset.liked = (!liked).toString();
 
-        const response = await fetch(
-          `https://localhost:7189/api/posts/${slug}/like`,
-          {
-            method: liked ? "DELETE" : "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
-            },
-          }
-        );
+        const response = await fetch(`/api/posts/${slug}/like`, {
+          method: liked ? "DELETE" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
+          },
+        });
 
         if (!response.ok) {
           // Revert visual change if request failed
@@ -439,14 +434,11 @@ export function renderPosts(posts, containerId, options = {}) {
       const slug = countSpan.dataset.slug;
 
       try {
-        const response = await fetch(
-          `https://localhost:7189/api/posts/${slug}/likes`,
-          {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
-            },
-          }
-        );
+        const response = await fetch(`/api/posts/${slug}/likes`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
+          },
+        });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);

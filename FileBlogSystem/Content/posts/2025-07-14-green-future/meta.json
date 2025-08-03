@@ -1,9 +1,8 @@
 {
   "title": "Sustainable Technology: Innovating for a Greener Future",
   "description": "Learn how sustainable tech is helping combat climate change and reshape industries for a more eco-conscious world.",
+  "customUrl": "green-future",
   "author": "Salma",
-  "publishedDate": "2025-07-14T10:26:31.7223625Z",
-  "lastModified": "2025-07-20T23:50:58.6606745Z",
   "tags": [
     "SustainableTech",
     "CleanEnergy",
@@ -14,7 +13,9 @@
     "Green Technology",
     "Environmental Innovation"
   ],
-  "slug": "-1",
+  "publishedDate": "2025-07-14T10:26:31.7223625Z",
+  "lastModified": "2025-08-02T23:58:50.9118283Z",
+  "slug": "green-future",
   "isPublished": true,
   "scheduledDate": null,
   "images": [

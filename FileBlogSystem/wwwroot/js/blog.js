@@ -211,11 +211,11 @@ async function reloadPosts() {
 
   try {
     if (!activeFilter) {
-      const res = await authenticatedFetch("https://localhost:7189/api/posts");
+      const res = await authenticatedFetch("/api/posts");
       posts = await res.json();
       allPosts = posts;
     } else {
-      const urlBase = `https://localhost:7189/api/posts/${
+      const urlBase = `:7189/api/posts/${
         activeFilter.type
       }/${encodeURIComponent(activeFilter.value)}`;
       const res = await authenticatedFetch(urlBase);

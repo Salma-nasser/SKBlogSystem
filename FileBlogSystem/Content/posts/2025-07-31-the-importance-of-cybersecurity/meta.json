@@ -1,8 +1,9 @@
 {
   "title": "The Importance of Cybersecurity",
   "description": "In today\u2019s digital world, cybersecurity is no longer optional\u2014it\u2019s essential.",
-  "customUrl": "",
   "author": "Salma",
+  "publishedDate": "2025-07-31T12:22:12.3381166Z",
+  "lastModified": "2025-07-31T12:22:12.3381176Z",
   "tags": [
     "security",
     "attaks",
@@ -11,14 +12,14 @@
   "categories": [
     "cybersecurity"
   ],
-  "publishedDate": "2025-07-31T12:22:12.3381166Z",
-  "lastModified": "2025-07-31T12:22:12.3381176Z",
   "slug": "the-importance-of-cybersecurity",
   "isPublished": true,
   "scheduledDate": null,
   "images": [
     "/assets/istockphoto-515656959-612x612.jpg"
   ],
-  "likes": [],
+  "likes": [
+    "Henry"
+  ],
   "commentCount": 0
 }

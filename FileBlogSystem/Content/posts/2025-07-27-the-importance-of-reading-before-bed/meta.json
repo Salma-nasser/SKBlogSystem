@@ -1,9 +1,10 @@
 {
-  "Title": "The Importance of Reading Before Bed",
-  "Description": "A Gateway to Better Sleep and Mental Wellness",
-  "CustomUrl": "",
-  "Author": "Salma",
-  "Tags": [
+  "title": "The Importance of Reading Before Bed",
+  "description": "A Gateway to Better Sleep and Mental Wellness",
+  "author": "Salma",
+  "publishedDate": "2025-07-27T09:52:51.2197301Z",
+  "lastModified": "2025-07-27T10:46:13.2281891Z",
+  "tags": [
     "ReadingBeforeBed",
     "SleepBenefits",
     "MentalWellness",
@@ -12,18 +13,20 @@
     "StressRelief",
     "CognitiveHealth"
   ],
-  "Categories": [
+  "categories": [
     "Health \u0026 Wellness",
     "Personal Development",
     "Sleep Science",
     "Reading Habits"
   ],
-  "PublishedDate": "2025-07-27T09:52:51.2197301Z",
-  "ModifiedDate": "2025-07-27T10:46:13.2281891Z",
-  "Slug": "the-importance-of-reading-before-bed",
-  "IsPublished": true,
-  "ScheduledDate": null,
-  "Images": [
+  "slug": "the-importance-of-reading-before-bed",
+  "isPublished": true,
+  "scheduledDate": null,
+  "images": [
     "/assets/books.jpg"
-  ]
+  ],
+  "likes": [
+    "Salma"
+  ],
+  "commentCount": 0
 }
