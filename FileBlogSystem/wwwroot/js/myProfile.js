@@ -797,11 +797,16 @@ window.addEventListener("DOMContentLoaded", () => {
         }
       );
 
-      showMessage("Password updated successfully!", "success");
-      toggleEditSection("password", false);
-      currentPasswordInput.value = "";
-      newPasswordInput.value = "";
-      confirmPasswordInput.value = "";
+      // Clear authentication and redirect to login
+      localStorage.removeItem("jwtToken");
+      localStorage.removeItem("username");
+      showMessage(
+        "Password updated successfully! Please log in again.",
+        "success"
+      );
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 1000);
     } catch (err) {
       if (err instanceof HttpError && err.message !== "Session expired") {
         const error = await err.response.json();
@@ -918,7 +923,7 @@ window.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("confirmDelete").onclick = async () => {
       try {
-        await authenticatedFetch(`/api/posts/${slug}`, {
+        await authenticatedFetch(`/api/posts/delete/${slug}`, {
           method: "DELETE",
         });
 

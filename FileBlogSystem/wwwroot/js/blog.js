@@ -215,9 +215,10 @@ async function reloadPosts() {
       posts = await res.json();
       allPosts = posts;
     } else {
-      const urlBase = `:7189/api/posts/${
-        activeFilter.type
-      }/${encodeURIComponent(activeFilter.value)}`;
+      // Use correct API path for filtered posts
+      const urlBase = `/api/posts/${activeFilter.type}/${encodeURIComponent(
+        activeFilter.value
+      )}`;
       const res = await authenticatedFetch(urlBase);
       posts = await res.json();
     }
@@ -370,9 +371,16 @@ function renderNotificationsDropdown(notifications) {
       notif.style.cursor = "pointer";
       notif.addEventListener("click", async (e) => {
         e.stopPropagation();
-        notif.style.pointerEvents = "none";
-        await authenticatedFetch(`/notifications/read/${n.Id}`, { method: "POST" });
-        getAllNotifications();
+        try {
+          await authenticatedFetch(`/notifications/read/${n.Id}`, {
+            method: "POST",
+          });
+          getAllNotifications();
+        } catch (error) {
+          console.error("Error marking notification as read:", error);
+          // Re-enable interaction on error
+          notif.style.pointerEvents = "";
+        }
       });
     }
     list.appendChild(notif);

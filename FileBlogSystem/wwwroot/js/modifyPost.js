@@ -318,6 +318,17 @@ async function submitModification() {
     return;
   }
 
+  // Determine final slug: use custom input if provided, otherwise keep existing
+  const slugValue = slug.trim();
+  const finalSlug = slugValue || postSlug;
+  // Prevent default 'untitled' slug collisions
+  if (finalSlug.toLowerCase().startsWith("untitled")) {
+    showMessage(
+      "Invalid custom URL: please specify a non-default slug.",
+      "warning"
+    );
+    return;
+  }
   // Add all fields to formData
   formData.append("Title", title);
   formData.append("Description", description);
@@ -356,11 +367,11 @@ async function submitModification() {
         formData.append("ScheduledDate", localDate.toISOString());
       } else {
         // If the date is invalid, clear any existing schedule on the backend
-        formData.append("ScheduledDate", "");
+        formData.append("ScheduledDate", post.ScheduledDate || "");
       }
     } else {
       // If scheduling is unchecked or no date is provided, clear any existing schedule
-      formData.append("ScheduledDate", "");
+      formData.append("ScheduledDate", post.ScheduledDate || "");
     }
   }
   // Always add kept images (images that weren't removed or unchanged)

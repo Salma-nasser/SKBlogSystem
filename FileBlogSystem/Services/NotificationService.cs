@@ -47,14 +47,45 @@ public class NotificationService : INotificationService
     var filePath = Path.Combine(userDir, "notifications.json");
     if (!File.Exists(filePath)) return notifications;
     var content = await File.ReadAllTextAsync(filePath);
-    // Allow IDs stored as strings or numbers
-    var readOptions = new JsonSerializerOptions
+    // Manually parse JSON array to safely handle numeric and string IDs
+    try
     {
-      PropertyNameCaseInsensitive = true,
-      NumberHandling = JsonNumberHandling.AllowReadingFromString
-    };
-    notifications = JsonSerializer.Deserialize<List<Notification>>(content, readOptions)
-                    ?? new List<Notification>();
+      using var doc = JsonDocument.Parse(content);
+      foreach (var elem in doc.RootElement.EnumerateArray())
+      {
+        int id;
+        var idProp = elem.GetProperty("Id");
+        if (idProp.ValueKind == JsonValueKind.Number)
+        {
+          if (!idProp.TryGetInt32(out id)) continue;
+        }
+        else if (idProp.ValueKind == JsonValueKind.String &&
+                 int.TryParse(idProp.GetString(), out var parsed))
+        {
+          id = parsed;
+        }
+        else
+        {
+          continue; // Skip invalid ID
+        }
+        var message = elem.GetProperty("Message").GetString() ?? string.Empty;
+        var link = elem.GetProperty("Link").GetString() ?? string.Empty;
+        var isRead = elem.GetProperty("IsRead").GetBoolean();
+        var createdAt = elem.GetProperty("CreatedAt").GetDateTime();
+        notifications.Add(new Notification
+        {
+          Id = id,
+          Message = message,
+          Link = link,
+          IsRead = isRead,
+          CreatedAt = createdAt
+        });
+      }
+    }
+    catch
+    {
+      // If parsing fails, return empty list or existing notifications
+    }
     return notifications;
   }
   public async Task<List<Notification>> GetUnreadAsync(string username)

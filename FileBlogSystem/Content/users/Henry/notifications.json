@@ -1,9 +1,16 @@
 [
   {
     "Id": 1,
-    "RecipientUsername": "Henry",
     "Message": "Salma liked your post: \u0022sfg\u0022",
-    "IsRead": false,
+    "Link": "",
+    "IsRead": true,
     "CreatedAt": "2025-07-28T00:17:27.5795272Z"
+  },
+  {
+    "Id": 2,
+    "Message": "Salma liked your post: \u0022Why We Move: The Human Drive to Explore New Places\u0022",
+    "Link": "/posts/why-we-move-the-human-drive-to-explore-new-places",
+    "IsRead": true,
+    "CreatedAt": "2025-08-03T09:55:49.715539Z"
   }
 ]

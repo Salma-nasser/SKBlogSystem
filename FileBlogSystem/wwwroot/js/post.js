@@ -171,7 +171,6 @@ function renderSinglePost(post) {
   // Interaction bar with likes and comments
   const likeIcon = post.LikedByCurrentUser ? "❤️" : "🤍";
   const likeCount = post.Likes?.length || 0;
-  const commentCount = post.CommentCount || 0;
 
   const interactionBarHtml = `
     <div class="interaction-bar">
@@ -179,7 +178,6 @@ function renderSinglePost(post) {
         ${likeIcon}
       </span>
       <span class="like-count" data-slug="${post.Slug}">${likeCount} Likes</span>
-      <span class="comment-count" data-slug="${post.Slug}">${commentCount} Comments</span>
     </div>
   `;
 

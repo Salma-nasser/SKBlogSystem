@@ -521,21 +521,37 @@ public class BlogPostService : IBlogPostService
       finalImages.AddRange(newImages);
 
       // Use updated data or fall back to existing data using safe accessors
-      // Sanitize and clean customUrl
-      var rawCustomUrl = string.IsNullOrWhiteSpace(updatedData.CustomUrl) ? GetSafeString("customUrl") : updatedData.CustomUrl;
-      var cleanedCustomUrl = GenerateSlugFromTitle(rawCustomUrl);
-      // Rename folder if slug (customUrl) changed
-      var oldFolderName = Path.GetFileName(folder);
-      var datePart = oldFolderName.Length >= 10 ? oldFolderName.Substring(0, 10) : oldFolderName;
-      var newFolderName = $"{datePart}-{cleanedCustomUrl}";
-      var newFolderPath = Path.Combine(_rootPath, newFolderName);
-      if (!folder.Equals(newFolderPath, StringComparison.OrdinalIgnoreCase))
+      // Only override slug when a customUrl is provided; otherwise keep existing
+      var existingSlug = GetSafeString("slug");
+      var existingCustomUrl = GetSafeString("customUrl");
+      var overrideSlug = !string.IsNullOrWhiteSpace(updatedData.CustomUrl);
+      string cleanedCustomUrl;
+      if (overrideSlug)
       {
-        Directory.Move(folder, newFolderPath);
-        folder = newFolderPath;
-        metaPath = Path.Combine(folder, "meta.json");
-        bodyPath = Path.Combine(folder, "content.md");
-        assetsDirectory = Path.Combine(folder, "assets");
+        // Clean provided customUrl
+        cleanedCustomUrl = GenerateSlugFromTitle(updatedData.CustomUrl!.Trim());
+        if (string.Equals(cleanedCustomUrl, "untitled", StringComparison.OrdinalIgnoreCase))
+        {
+          return (false, "Invalid custom URL: please specify a unique, non-default slug.");
+        }
+        // Rename folder only if slug changed
+        var oldFolderName = Path.GetFileName(folder);
+        var datePart = oldFolderName.Length >= 10 ? oldFolderName.Substring(0, 10) : oldFolderName;
+        var newFolderName = $"{datePart}-{cleanedCustomUrl}";
+        var newFolderPath = Path.Combine(_rootPath, newFolderName);
+        if (!folder.Equals(newFolderPath, StringComparison.OrdinalIgnoreCase))
+        {
+          Directory.Move(folder, newFolderPath);
+          folder = newFolderPath;
+          metaPath = Path.Combine(folder, "meta.json");
+          bodyPath = Path.Combine(folder, "content.md");
+          assetsDirectory = Path.Combine(folder, "assets");
+        }
+      }
+      else
+      {
+        // Keep existing values
+        cleanedCustomUrl = existingCustomUrl;
       }
       // Use updated data or fallback to existing
       var title = string.IsNullOrWhiteSpace(updatedData.Title) ? GetSafeString("title") : updatedData.Title;
@@ -627,12 +643,20 @@ public class BlogPostService : IBlogPostService
     {
       var folder = Directory.GetDirectories(_rootPath)
           .FirstOrDefault(dir => dir.EndsWith(slug, StringComparison.OrdinalIgnoreCase));
+      // If slug is empty or meta blank, derive slug from folder name
+      string folderName = folder != null ? Path.GetFileName(folder) : string.Empty;
+      var derivedSlug = slug;
+      if (string.IsNullOrWhiteSpace(derivedSlug) && folderName.Length > 11 && folderName[10] == '-')
+      {
+        // folderName format: yyyy-MM-dd-slugPart
+        derivedSlug = folderName.Substring(11);
+      }
       // Rename folder to current date prefix when publishing
       if (folder != null)
       {
-        var oldFolderName = Path.GetFileName(folder);
         var newDatePrefix = DateTime.UtcNow.ToString("yyyy-MM-dd");
-        var newFolderName = $"{newDatePrefix}-{slug}";
+        // Use derivedSlug to prevent empty directory names
+        var newFolderName = $"{newDatePrefix}-{derivedSlug}";
         var newFolderPath = Path.Combine(_rootPath, newFolderName);
         if (!folder.Equals(newFolderPath, StringComparison.OrdinalIgnoreCase))
         {
@@ -701,15 +725,17 @@ public class BlogPostService : IBlogPostService
       {
         title = title,
         description = description,
+        // Preserve customUrl
         customUrl = customUrl,
         author = authorUsername,
         tags = tags,
         categories = categories,
-        publishedDate = DateTime.UtcNow, // Set the publish date to now
+        publishedDate = DateTime.UtcNow,
         lastModified = DateTime.UtcNow,
-        slug = GetSafeString("customUrl"),
+        // Use derivedSlug for final slug
+        slug = derivedSlug,
         isPublished = true,
-        scheduledDate = (DateTime?)null, // Clear the scheduled date
+        scheduledDate = (DateTime?)null,
         images = existingImages,
         likes = existingLikes,
         commentCount = commentCount

@@ -1,9 +1,8 @@
 {
   "title": "Why We Move: The Human Drive to Explore New Places",
   "description": "Moving to a new place isn\u2019t always about necessity. Sometimes, it\u2019s about curiosity, challenge, and the hunger for something more. Here\u0027s why so many people pack up and go\u2014seeking not just a change of scenery, but a deeper connection to life.",
+  "customUrl": "travel",
   "author": "Henry",
-  "publishedDate": "2025-07-27T11:43:25.0228032Z",
-  "lastModified": null,
   "tags": [
     "moving",
     "adventure",
@@ -22,14 +21,17 @@
     "Personal Growth",
     "Culture"
   ],
-  "slug": "why-we-move-the-human-drive-to-explore-new-places",
+  "publishedDate": "2025-08-03T10:38:21.1654105Z",
+  "lastModified": "2025-08-03T10:46:19.8650955Z",
+  "slug": "travel",
   "isPublished": true,
   "scheduledDate": null,
   "images": [
     "/assets/travel.jpg"
   ],
   "likes": [
-    "Henry"
+    "Henry",
+    "Salma"
   ],
   "commentCount": 0
 }

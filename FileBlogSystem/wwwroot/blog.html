@@ -21,25 +21,9 @@
         >Welcome back, <span id="username">Guest</span>!</span
       >
       <div style="display: flex; align-items: center; gap: 12px">
-        <div
-          id="notificationBell"
-          style="position: relative; cursor: pointer; margin-right: 8px"
-        >
-          <span style="font-size: 1.7em; color: #8b4513">&#128276;</span>
-          <span
-            id="bellUnreadCount"
-            style="
-              position: absolute;
-              top: -6px;
-              right: -6px;
-              background: #8b4513;
-              color: #fff;
-              border-radius: 50%;
-              padding: 2px 7px;
-              font-size: 0.9em;
-              display: none;
-            "
-          ></span>
+        <div id="notificationBell" class="notification-bell">
+          <span>&#128276;</span>
+          <span id="bellUnreadCount" class="count-badge"></span>
         </div>
         <button id="profileBtn">Profile</button>
         <button id="adminBtn" style="display: none">Admin</button>

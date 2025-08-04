@@ -80,7 +80,8 @@ public static class UserEndpoints
       var username = ctx.User.Identity?.Name;
       if (username == null)
         return Results.Unauthorized();
-      if (!Guid.TryParse(id, out _))
+      // Accept numeric IDs for notifications
+      if (!int.TryParse(id, out _))
         return Results.BadRequest(new { message = "Invalid notification id format." });
       await service.MarkAsReadAsync(username, id);
       return Results.Ok();

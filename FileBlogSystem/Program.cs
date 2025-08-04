@@ -9,13 +9,31 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.AspNetCore.Rewrite;
 using SixLabors.ImageSharp.Web.Middleware;
 using SixLabors.ImageSharp.Web.DependencyInjection;
+using System.IO;
+using Microsoft.AspNetCore.DataProtection;
 
-
+// Create builder
 var builder = WebApplication.CreateBuilder(args);
+// Configure host to ignore background service exceptions
+builder.Host.ConfigureServices((ctx, services) =>
+{
+  services.Configure<HostOptions>(options =>
+  {
+    options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
+  });
+});
 
 // Read PORT from environment for deployment (e.g., Render)
 var port = Environment.GetEnvironmentVariable("PORT") ?? "7189";
-builder.WebHost.UseUrls($"https://*:{port}");
+// Listen on HTTP only in container to avoid missing HTTPS cert
+builder.WebHost.UseUrls($"http://*:{port}");
+
+// Persist data protection keys in project directory to survive container restarts
+var keysPath = Path.Combine(builder.Environment.ContentRootPath, "DataProtection-Keys");
+Directory.CreateDirectory(keysPath);
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(keysPath))
+    .SetApplicationName("FileBlogSystem");
 
 // JSON
 builder.Services.Configure<JsonOptions>(options =>
@@ -41,6 +59,21 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     {
       var jwtService = new JwtService(builder.Configuration);
       options.TokenValidationParameters = jwtService.GetTokenValidationParameters();
+      // Allow SignalR to receive access token from query string
+      options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
+      {
+        OnMessageReceived = context =>
+        {
+          var accessToken = context.Request.Query["access_token"];
+          var path = context.HttpContext.Request.Path;
+          // If the request is for our SignalR hub, read the token from the query string
+          if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/notificationHub"))
+          {
+            context.Token = accessToken;
+          }
+          return System.Threading.Tasks.Task.CompletedTask;
+        }
+      };
     });
 
 // CORS
@@ -48,7 +81,7 @@ builder.Services.AddCors(options =>
 {
   options.AddPolicy("AllowFrontend", policy =>
   {
-    policy.WithOrigins("https://localhost:7189", "http://localhost:5500")
+    policy.WithOrigins("http://localhost:7189", "http://localhost:5500")
             .AllowAnyHeader()
             .AllowAnyMethod();
   });
@@ -85,9 +118,6 @@ var rewriteOptions = new RewriteOptions()
 
 app.UseRewriter(rewriteOptions);
 
-// Pipeline
-app.UseHttpsRedirection();
-
 // Static Files for wwwroot
 app.UseDefaultFiles(new DefaultFilesOptions
 {
@@ -120,7 +150,8 @@ app.MapHub<NotificationHub>("/notificationHub");
 // Only in development, open browser
 if (app.Environment.IsDevelopment())
 {
-  var url = "https://localhost:7189";
+  app.UseHttpsRedirection();
+  var url = "http://localhost:7189";
   try
   {
     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
