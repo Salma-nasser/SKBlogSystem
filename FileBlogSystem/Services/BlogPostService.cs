@@ -550,8 +550,8 @@ public class BlogPostService : IBlogPostService
       }
       else
       {
-        // Keep existing values
-        cleanedCustomUrl = existingCustomUrl;
+        // No new slug provided: fallback to existing slug to avoid empty values
+        cleanedCustomUrl = !string.IsNullOrWhiteSpace(existingCustomUrl) ? existingCustomUrl : existingSlug;
       }
       // Use updated data or fallback to existing
       var title = string.IsNullOrWhiteSpace(updatedData.Title) ? GetSafeString("title") : updatedData.Title;

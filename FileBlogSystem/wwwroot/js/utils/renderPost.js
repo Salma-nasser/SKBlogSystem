@@ -77,7 +77,8 @@ function renderMarkdown(content) {
   // Check if marked library is available
   if (typeof marked !== "undefined") {
     try {
-      return marked.parse(content);
+      const rawHtml = marked.parse(content);
+      return DOMPurify.sanitize(rawHtml);
     } catch (error) {
       console.error("Error parsing markdown:", error);
       return content; // Fallback to raw content
@@ -134,7 +135,8 @@ function renderMarkdownWithImageHandling(
         }')">`;
       };
 
-      renderedHtml = marked.parse(content, { renderer: renderer });
+      const rawHtml = marked.parse(content, { renderer: renderer });
+      renderedHtml = DOMPurify.sanitize(rawHtml);
     } catch (error) {
       console.error("Error parsing markdown:", error);
       renderedHtml = content; // Fallback to raw content
@@ -195,6 +197,17 @@ function stripHtml(html) {
   return tmp.textContent || tmp.innerText || "";
 }
 
+// Helper to split camelCase/concatenated words and capitalize each
+function formatLabel(str) {
+  // Insert space before capital letters, replace underscores/hyphens, then capitalize
+  return str
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
 export function renderPosts(posts, containerId, options = {}) {
   const {
     showDelete = false,
@@ -217,12 +230,16 @@ export function renderPosts(posts, containerId, options = {}) {
 
     const tagsHtml = post.Tags.map(
       (tag) =>
-        `<span class="tag clickable-tag" data-type="tag" data-value="${tag}">${tag}</span>`
+        `<span class="tag clickable-tag" data-type="tag" data-value="${tag}">${formatLabel(
+          tag
+        )}</span>`
     ).join("");
 
     const catsHtml = post.Categories.map(
       (cat) =>
-        `<span class="category clickable-tag" data-type="category" data-value="${cat}">${cat}</span>`
+        `<span class="category clickable-tag" data-type="category" data-value="${cat}">${formatLabel(
+          cat
+        )}</span>`
     ).join("");
 
     let imgHtml = "";

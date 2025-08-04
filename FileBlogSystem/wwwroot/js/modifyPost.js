@@ -162,9 +162,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById("title").value = post.Title || "";
     document.getElementById("description").value = post.Description || "";
-    document.getElementById("customUrl").value = post.customUrl || "";
-    document.getElementById("tags").value = (post.tags || []).join(", ");
-    document.getElementById("categories").value = (post.categories || []).join(
+    document.getElementById("customUrl").value = post.CustomUrl || "";
+    document.getElementById("tags").value = (post.Tags || []).join(", ");
+    document.getElementById("categories").value = (post.Categories || []).join(
       ", "
     );
     document.getElementById("slugPreview").textContent = `/post/${post.Slug}`;

@@ -4,6 +4,16 @@ import { initializeThemeToggle } from "./utils/themeToggle.js";
 import { showMessage } from "./utils/notifications.js";
 import { authenticatedFetch } from "./utils/api.js";
 
+// Helper to split camelCase and concatenated labels and capitalize each word
+function formatLabel(str) {
+  return str
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[_-]+/g, " ")
+    .split(" ")
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(" ");
+}
+
 // Extract slug from URL path (e.g., /post/Palestine -> Palestine)
 function getSlugFromPath() {
   const path = window.location.pathname;
@@ -59,9 +69,7 @@ async function loadPost(slug) {
   try {
     showMessage("Loading post...", "info");
 
-    const response = await authenticatedFetch(
-      `/api/posts/${slug}`
-    );
+    const response = await authenticatedFetch(`/api/posts/${slug}`);
 
     const post = await response.json();
 
@@ -135,15 +143,13 @@ function renderSinglePost(post) {
         ${post.Images.map(
           (imagePath, index) =>
             `<img 
-             src="/Content/posts/${dateOnly}-${
-              post.Slug
-            }${imagePath}" 
-             alt="Post Image ${index + 1}" 
-             class="post-image" 
-             loading="lazy"
-             data-index="${index}"
-             onerror="this.style.display='none'"
-           />`
+            src="/Content/posts/${dateOnly}-${post.Slug}${imagePath}" 
+            alt="Post Image ${index + 1}" 
+            class="post-image" 
+            loading="lazy"
+            data-index="${index}"
+            onerror="this.style.display='none'"
+          />`
         ).join("")}
       </div>
     `;
@@ -153,19 +159,20 @@ function renderSinglePost(post) {
   const tagsHtml =
     post.Tags && post.Tags.length > 0
       ? `<div class="post-tags">
-         <strong>Tags:</strong> ${post.Tags.map(
-           (tag) => `<span class="tag">${tag}</span>`
-         ).join("")}
-       </div>`
+        <strong>Tags:</strong> ${post.Tags.map(
+          (tag) => `<span class="tag">${formatLabel(tag)}</span>`
+        ).join("")}
+      </div>`
       : "";
 
   const categoriesHtml =
     post.Categories && post.Categories.length > 0
       ? `<div class="post-categories">
-         <strong>Categories:</strong> ${post.Categories.map(
-           (category) => `<span class="category">${category}</span>`
-         ).join("")}
-       </div>`
+        <strong>Categories:</strong> ${post.Categories.map(
+          (category) =>
+            `<span class="category">${formatLabel(category)}</span>`
+        ).join("")}
+      </div>`
       : "";
 
   // Interaction bar with likes and comments
@@ -229,7 +236,8 @@ function renderMarkdownContent(markdownText) {
     });
 
     // Render the markdown to HTML
-    return marked.parse(markdownText);
+    const rawHtml = marked.parse(markdownText);
+    return DOMPurify.sanitize(rawHtml);
   } catch (error) {
     console.error("Error rendering markdown:", error);
     // Fallback to plain text with line breaks
@@ -251,12 +259,9 @@ function setupLikesInteraction(slug) {
         likeToggle.textContent = liked ? "🤍" : "❤️";
         likeToggle.dataset.liked = (!liked).toString();
 
-        const response = await authenticatedFetch(
-          `/api/posts/${slug}/like`,
-          {
-            method: liked ? "DELETE" : "POST",
-          }
-        );
+        const response = await authenticatedFetch(`/api/posts/${slug}/like`, {
+          method: liked ? "DELETE" : "POST",
+        });
 
         const result = await response.json();
 
@@ -286,9 +291,7 @@ function setupLikesInteraction(slug) {
   if (likeCount) {
     likeCount.addEventListener("click", async () => {
       try {
-        const response = await authenticatedFetch(
-          `/api/posts/${slug}/likes`
-        );
+        const response = await authenticatedFetch(`/api/posts/${slug}/likes`);
 
         const likers = await response.json();
 

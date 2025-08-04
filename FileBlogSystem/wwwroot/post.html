@@ -1,30 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>View Post</title>
-    <link rel="stylesheet" href="/css/post.css">
+    <link rel="stylesheet" href="/css/post.css" />
     <!-- Add marked.js for markdown rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-</head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
+  </head>
 
-<body>
+  <body>
     <header>
-        <h1><a href="/blog">Aether & Ink</a></h1>
-        <div class="header-buttons">
-            <button id="backToBlogBtn">Home</button>
-            <button id="logoutBtn">Logout</button>
-        </div>
+      <h1><a href="/blog">Aether & Ink</a></h1>
+      <div class="header-buttons">
+        <button id="backToBlogBtn">Home</button>
+        <button id="logoutBtn">Logout</button>
+      </div>
     </header>
     <div id="modeToggle" data-theme="light">☀️</div>
-    
+
     <main class="main-content">
-        <div class="container">
-            <div id="postContainer"></div>
-        </div>
+      <div class="container">
+        <div id="postContainer"></div>
+      </div>
     </main>
 
     <script type="module" src="/js/post.js" defer></script>
-</body>
+  </body>
 </html>
