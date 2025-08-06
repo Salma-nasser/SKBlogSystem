@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
+    <!-- Build against both net9.0 (for container runtime) and net10.0 (local preview) -->
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -13,7 +14,7 @@
   </ItemGroup>
   <PropertyGroup>
   <RuntimeIdentifier>win-x64</RuntimeIdentifier>
-  <SelfContained>true</SelfContained>
+  <SelfContained>false</SelfContained>
   <PublishTrimmed>false</PublishTrimmed>
   <EnableCompressionInStaticWebAssets>false</EnableCompressionInStaticWebAssets>
   <InvariantGlobalization>true</InvariantGlobalization>

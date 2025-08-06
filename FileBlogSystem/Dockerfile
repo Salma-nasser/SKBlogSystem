@@ -1,17 +1,15 @@
 # Use .NET SDK image for building
-FROM mcr.microsoft.com/dotnet/sdk:10.0.100-preview.6 AS build
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 # Copy all sources and publish
 COPY . .
 
-# Restore dependencies
-RUN dotnet restore FileBlogSystem.csproj
-
-RUN dotnet publish FileBlogSystem.csproj -c Release -o /app/publish --no-restore
+# Build and publish the app for net9.0 (restore happens implicitly)
+RUN dotnet publish FileBlogSystem.csproj -c Release -o /app/publish -f net9.0
 
 # Runtime image
-FROM mcr.microsoft.com/dotnet/nightly/runtime:10.0.0-preview.6 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
 WORKDIR /app
 
 # Copy published output
