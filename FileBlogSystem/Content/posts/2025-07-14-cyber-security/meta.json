@@ -1,8 +1,9 @@
 {
   "title": "The Future of Cybersecurity: Staying Ahead in a Digital World",
   "description": "Explore how evolving technologies and smarter threats are reshaping the cybersecurity landscape\u2014and what we can do to stay protected.",
-  "customUrl": "cyber-security",
   "author": "Salma",
+  "publishedDate": "2025-07-14T11:07:26.7311079Z",
+  "lastModified": "2025-08-03T10:09:21.0952295Z",
   "tags": [
     "Security",
     "innovation"
@@ -10,8 +11,6 @@
   "categories": [
     "Cyber Security"
   ],
-  "publishedDate": "2025-07-14T11:07:26.7311079Z",
-  "lastModified": "2025-08-03T10:09:21.0952295Z",
   "slug": "cyber-security",
   "isPublished": true,
   "scheduledDate": null,
@@ -19,7 +18,8 @@
     "/assets/istockphoto-515656959-612x612.jpg"
   ],
   "likes": [
-    "Salma"
+    "Salma",
+    "Henry"
   ],
   "commentCount": 0
 }

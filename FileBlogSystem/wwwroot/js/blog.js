@@ -145,12 +145,14 @@ window.addEventListener("DOMContentLoaded", () => {
       currentPage--;
       updateURL(currentPage);
       reloadPosts();
+      window.scrollTo({ top: 0, behavior: "smooth" });
     }
   });
   document.getElementById("nextPage")?.addEventListener("click", () => {
     currentPage++;
     updateURL(currentPage);
     reloadPosts();
+    window.scrollTo({ top: 0, behavior: "smooth" });
   });
 
   // ---------- CLEAR FILTER ----------
@@ -268,7 +270,6 @@ function updatePagination(totalItems) {
     currentPage = totalPages;
     updateURL(currentPage);
   }
-  window.scrollTo({ top: 0, behavior: "smooth" });
   const info = document.getElementById("pageInfo");
   const prevButton = document.getElementById("prevPage");
   const nextButton = document.getElementById("nextPage");
