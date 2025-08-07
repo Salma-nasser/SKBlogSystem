@@ -267,7 +267,7 @@ function updatePagination(totalItems) {
     currentPage = totalPages;
     updateURL(currentPage);
   }
-
+  window.scrollTo({ top: 0, behavior: "smooth" });
   const info = document.getElementById("pageInfo");
   const prevButton = document.getElementById("prevPage");
   const nextButton = document.getElementById("nextPage");

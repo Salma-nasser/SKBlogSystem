@@ -1,53 +1,84 @@
 <html lang="en">
-<head>
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Register</title>
     <link rel="stylesheet" href="css/auth.css" />
     <script type="module" src="js/auth.js" defer></script>
   </head>
-<body>
-  <div class="page-wrapper">
-    <header class="top-banner">
-      <div class="banner-content">
-        <h1 class="blog-name">Aether & Ink</h1>
-      </div>
-    </header>
-    <div id="modeToggle" data-theme="light">☀️</div>
-    <main class="content-area">
-      <div class="register-box">
-        <h2>Register</h2>
-        <form id="RegisterForm">
-          <label for="email">Email Address</label>
-          <input type="email" id="email" placeholder="Enter your email" required />
-          
-          <label for="username">Username</label>
-          <input type="text" id="username" placeholder="Choose a username" required />
-          
-            <div id="passwordWrapper" style="position: relative;">
+  <body>
+    <div class="page-wrapper">
+      <header class="top-banner">
+        <div class="banner-content">
+          <h1 class="blog-name">Aether & Ink</h1>
+        </div>
+      </header>
+      <div id="modeToggle" data-theme="light">☀️</div>
+      <main class="content-area">
+        <div class="register-box">
+          <h2>Register</h2>
+          <form id="RegisterForm">
+            <label for="email">Email Address</label>
+            <input
+              type="email"
+              id="email"
+              placeholder="Enter your email"
+              required
+            />
+
+            <label for="username">Username</label>
+            <input
+              type="text"
+              id="username"
+              placeholder="Choose a username"
+              required
+            />
+
+            <div id="passwordWrapper" style="position: relative">
               <label for="registerPassword">Password</label>
-              <input type="password" id="registerPassword" placeholder="Create a strong password" required />
+              <input
+                type="password"
+                id="registerPassword"
+                placeholder="Create a strong password"
+                required
+              />
               <span id="togglePassword">👁️</span>
             </div>
             <ul id="passwordRules">
               <li id="ruleLength">❌ At least 8 characters</li>
               <li id="ruleUpper">❌ At least one uppercase letter</li>
-              <li id="ruleSpecial">❌ At least one special character (!@#$...)</li>
+              <li id="ruleSpecial">
+                ❌ At least one special character (!@#$...)
+              </li>
             </ul>
-          <button type="submit">Register</button>
-      </form>
-      <p class="account-switch">
-      Already have an account?
-      <a href="login.html">Sign in</a>
-    </p>
-      <p id="successMessage" style="display: none; color: green; text-align: center;">
-    Registration successful!
-  </p>
-      <p id="errorMessage" style="display: none; color: red; text-align: center;">
-    </p>
-      </div>
-    </main>
-
-  </div>
-</body>
-    </html>
+            <div class="password-wrapper">
+              <label for="registerConfirmPassword">Confirm Password</label>
+              <input
+                type="password"
+                id="registerConfirmPassword"
+                placeholder="Confirm password"
+                required
+              />
+              <span id="toggleRegisterConfirmPassword">👁️</span>
+            </div>
+            <button type="submit">Register</button>
+          </form>
+          <p class="account-switch">
+            Already have an account?
+            <a href="login.html">Sign in</a>
+          </p>
+          <p
+            id="successMessage"
+            style="display: none; color: green; text-align: center"
+          >
+            Registration successful!
+          </p>
+          <p
+            id="errorMessage"
+            style="display: none; color: red; text-align: center"
+          ></p>
+        </div>
+      </main>
+    </div>
+  </body>
+</html>

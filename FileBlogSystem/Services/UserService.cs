@@ -66,6 +66,8 @@ public class UserService : IUserService
         return Results.Problem("Invalid username or password");
       }
 
+      // Update last login timestamp and persist profile
+      user.LastLoginDate = DateTime.UtcNow;
       await File.WriteAllTextAsync(profileFilePath, JsonSerializer.Serialize(user, new JsonSerializerOptions { WriteIndented = true }));
 
       string token = _jwtService.GenerateToken(user);

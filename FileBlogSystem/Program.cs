@@ -105,6 +105,9 @@ var app = builder.Build();
 
 // URL Rewriting for kebab-case URLs
 var rewriteOptions = new RewriteOptions()
+    // Redirect any *.html requests to extensionless URLs
+    .AddRedirect("^([^.]+)\\.html$", "$1", statusCode: 301)
+    // Rewrite extensionless routes to serve corresponding .html files
     .AddRewrite("^$", "welcome.html", skipRemainingRules: true)
     .AddRewrite("^login/?$", "login.html", skipRemainingRules: true)
     .AddRewrite("^register/?$", "register.html", skipRemainingRules: true)
