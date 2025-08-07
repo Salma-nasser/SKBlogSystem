@@ -14,10 +14,15 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.12.0" />
   </ItemGroup>
   <ItemGroup>
-  <Content Include="Content\**\*">
-    <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-  </Content>
-</ItemGroup>
+    <!-- Include user content files -->
+    <Content Include="Content\**\*">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <!-- Include static wwwroot assets -->
+    <Content Include="wwwroot\**\*">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
   <PropertyGroup>
   <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   <SelfContained>false</SelfContained>
