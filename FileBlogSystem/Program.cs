@@ -115,12 +115,27 @@ var rewriteOptions = new RewriteOptions()
     .AddRewrite("^profile/([^/?]+)/?$", "myProfile.html", skipRemainingRules: true)
     .AddRewrite("^admin/?$", "admin.html", skipRemainingRules: true)
     .AddRewrite("^create-post/?$", "createPost.html", skipRemainingRules: true)
-    .AddRewrite("^post/([^/?]+)/?$", "post.html?slug=$1", skipRemainingRules: true)
+    // Dynamic post rendering via API, rewrite removed
     .AddRewrite("^modify-post/([^/?]+)/?$", "modifyPost.html?slug=$1", skipRemainingRules: true)
     .AddRewrite("^forgot-password/?$", "forgot-password.html", skipRemainingRules: true);
 
 app.UseRewriter(rewriteOptions);
 
+// Dynamic post page rendering with Open Graph metadata
+app.MapGet("/post/{slug}", async (string slug, IBlogPostService service, HttpContext ctx, IWebHostEnvironment env) =>
+{
+  var post = service.GetPostBySlug(slug, ctx.User.Identity?.Name);
+  if (post == null) return Results.NotFound();
+  var templatePath = Path.Combine(env.WebRootPath, "post.html");
+  var html = await File.ReadAllTextAsync(templatePath);
+  var desc = post.Description ?? string.Empty;
+  var url = $"{ctx.Request.Scheme}://{ctx.Request.Host}/post/{slug}";
+  html = html.Replace("%POST_TITLE%", post.Title)
+             .Replace("%POST_DESC%", desc)
+             .Replace("%POST_URL%", url)
+             .Replace("%POST_AUTHOR%", post.Author);
+  return Results.Content(html, "text/html");
+});
 // Static Files for wwwroot
 app.UseDefaultFiles(new DefaultFilesOptions
 {

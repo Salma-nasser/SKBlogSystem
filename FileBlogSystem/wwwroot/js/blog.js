@@ -199,6 +199,7 @@ window.addEventListener("DOMContentLoaded", () => {
   document.body.addEventListener("click", async (e) => {
     if (e.target.classList.contains("like-toggle")) {
       // Wait a moment for backend to process, then refresh notifications and posts
+      reloadPosts();
       setTimeout(getAllNotifications, 500);
     }
   });
