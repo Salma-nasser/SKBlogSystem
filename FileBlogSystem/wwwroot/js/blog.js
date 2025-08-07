@@ -198,7 +198,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // Patch like button handler to refresh notifications after like
   document.body.addEventListener("click", async (e) => {
     if (e.target.classList.contains("like-toggle")) {
-      // Wait a moment for backend to process, then refresh notifications
+      // Wait a moment for backend to process, then refresh notifications and posts
       setTimeout(getAllNotifications, 500);
     }
   });

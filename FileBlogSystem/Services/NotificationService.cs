@@ -26,8 +26,14 @@ public class NotificationService : INotificationService
     if (File.Exists(filePath))
     {
       var existing = await File.ReadAllTextAsync(filePath);
-      notifications = JsonSerializer.Deserialize<List<Notification>>(existing)
-                     ?? new List<Notification>();
+      // Use options to allow numeric IDs stored as strings
+      var options = new JsonSerializerOptions
+      {
+        PropertyNameCaseInsensitive = true,
+        NumberHandling = JsonNumberHandling.AllowReadingFromString
+      };
+      notifications = JsonSerializer.Deserialize<List<Notification>>(existing, options)
+                    ?? new List<Notification>();
     }
     else
     {
