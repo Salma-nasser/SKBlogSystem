@@ -121,6 +121,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const changeEmailBtn = document.getElementById("changeEmailBtn");
   const changePasswordBtn = document.getElementById("changePasswordBtn");
   const changePictureBtn = document.getElementById("changePictureBtn");
+  const deleteAccountBtn = document.getElementById("deleteAccountBtn");
 
   // Edit forms
   const changeEmailForm = document.getElementById("changeEmailForm");

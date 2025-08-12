@@ -90,13 +90,13 @@
 
 /* Post Card Container */
 .post-card {
-  padding: 20px;
+  padding: 10px;
   border-radius: 16px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-  max-width: 800px;
+  max-width: 1000px;
   width: 100%;
   min-height: 400px;
   height: auto;
