@@ -90,9 +90,9 @@ builder.Services.AddCors(options =>
 builder.Services.AddSingleton(new EmailService(
     smtpHost: "smtp.gmail.com",       // Or your provider
     smtpPort: 587,
-    fromAddress: "salma.naser1020@gmail.com",
-    smtpUser: "salma.naser1020@gmail.com",
-    smtpPassword: "msqo gsmd tezi vznp" // Gmail requires an App Password
+    fromAddress: "atherandink@gmail.com",
+    smtpUser: "atherandink@gmail.com",
+    smtpPassword: "zkrh togr pzxm mbhl" // Gmail requires an App Password
 ));
 
 builder.Services.AddAuthorization();
