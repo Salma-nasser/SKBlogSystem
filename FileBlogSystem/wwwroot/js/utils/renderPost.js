@@ -107,8 +107,27 @@ function renderMarkdownWithImageHandling(
 
       // Custom image renderer to handle both markdown images and existing post images
       renderer.image = function (href, title, text) {
-        // Ensure href is a string
-        const hrefStr = String(href);
+        // Robustly resolve href to a usable string (marked may pass an object in some versions)
+        const resolveHref = (val) => {
+          if (val == null) return "";
+          if (typeof val === "string") return val;
+          if (typeof val === "object") {
+            // Common keys that may hold the URL
+            if (typeof val.href === "string") return val.href;
+            if (typeof val.url === "string") return val.url;
+            if (typeof val.src === "string") return val.src;
+            // Token-like objects may have a text property that is the url
+            if (typeof val.text === "string") return val.text;
+          }
+          // Fallback to coercion (avoids throwing, but try to not produce [object Object])
+          try {
+            return String(val);
+          } catch {
+            return "";
+          }
+        };
+
+        const hrefStr = resolveHref(href);
         // Handle relative paths for post images
         let imageSrc = hrefStr;
 

@@ -8,6 +8,113 @@ const pageSize = 5;
 let allPosts = [];
 let activeFilter = null; // { type: "tag"|"category", value: "..." }
 
+// Ensure a small status line to inform users about current search/filter
+function ensureSearchStatusElement() {
+  let el = document.getElementById("searchStatus");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "searchStatus";
+    el.style.margin = "8px 0 0 0";
+    el.style.fontSize = "0.95rem";
+    el.style.color = "#5a4636";
+    el.style.textAlign = "center";
+    const container =
+      document.querySelector(".search-container") || document.body;
+    container.parentNode.insertBefore(el, container.nextSibling);
+  }
+  return el;
+}
+
+function updateSearchStatus(searchQuery, filter) {
+  const el = ensureSearchStatusElement();
+  const parts = [];
+  if (searchQuery) parts.push(`keyword: \"${searchQuery}\"`);
+  if (filter?.type && filter?.value)
+    parts.push(`${filter.type}: ${filter.value}`);
+  if (parts.length) {
+    el.textContent = `You are viewing posts for ${parts.join(" • ")}`;
+    el.style.display = "block";
+  } else {
+    el.textContent = "";
+    el.style.display = "none";
+  }
+}
+
+// Highlight helpers
+function removeHighlights(root) {
+  root.querySelectorAll("mark.__hl").forEach((m) => {
+    const parent = m.parentNode;
+    if (!parent) return;
+    parent.replaceChild(document.createTextNode(m.textContent || ""), m);
+    parent.normalize();
+  });
+}
+
+function highlightElement(root, terms) {
+  if (!terms || terms.length === 0) return;
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+  const nodes = [];
+  let n;
+  while ((n = walker.nextNode())) {
+    // Skip empty or whitespace-only text nodes
+    if (!n.nodeValue || !n.nodeValue.trim()) continue;
+    nodes.push(n);
+  }
+  const patterns = terms
+    .filter((t) => t.length > 1)
+    .map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+  if (patterns.length === 0) return;
+  const regex = new RegExp(`(${patterns.join("|")})`, "gi");
+  for (const textNode of nodes) {
+    const txt = textNode.nodeValue;
+    if (!regex.test(txt)) continue;
+    const frag = document.createDocumentFragment();
+    let lastIdx = 0;
+    txt.replace(regex, (match, _g1, offset) => {
+      if (offset > lastIdx) {
+        frag.appendChild(document.createTextNode(txt.slice(lastIdx, offset)));
+      }
+      const mark = document.createElement("mark");
+      mark.className = "__hl"; // our marker so we can clear later
+      mark.textContent = match;
+      frag.appendChild(mark);
+      lastIdx = offset + match.length;
+      return match;
+    });
+    if (lastIdx < txt.length)
+      frag.appendChild(document.createTextNode(txt.slice(lastIdx)));
+    textNode.parentNode.replaceChild(frag, textNode);
+  }
+}
+
+function applyHighlights(searchQuery) {
+  const container = document.getElementById("postsContainer");
+  if (!container) return;
+  // Clear previous highlights
+  removeHighlights(container);
+  // Determine terms: prefer search query; fallback to active filter value
+  let terms = [];
+  if (searchQuery && searchQuery.trim()) {
+    terms = searchQuery.split(/\s+/).filter(Boolean);
+  } else if (activeFilter?.value) {
+    terms = [activeFilter.value];
+  }
+  if (terms.length === 0) return;
+  // Highlight across relevant regions in each card
+  container.querySelectorAll(".post-card").forEach((card) => {
+    const titleLink = card.querySelector("h3 a");
+    const desc = card.querySelector(".post-description");
+    const body = card.querySelector(".post-body");
+    if (titleLink) highlightElement(titleLink, terms);
+    if (desc) highlightElement(desc, terms);
+    if (body) highlightElement(body, terms);
+    // Also highlight tag/category chips
+    card
+      .querySelectorAll(".tag.clickable-tag, .category.clickable-tag")
+      .forEach((chip) => highlightElement(chip, terms));
+  });
+}
+
 // URL Pagination utilities
 function getPageFromURL() {
   const urlParams = new URLSearchParams(window.location.search);
@@ -210,51 +317,48 @@ window.addEventListener("DOMContentLoaded", () => {
 // ---------- SHARED HELPERS ----------
 
 async function reloadPosts() {
-  let posts;
+  // read query
+  const searchQuery =
+    document.getElementById("searchInput")?.value.trim() || "";
+  const params = new URLSearchParams();
+  if (searchQuery) params.set("q", searchQuery);
+  if (activeFilter?.type && activeFilter?.value) {
+    params.set("type", activeFilter.type);
+    params.set("value", activeFilter.value);
+  }
 
   try {
-    if (!activeFilter) {
+    let posts;
+    if (searchQuery || activeFilter) {
+      const res = await authenticatedFetch(`/api/search?${params.toString()}`);
+      posts = await res.json();
+    } else {
       const res = await authenticatedFetch("/api/posts");
       posts = await res.json();
       allPosts = posts;
-    } else {
-      // Use correct API path for filtered posts
-      const urlBase = `/api/posts/${activeFilter.type}/${encodeURIComponent(
-        activeFilter.value
-      )}`;
-      const res = await authenticatedFetch(urlBase);
-      posts = await res.json();
     }
+
+    // Only show published and not future scheduled
+    const now = new Date();
+    const visible = posts.filter((post) => {
+      const sched = post.ScheduledDate ? new Date(post.ScheduledDate) : null;
+      return post.IsPublished && (!sched || sched <= now);
+    });
+
+    renderPosts(paginate(visible, currentPage, pageSize), "postsContainer", {
+      showDelete: false,
+      showModify: false,
+    });
+    updatePagination(visible.length);
+    // Update status line and apply highlights
+    updateSearchStatus(searchQuery, activeFilter);
+    applyHighlights(searchQuery);
   } catch (error) {
     if (error.message !== "Session expired") {
       console.error("Failed to reload posts:", error);
       showMessage("Could not load posts.", "error");
     }
-    return; // Stop execution if fetch fails
   }
-
-  // apply client‐side search, publish & schedule filters
-  const searchQuery =
-    document.getElementById("searchInput")?.value.trim().toLowerCase() || "";
-  const now = new Date();
-
-  const filtered = posts.filter((post) => {
-    const sched = post.ScheduledDate ? new Date(post.ScheduledDate) : null;
-    const matchesSearch =
-      post.Title.toLowerCase().includes(searchQuery) ||
-      post.Description.toLowerCase().includes(searchQuery) ||
-      post.Tags.some((t) => t.toLowerCase().includes(searchQuery)) ||
-      post.Categories.some((c) => c.toLowerCase().includes(searchQuery));
-
-    return post.IsPublished && (!sched || sched <= now) && matchesSearch;
-  });
-
-  // render + pagination update
-  renderPosts(paginate(filtered, currentPage, pageSize), "postsContainer", {
-    showDelete: false,
-    showModify: false,
-  });
-  updatePagination(filtered.length);
 }
 
 function paginate(items, page, size) {
@@ -273,6 +377,7 @@ function updatePagination(totalItems) {
   const info = document.getElementById("pageInfo");
   const prevButton = document.getElementById("prevPage");
   const nextButton = document.getElementById("nextPage");
+  const controls = document.getElementById("paginationControls");
   if (info) {
     info.textContent = `Page ${currentPage} of ${totalPages}`;
   }
@@ -281,6 +386,10 @@ function updatePagination(totalItems) {
   }
   if (nextButton) {
     nextButton.disabled = currentPage === totalPages;
+  }
+  if (controls) {
+    // Hide pagination controls when there's only one page
+    controls.style.display = totalPages <= 1 ? "none" : "block";
   }
 }
 
