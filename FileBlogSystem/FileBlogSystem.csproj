@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <!-- Build against both net9.0 (for container runtime) and net10.0 (local preview) -->
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <EnableDefaultContentItems>false</EnableDefaultContentItems>
