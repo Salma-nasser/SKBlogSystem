@@ -1,0 +1,35 @@
+/* Force left alignment for terms page; override shared layout */
+
+main {
+  display: block; /* cancel shared flex centering */
+  max-width: 900px;
+  margin: 2rem auto;
+}
+
+main section {
+  width: 100%;
+}
+
+/* Left-align all text */
+main,
+main section,
+main h1,
+main h2,
+main h3,
+main p,
+main ul,
+main li,
+header,
+header h1,
+footer,
+footer p,
+footer a {
+  text-align: left !important;
+}
+
+main ul {
+  padding-left: 1.25rem;
+}
+main li {
+  margin: 0.5rem 0;
+}
