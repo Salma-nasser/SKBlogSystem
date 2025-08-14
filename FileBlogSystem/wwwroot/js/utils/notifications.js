@@ -220,3 +220,181 @@ if (!document.querySelector("#notification-styles")) {
   `;
   document.head.appendChild(style);
 }
+
+// === Reusable Notifications Modal (desktop + mobile) ===
+/**
+ * Opens the notifications modal and populates it with the user's notifications.
+ * Each unread notification shows a left accent bar and is clickable to mark as read.
+ * Includes a "Mark all as read" action.
+ */
+export function openNotificationsModal() {
+  ensureNotificationsModal();
+  const modal = document.getElementById("notificationsModal");
+  const body = document.getElementById("notificationsModalBody");
+  if (!modal) return;
+  if (!body) {
+    // If body is missing, rebuild modal contents and continue
+    buildNotificationsModalContents(modal);
+  }
+  const bodyEl = document.getElementById("notificationsModalBody");
+  if (!bodyEl) return;
+  bodyEl.innerHTML = "<div style='color:#8a7a6e'>Loading...</div>";
+
+  // Load and render
+  loadNotifications()
+    .then((notifications) => {
+      renderNotificationsList(notifications);
+      updateUnreadBadgeFromList(notifications);
+      broadcastUnreadFromList(notifications);
+    })
+    .catch(() => {
+      bodyEl.innerHTML =
+        "<div style='color:#8a7a6e'>Failed to load notifications.</div>";
+    });
+
+  modal.style.display = "flex";
+}
+
+function ensureNotificationsModal() {
+  let notifModal = document.getElementById("notificationsModal");
+  if (!notifModal) {
+    notifModal = document.createElement("div");
+    notifModal.id = "notificationsModal";
+    notifModal.style.cssText = `
+      position: fixed; inset: 0; z-index: 1202; display: none;
+      background: rgba(0,0,0,0.45); backdrop-filter: blur(2px);
+      align-items: center; justify-content: center; padding: 16px;
+    `;
+    buildNotificationsModalContents(notifModal);
+    document.body.appendChild(notifModal);
+  }
+  // If the modal exists but doesn't have our expected body, rebuild contents
+  if (!document.getElementById("notificationsModalBody")) {
+    buildNotificationsModalContents(notifModal);
+  }
+}
+
+function buildNotificationsModalContents(notifModal) {
+  notifModal.innerHTML = `
+    <div style="max-width: 520px; width: 100%; background: var(--bg-secondary, #fff); color: var(--text-color, #2c1810); border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.25); overflow: hidden;">
+      <div style="display:flex; align-items:center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--border-color, #e6d9c9);">
+        <h3 style="margin:0; font-size:1.1rem; color: var(--primary-color, #8b4513);">Notifications</h3>
+        <div>
+          <button id="markAllReadBtn" type="button" class="btn btn--ghost" style="margin-right:8px;">Mark all as read</button>
+          <button id="closeNotificationsModal" type="button" class="btn btn--ghost">Close</button>
+        </div>
+      </div>
+      <div id="notificationsModalBody" style="max-height: 70vh; overflow:auto; padding: 12px 16px;"></div>
+    </div>`;
+  // Delegate clicks for buttons to be resilient across rerenders
+  notifModal.onclick = async (e) => {
+    const target = e.target;
+    if (!(target instanceof HTMLElement)) return;
+    if (target.id === "closeNotificationsModal") {
+      notifModal.style.display = "none";
+      return;
+    }
+    if (target.id === "markAllReadBtn") {
+      try {
+        await authFetch("/notifications/mark-all-read", { method: "POST" });
+        const list = await loadNotifications();
+        renderNotificationsList(list);
+        updateUnreadBadgeFromList(list);
+        broadcastUnreadFromList(list);
+      } catch (e) {
+        console.error("Failed to mark all as read", e);
+      }
+    }
+  };
+}
+
+async function loadNotifications() {
+  const res = await authFetch("/notifications?all=true");
+  return res.json();
+}
+
+function updateUnreadBadgeFromList(list) {
+  const badge = document.getElementById("bellUnreadCount");
+  if (!badge) return;
+  const unread = (list || []).filter((n) => !n.IsRead).length;
+  if (unread > 0) {
+    badge.textContent = unread > 99 ? "99+" : unread;
+    badge.style.display = "inline-block";
+  } else {
+    badge.style.display = "none";
+  }
+}
+
+function broadcastUnreadFromList(list) {
+  const unread = (list || []).filter((n) => !n.IsRead).length;
+  try {
+    window.dispatchEvent(
+      new CustomEvent("notifications:unreadCount", {
+        detail: { count: unread },
+      })
+    );
+  } catch {}
+}
+
+function renderNotificationsList(notifications) {
+  const body = document.getElementById("notificationsModalBody");
+  if (!body) return;
+  body.innerHTML = "";
+  if (!notifications || notifications.length === 0) {
+    body.innerHTML = "<div style='color:#8a7a6e'>No notifications yet.</div>";
+    return;
+  }
+
+  const listEl = document.createElement("div");
+  notifications.forEach((n) => {
+    const item = document.createElement("div");
+    item.style.cssText =
+      "background:#ffe4b5;color:#2c1810;border-radius:7px;padding:10px 12px;margin-bottom:10px;font-size:0.98rem;cursor:pointer;";
+    if (!n.IsRead) item.style.borderLeft = "4px solid #8b4513";
+    item.innerHTML = `<div>${
+      n.Message
+    }</div><div style='font-size:0.8em;color:#8a7a6e;'>${new Date(
+      n.CreatedAt
+    ).toLocaleString()}</div>`;
+    item.addEventListener("click", async (e) => {
+      e.preventDefault();
+      try {
+        if (!n.IsRead) {
+          await authFetch(`/notifications/read/${n.Id}`, { method: "POST" });
+          n.IsRead = true; // optimistic
+          item.style.borderLeft = "none"; // hide accent banner
+          // update badge by re-counting quickly
+          const container = listEl; // already constructed
+          const unreadLeft = notifications.filter((x) => !x.IsRead).length;
+          const badge = document.getElementById("bellUnreadCount");
+          if (badge) {
+            if (unreadLeft > 0) {
+              badge.textContent = unreadLeft > 99 ? "99+" : unreadLeft;
+              badge.style.display = "inline-block";
+            } else {
+              badge.style.display = "none";
+            }
+          }
+          // Broadcast for sidebar label
+          broadcastUnreadFromList(notifications);
+        }
+      } catch (err) {
+        console.error("Failed to mark notification as read", err);
+      }
+    });
+    listEl.appendChild(item);
+  });
+  body.appendChild(listEl);
+}
+
+// Minimal auth-aware fetch to avoid circular import with api.js
+async function authFetch(url, options = {}) {
+  const token = localStorage.getItem("jwtToken");
+  const headers = new Headers(options.headers || {});
+  if (token) headers.append("Authorization", `Bearer ${token}`);
+  if (!(options.body instanceof FormData) && !headers.has("Content-Type")) {
+    headers.append("Content-Type", "application/json");
+  }
+  const res = await fetch(url, { ...options, headers });
+  return res;
+}

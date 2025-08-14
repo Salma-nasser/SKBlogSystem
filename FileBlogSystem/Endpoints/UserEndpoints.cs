@@ -86,6 +86,18 @@ public static class UserEndpoints
       await service.MarkAsReadAsync(username, id);
       return Results.Ok();
     });
+    app.MapPost("/notifications/mark-all-read", async (HttpContext ctx, INotificationService service) =>
+    {
+      var username = ctx.User.Identity?.Name;
+      if (username == null)
+        return Results.Unauthorized();
+      var notifications = await service.GetUnreadAsync(username);
+      foreach (var notif in notifications)
+      {
+        await service.MarkAsReadAsync(username, notif.Id.ToString());
+      }
+      return Results.Ok();
+    });
     app.MapPost("/api/users/forgot-password", async (Models.ForgotPasswordRequest request, IUserService userService, EmailService emailService) =>
     {
       if (request == null)

@@ -238,7 +238,7 @@ header h1 a {
 }
 header h1 a:hover {
   color: var(--accent-color);
-  transform: translateY(-1px); /* Subtle lift effect */
+  /* Remove lift to avoid any visual jitter in header */
 }
 
 /* Mobile sidebar + hamburger */
@@ -252,6 +252,11 @@ header h1 a:hover {
   border: none;
   padding: 8px;
   cursor: pointer;
+  z-index: 1201; /* Stay above header content */
+  line-height: 0; /* Prevent inline height adjustments */
+  -webkit-tap-highlight-color: transparent; /* Better mobile tap */
+  user-select: none;
+  box-shadow: none; /* No elevation */
 }
 .hamburger:focus {
   outline: 2px solid var(--primary-color);
@@ -265,7 +270,11 @@ header h1 a:hover {
   background: var(--text-color);
   margin: 4px 0;
   border-radius: 2px;
-  transition: transform 0.25s ease, opacity 0.25s ease;
+  transition: none; /* No hover animation */
+  pointer-events: none; /* Ensure clicks go to the button */
+}
+.hamburger.open span {
+  transition: transform 0.2s ease, opacity 0.2s ease;
 }
 .hamburger.open span:nth-child(1) {
   transform: translateY(6px) rotate(45deg);
@@ -275,6 +284,25 @@ header h1 a:hover {
 }
 .hamburger.open span:nth-child(3) {
   transform: translateY(-6px) rotate(-45deg);
+}
+
+/* Prevent any hover/active/focus rules from moving/styling the hamburger */
+.hamburger,
+.hamburger:hover,
+.hamburger:active,
+.hamburger:focus,
+.hamburger:focus-visible {
+  transform: translateY(-50%) !important;
+  top: 50% !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+.hamburger:hover span,
+.hamburger:active span,
+.hamburger:focus-visible span {
+  transform: none !important;
+  opacity: 1 !important;
 }
 
 .mobile-sidebar {
@@ -320,14 +348,32 @@ header h1 a:hover {
 }
 .mobile-sidebar .mobile-link,
 .mobile-sidebar .mobile-btn {
-  display: block;
+  /* Uniform look for all drawer items (links and buttons) */
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
   width: 100%;
-  padding: 12px;
+  padding: 12px 14px;
+  min-height: 44px; /* consistent tap target height */
   border-radius: 8px;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   color: var(--text-color);
   text-align: left;
+  font-family: var(--font-body);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: normal;
+  text-decoration: none; /* No underline for links */
+  white-space: nowrap; /* keep same height */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  appearance: none;
+}
+.mobile-sidebar .mobile-link:visited {
+  color: var(--text-color);
 }
 .mobile-sidebar .mobile-link:hover,
 .mobile-sidebar .mobile-btn:hover {
@@ -355,8 +401,15 @@ header h1 a:hover {
   .hide-on-mobile {
     display: none !important;
   }
+  /* Ensure Admin button in header is hidden on mobile; it will appear in the drawer instead */
+  #adminBtn {
+    display: none !important;
+  }
   .hamburger {
     display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
 }
 
@@ -402,7 +455,7 @@ button,
   box-shadow: 0 2px 8px var(--shadow-light);
 }
 
-button:hover,
+button:not(.hamburger):hover,
 .btn:hover {
   background: var(--primary-hover);
   transform: translateY(-2px);
