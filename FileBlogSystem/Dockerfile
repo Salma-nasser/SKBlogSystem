@@ -20,7 +20,7 @@ COPY wwwroot/ /app/wwwroot/
 RUN mkdir -p /app/Content/posts /app/Content/users
 
 EXPOSE 80
-ENV ASPNETCORE_URLS=http://+:80
+ENV ASPNETCORE_URLS=http://+:8080
 VOLUME ["/app/Content/posts", "/app/Content/users"]
 
 ENTRYPOINT ["dotnet", "FileBlogSystem.dll"]
