@@ -1,35 +1,31 @@
-# Use .NET SDK image for building
-FROM mcr.microsoft.com/dotnet/sdk:10.0.100-preview.6 AS build
+# ===== BUILD STAGE =====
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
-# Copy all sources and publish
-COPY . .
-
-# Restore dependencies
+# Copy csproj and restore dependencies
+COPY FileBlogSystem.csproj .
 RUN dotnet restore FileBlogSystem.csproj
 
+# Copy everything else and build
+COPY . .
 RUN dotnet publish FileBlogSystem.csproj -c Release -o /app/publish --no-restore
 
-# Runtime image
-FROM mcr.microsoft.com/dotnet/nightly/runtime:10.0.0-preview.6 AS runtime
+# ===== RUNTIME STAGE =====
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
-# Copy published output
+# Copy published app
 COPY --from=build /app/publish .
-# Copy frontend build into wwwroot
-COPY wwwroot/ /app/wwwroot/
 
-
-# Ensure Content subfolders for posts and users exist
+# Ensure content folders exist
 RUN mkdir -p /app/Content/posts /app/Content/users
 
-# Expose application ports
+# Expose port
 EXPOSE 80
 ENV ASPNETCORE_URLS=http://+:80
 
-
-# Declare volumes for persistent storage of posts and user data
+# Declare volumes
 VOLUME ["/app/Content/posts", "/app/Content/users"]
 
-# Start the application
+# Start the app
 ENTRYPOINT ["dotnet", "FileBlogSystem.dll"]
