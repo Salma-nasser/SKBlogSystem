@@ -1,7 +1,9 @@
 import { showMessage } from "./utils/notifications.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
+import { initMobileSidebar } from "./utils/mobileSidebar.js";
 
 initializeThemeToggle();
+initMobileSidebar();
 const forgotForm = document.getElementById("forgotForm");
 const otpForm = document.getElementById("otpForm");
 const resetForm = document.getElementById("resetForm");

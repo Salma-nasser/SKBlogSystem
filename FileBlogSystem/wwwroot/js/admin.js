@@ -1,6 +1,7 @@
 // Admin Dashboard JavaScript
 
 import { initializeThemeToggle } from "./utils/themeToggle.js";
+import { initMobileSidebar } from "./utils/mobileSidebar.js";
 import { authenticatedFetch, HttpError } from "./utils/api.js";
 
 class AdminDashboard {
@@ -13,6 +14,7 @@ class AdminDashboard {
   async init() {
     // Initialize theme toggle
     initializeThemeToggle();
+    initMobileSidebar();
 
     // Check if user is admin
     await this.checkAdminAccess();

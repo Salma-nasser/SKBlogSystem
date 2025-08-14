@@ -1,6 +1,7 @@
 import { renderPosts, safeBase64Decode } from "./utils/renderPost.js";
 import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
+import { initMobileSidebar } from "./utils/mobileSidebar.js";
 import { showMessage, showConfirmation } from "./utils/notifications.js";
 import { authenticatedFetch, HttpError } from "./utils/api.js";
 
@@ -87,6 +88,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // Initialize components
   initializeImageModal();
   initializeThemeToggle();
+  initMobileSidebar();
 
   // Make functions globally accessible for onclick handlers
   window.openModifyPage = openModifyPage;

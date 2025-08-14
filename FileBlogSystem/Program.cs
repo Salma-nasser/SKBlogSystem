@@ -26,10 +26,10 @@ builder.Services.AddHsts(options =>
 // Configure host to ignore background service exceptions
 builder.Host.ConfigureServices((ctx, services) =>
 {
-    services.Configure<HostOptions>(options =>
-    {
-        options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
-    });
+  services.Configure<HostOptions>(options =>
+  {
+    options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
+  });
 });
 
 // Persist data protection keys in project directory to survive container restarts
@@ -42,8 +42,8 @@ builder.Services.AddDataProtection()
 // JSON
 builder.Services.Configure<JsonOptions>(options =>
 {
-    options.SerializerOptions.PropertyNamingPolicy = null;
-    options.SerializerOptions.WriteIndented = true;
+  options.SerializerOptions.PropertyNamingPolicy = null;
+  options.SerializerOptions.WriteIndented = true;
 });
 
 // Services
@@ -63,33 +63,33 @@ builder.Services.AddImageSharp();
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-        var jwtService = new JwtService(builder.Configuration);
-        options.TokenValidationParameters = jwtService.GetTokenValidationParameters();
-        // Allow SignalR to receive access token from query string
-        options.Events = new JwtBearerEvents
+      var jwtService = new JwtService(builder.Configuration);
+      options.TokenValidationParameters = jwtService.GetTokenValidationParameters();
+      // Allow SignalR to receive access token from query string
+      options.Events = new JwtBearerEvents
+      {
+        OnMessageReceived = context =>
         {
-            OnMessageReceived = context =>
-            {
-                var accessToken = context.Request.Query["access_token"];
-                var path = context.HttpContext.Request.Path;
-                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/notificationHub"))
-                {
-                    context.Token = accessToken;
-                }
-                return Task.CompletedTask;
-            }
-        };
+          var accessToken = context.Request.Query["access_token"];
+          var path = context.HttpContext.Request.Path;
+          if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/notificationHub"))
+          {
+            context.Token = accessToken;
+          }
+          return Task.CompletedTask;
+        }
+      };
     });
 
 // CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend", policy =>
-    {
-        policy.WithOrigins("http://localhost:7189", "http://localhost:5500")
-              .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
+  options.AddPolicy("AllowFrontend", policy =>
+  {
+    policy.WithOrigins("http://localhost:7189", "http://localhost:5500")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+  });
 });
 
 // Email
@@ -104,7 +104,7 @@ builder.Services.AddSingleton(new EmailService(
 builder.Services.AddAuthorization();
 builder.Services.Configure<FormOptions>(options =>
 {
-    options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10MB limit
+  options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10MB limit
 });
 
 var app = builder.Build();
@@ -157,6 +157,8 @@ var rewriteOptions = new RewriteOptions()
     .AddRewrite("^login/?$", "login.html", skipRemainingRules: true)
     .AddRewrite("^register/?$", "register.html", skipRemainingRules: true)
     .AddRewrite("^blog/?$", "blog.html", skipRemainingRules: true)
+    .AddRewrite("^privacy/?$", "privacy.html", skipRemainingRules: true)
+    .AddRewrite("^terms/?$", "terms.html", skipRemainingRules: true)
     .AddRewrite("^profile/([^/?]+)/?$", "myProfile.html", skipRemainingRules: true)
     .AddRewrite("^admin/?$", "admin.html", skipRemainingRules: true)
     .AddRewrite("^create-post/?$", "createPost.html", skipRemainingRules: true)
@@ -185,14 +187,14 @@ app.MapGet("/post/{slug}", async (string slug, IBlogPostService service, HttpCon
 
 app.UseDefaultFiles(new DefaultFilesOptions
 {
-    DefaultFileNames = { "welcome.html" }
+  DefaultFileNames = { "welcome.html" }
 });
 app.UseStaticFiles();
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(
+  FileProvider = new PhysicalFileProvider(
         Path.Combine(builder.Environment.ContentRootPath, "Content")),
-    RequestPath = "/Content"
+  RequestPath = "/Content"
 });
 app.UseImageSharp();
 

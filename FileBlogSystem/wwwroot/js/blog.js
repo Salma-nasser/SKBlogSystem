@@ -2,6 +2,7 @@ import { renderPosts } from "./utils/renderPost.js";
 import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
 import { showMessage } from "./utils/notifications.js";
+import { initMobileSidebar } from "./utils/mobileSidebar.js";
 import { authenticatedFetch } from "./utils/api.js";
 let currentPage = 1;
 const pageSize = 5;
@@ -139,6 +140,7 @@ function initializePageFromURL() {
 const clearFilterBtn = document.getElementById("clearFilterBtn");
 initializeImageModal();
 initializeThemeToggle();
+initMobileSidebar();
 window.addEventListener("DOMContentLoaded", () => {
   const token = localStorage.getItem("jwtToken");
   if (!token) {

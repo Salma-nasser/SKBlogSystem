@@ -1,6 +1,7 @@
 import { renderPosts } from "./utils/renderPost.js";
 import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
+import { initMobileSidebar } from "./utils/mobileSidebar.js";
 import { showMessage } from "./utils/notifications.js";
 import { authenticatedFetch } from "./utils/api.js";
 
@@ -25,6 +26,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // Initialize components
   initializeImageModal();
   initializeThemeToggle();
+  initMobileSidebar();
   const logoutBtn1 = document.querySelector(
     'a[href="/logout"], .header-buttons .btn[href="/logout"]'
   );
@@ -169,8 +171,7 @@ function renderSinglePost(post) {
     post.Categories && post.Categories.length > 0
       ? `<div class="post-categories">
         <strong>Categories:</strong> ${post.Categories.map(
-          (category) =>
-            `<span class="category">${formatLabel(category)}</span>`
+          (category) => `<span class="category">${formatLabel(category)}</span>`
         ).join("")}
       </div>`
       : "";
