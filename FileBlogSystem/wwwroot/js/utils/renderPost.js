@@ -214,6 +214,7 @@ export function renderPosts(posts, containerId, options = {}) {
     showModify = false,
     showAuthor = true,
     showActions = true,
+    showPublishNow = false,
     onDelete = null,
     onModify = null,
   } = options;
@@ -293,6 +294,13 @@ export function renderPosts(posts, containerId, options = {}) {
       if (showDelete) {
         buttons.push(
           `<button class="deleteBtn" data-slug="${post.Slug}">Delete</button>`
+        );
+      }
+
+      // Optionally show a Publish Now button for drafts
+      if (showPublishNow && !post.IsPublished) {
+        buttons.push(
+          `<button class="publishNowBtn" data-slug="${post.Slug}">Publish now</button>`
         );
       }
 
