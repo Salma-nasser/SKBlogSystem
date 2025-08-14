@@ -1,8 +1,9 @@
 {
   "title": "The Rise of Remote Work: Redefining the Modern Workplace",
   "description": "Discover how remote work is changing company culture, employee productivity, and the future of how we work.",
-  "customUrl": "image",
   "author": "Salma",
+  "publishedDate": "2025-06-25T23:24:32.7621115Z",
+  "lastModified": "2025-08-03T10:08:34.1633953Z",
   "tags": [
     "work",
     "remote"
@@ -11,8 +12,6 @@
     "modern",
     "workspace"
   ],
-  "publishedDate": "2025-06-25T23:24:32.7621115Z",
-  "lastModified": "2025-08-03T10:08:34.1633953Z",
   "slug": "image",
   "isPublished": true,
   "scheduledDate": null,
@@ -21,7 +20,8 @@
   ],
   "likes": [
     "Henry",
-    "Salma"
+    "Salma",
+    "Sohilaa"
   ],
   "commentCount": 0
 }

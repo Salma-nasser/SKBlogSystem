@@ -558,6 +558,18 @@ main {
 .text-accent-secondary {
   color: var(--accent-secondary);
 }
+
+/* Inline Highlight styling (used by client-side search highlighting) */
+mark.__hl {
+  background: #fff3b0; /* soft pale yellow for light mode */
+  color: inherit;
+  padding: 0 2px;
+  border-radius: 3px;
+}
+body.dark-mode mark.__hl {
+  background: #8b6b2a; /* warm muted yellow-brown for dark mode */
+  color: inherit;
+}
 .text-accent-tertiary {
   color: var(--accent-tertiary);
 }

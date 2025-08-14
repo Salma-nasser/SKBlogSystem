@@ -15,6 +15,14 @@ using Microsoft.AspNetCore.DataProtection;
 // Create builder
 var builder = WebApplication.CreateBuilder(args);
 
+// HSTS configuration
+builder.Services.AddHsts(options =>
+{
+  options.Preload = true;
+  options.IncludeSubDomains = true;
+  options.MaxAge = TimeSpan.FromDays(365);
+});
+
 // Configure host to ignore background service exceptions
 builder.Host.ConfigureServices((ctx, services) =>
 {
@@ -47,6 +55,7 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddHostedService<ScheduledPostPublisher>();
 builder.Services.AddSingleton<NotificationService>();
 builder.Services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<NotificationService>());
+builder.Services.AddSingleton<ISearchService, LuceneSearchService>();
 builder.Services.AddSignalR();
 builder.Services.AddImageSharp();
 
@@ -87,9 +96,9 @@ builder.Services.AddCors(options =>
 builder.Services.AddSingleton(new EmailService(
     smtpHost: "smtp.gmail.com",
     smtpPort: 587,
-    fromAddress: "salma.naser1020@gmail.com",
-    smtpUser: "salma.naser1020@gmail.com",
-    smtpPassword: "msqo gsmd tezi vznp" // Gmail App Password
+    fromAddress: "atherandink@gmail.com",
+    smtpUser: "atherandink@gmail.com",
+    smtpPassword: "zkrh togr pzxm mbhl" // Gmail requires an App Password
 ));
 
 builder.Services.AddAuthorization();
@@ -100,8 +109,50 @@ builder.Services.Configure<FormOptions>(options =>
 
 var app = builder.Build();
 
-// URL Rewriting
+// Only send HSTS in non-dev
+if (!app.Environment.IsDevelopment())
+{
+  app.UseHsts();
+}
+
+// Redirect HTTP -> HTTPS
+app.UseHttpsRedirection();
+
+// Security headers (applies to all responses)
+app.Use(async (context, next) =>
+{
+  context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+  context.Response.Headers["X-Frame-Options"] = "SAMEORIGIN";
+  context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+  context.Response.Headers["Permissions-Policy"] =
+      "geolocation=(), microphone=(), camera=(), payment=(), usb=(), fullscreen=(self)";
+
+  // Content Security Policy — adjust to your needs
+  // Allows your Google Fonts import, images, and WebSocket connections.
+  context.Response.Headers["Content-Security-Policy"] =
+  "default-src 'self'; " +
+  "base-uri 'self'; frame-ancestors 'self'; form-action 'self'; " +
+  "img-src 'self' data: blob:; " +
+  "font-src 'self' https://fonts.gstatic.com data:; " +
+  // Allow Google Fonts CSS and jsDelivr for EasyMDE CSS
+  "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; " +
+  // Be explicit for style elements as well
+  "style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdn.jsdelivr.net; " +
+  // Allow scripts from jsDelivr (marked, EasyMDE) and cdnjs (DOMPurify, SignalR)
+  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
+  // Be explicit for script elements as well
+  "script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
+  // API/Ajax and SignalR websockets
+  "connect-src 'self' ws: wss:";
+
+  await next();
+});
+
+// URL Rewriting for kebab-case URLs
 var rewriteOptions = new RewriteOptions()
+    // Redirect any *.html requests to extensionless URLs
+    .AddRedirect("^([^.]+)\\.html$", "$1", statusCode: 301)
+    // Rewrite extensionless routes to serve corresponding .html files
     .AddRewrite("^$", "welcome.html", skipRemainingRules: true)
     .AddRewrite("^login/?$", "login.html", skipRemainingRules: true)
     .AddRewrite("^register/?$", "register.html", skipRemainingRules: true)
@@ -109,13 +160,29 @@ var rewriteOptions = new RewriteOptions()
     .AddRewrite("^profile/([^/?]+)/?$", "myProfile.html", skipRemainingRules: true)
     .AddRewrite("^admin/?$", "admin.html", skipRemainingRules: true)
     .AddRewrite("^create-post/?$", "createPost.html", skipRemainingRules: true)
-    .AddRewrite("^post/([^/?]+)/?$", "post.html?slug=$1", skipRemainingRules: true)
+    // Dynamic post rendering via API, rewrite removed
     .AddRewrite("^modify-post/([^/?]+)/?$", "modifyPost.html?slug=$1", skipRemainingRules: true)
     .AddRewrite("^forgot-password/?$", "forgot-password.html", skipRemainingRules: true);
 
 app.UseRewriter(rewriteOptions);
 
-// Static files
+// Dynamic post page rendering with Open Graph metadata
+app.MapGet("/post/{slug}", async (string slug, IBlogPostService service, HttpContext ctx, IWebHostEnvironment env) =>
+{
+  var post = service.GetPostBySlug(slug, ctx.User.Identity?.Name);
+  if (post == null) return Results.NotFound();
+  var templatePath = Path.Combine(env.WebRootPath, "post.html");
+  var html = await File.ReadAllTextAsync(templatePath);
+  var desc = post.Description ?? string.Empty;
+  var url = $"{ctx.Request.Scheme}://{ctx.Request.Host}/post/{slug}";
+  html = html.Replace("%POST_TITLE%", post.Title)
+            .Replace("%POST_DESC%", desc)
+            .Replace("%POST_URL%", url)
+            .Replace("%POST_AUTHOR%", post.Author);
+  return Results.Content(html, "text/html");
+});
+// Static Files for wwwroot
+
 app.UseDefaultFiles(new DefaultFilesOptions
 {
     DefaultFileNames = { "welcome.html" }
@@ -142,4 +209,14 @@ app.MapAdminEndpoints();
 // app.MapCommentsEndpoints();
 app.MapHub<NotificationHub>("/notificationHub");
 
+// Build initial search index on startup
+using (var scope = app.Services.CreateScope())
+{
+  var search = scope.ServiceProvider.GetRequiredService<ISearchService>();
+  var posts = scope.ServiceProvider.GetRequiredService<IBlogPostService>().GetAllPosts();
+  search.RebuildIndex(posts);
+}
+
+
 app.Run();
+

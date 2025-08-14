@@ -62,10 +62,10 @@ header h1 a:hover {
 
 /* Single Post Specific Styles - More manageable sizes */
 .single-post {
-  max-width: 800px;
-  width: 90%;
-  margin: 20px auto;
-  padding: 30px 40px;
+  max-width: 1200px;
+  width: 100%;
+  margin: 10px;
+  padding: 10px 10px;
   background: var(--post-bg);
   border-radius: 12px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
@@ -690,4 +690,47 @@ body.dark-mode .tags a {
 body.dark-mode .tags a:hover {
   background-color: var(--tertiary-hover);
   color: #0f0804 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .single-post {
+    width: 95%;
+    padding: 20px;
+  }
+  .single-post .post-title {
+    font-size: 1.8rem;
+  }
+  .single-post .post-meta {
+    flex-direction: column;
+    gap: 8px;
+  }
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .header-buttons {
+    margin-top: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .single-post {
+    width: 100%;
+    margin: 10px auto;
+    padding: 15px;
+  }
+  .single-post .post-title {
+    font-size: 1.6rem;
+  }
+  .single-post .post-meta {
+    font-size: 0.85rem;
+  }
+  header h1 {
+    font-size: 1.5rem;
+  }
+  .header-buttons button {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
 }

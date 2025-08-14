@@ -361,13 +361,28 @@ window.addEventListener("DOMContentLoaded", () => {
         changeEmailSection?.classList.toggle("hidden", !show);
         if (show && currentEmailInput)
           currentEmailInput.value = userEmail.textContent;
+        if (show)
+          changeEmailSection?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         break;
       case "password":
         changePasswordSection?.classList.toggle("hidden", !show);
+        if (show)
+          changePasswordSection?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         break;
       case "picture":
         changePictureSection?.classList.toggle("hidden", !show);
         if (show && picturePreview) picturePreview.src = userProfilePic.src;
+        if (show)
+          changePictureSection?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         break;
     }
   }
@@ -725,13 +740,28 @@ window.addEventListener("DOMContentLoaded", () => {
         changeEmailSection?.classList.toggle("hidden", !show);
         if (show && currentEmailInput)
           currentEmailInput.value = userEmail.textContent;
+        if (show)
+          changeEmailSection?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         break;
       case "password":
         changePasswordSection?.classList.toggle("hidden", !show);
+        if (show)
+          changePasswordSection?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         break;
       case "picture":
         changePictureSection?.classList.toggle("hidden", !show);
         if (show && picturePreview) picturePreview.src = userProfilePic.src;
+        if (show)
+          changePictureSection?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         break;
     }
   }

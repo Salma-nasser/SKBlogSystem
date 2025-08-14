@@ -20,6 +20,7 @@ public class ScheduledPostPublisher : BackgroundService
       {
         using var scope = _scopeFactory.CreateScope();
         var blogService = scope.ServiceProvider.GetRequiredService<IBlogPostService>();
+        var search = scope.ServiceProvider.GetRequiredService<ISearchService>();
 
         var now = DateTime.UtcNow;
         var scheduledPosts = blogService.GetAllPostsIncludingDrafts()
@@ -30,9 +31,14 @@ public class ScheduledPostPublisher : BackgroundService
         {
           var (success, message) = await blogService.PublishPostAsync(post.Slug, post.Author);
           if (success)
+          {
             _logger.LogInformation($"✅ Scheduled post '{post.Title}' published automatically at {now}.");
+            search.RebuildIndex(blogService.GetAllPosts());
+          }
           else
+          {
             _logger.LogWarning($"⚠️ Failed to publish scheduled post '{post.Title}': {message}");
+          }
         }
       }
       catch (Exception ex)
