@@ -2,4 +2,4 @@ replicaCount: 1
 image:
   repository: registry.arc-center.run/silverkeytech/skblogsystem/backstage
   pullPolicy: IfNotPresent
-  tag: fd8f8f
+  tag: 84f574
