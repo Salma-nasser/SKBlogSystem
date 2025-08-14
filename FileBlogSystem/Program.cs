@@ -14,19 +14,15 @@ using Microsoft.AspNetCore.DataProtection;
 
 // Create builder
 var builder = WebApplication.CreateBuilder(args);
+
 // Configure host to ignore background service exceptions
 builder.Host.ConfigureServices((ctx, services) =>
 {
-  services.Configure<HostOptions>(options =>
-  {
-    options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
-  });
+    services.Configure<HostOptions>(options =>
+    {
+        options.BackgroundServiceExceptionBehavior = BackgroundServiceExceptionBehavior.Ignore;
+    });
 });
-
-// Read PORT from environment for deployment (e.g., Render)
-var port = Environment.GetEnvironmentVariable("PORT") ?? "7189";
-// Listen on HTTP only in container to avoid missing HTTPS cert
-builder.WebHost.UseUrls($"http://*:{port}");
 
 // Persist data protection keys in project directory to survive container restarts
 var keysPath = Path.Combine(builder.Environment.ContentRootPath, "DataProtection-Keys");
@@ -38,8 +34,8 @@ builder.Services.AddDataProtection()
 // JSON
 builder.Services.Configure<JsonOptions>(options =>
 {
-  options.SerializerOptions.PropertyNamingPolicy = null;
-  options.SerializerOptions.WriteIndented = true;
+    options.SerializerOptions.PropertyNamingPolicy = null;
+    options.SerializerOptions.WriteIndented = true;
 });
 
 // Services
@@ -53,57 +49,58 @@ builder.Services.AddSingleton<NotificationService>();
 builder.Services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<NotificationService>());
 builder.Services.AddSignalR();
 builder.Services.AddImageSharp();
+
 // Auth
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
-      var jwtService = new JwtService(builder.Configuration);
-      options.TokenValidationParameters = jwtService.GetTokenValidationParameters();
-      // Allow SignalR to receive access token from query string
-      options.Events = new Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerEvents
-      {
-        OnMessageReceived = context =>
+        var jwtService = new JwtService(builder.Configuration);
+        options.TokenValidationParameters = jwtService.GetTokenValidationParameters();
+        // Allow SignalR to receive access token from query string
+        options.Events = new JwtBearerEvents
         {
-          var accessToken = context.Request.Query["access_token"];
-          var path = context.HttpContext.Request.Path;
-          // If the request is for our SignalR hub, read the token from the query string
-          if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/notificationHub"))
-          {
-            context.Token = accessToken;
-          }
-          return System.Threading.Tasks.Task.CompletedTask;
-        }
-      };
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"];
+                var path = context.HttpContext.Request.Path;
+                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/notificationHub"))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            }
+        };
     });
 
 // CORS
 builder.Services.AddCors(options =>
 {
-  options.AddPolicy("AllowFrontend", policy =>
-  {
-    policy.WithOrigins("http://localhost:7189", "http://localhost:5500")
-            .AllowAnyHeader()
-            .AllowAnyMethod();
-  });
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:7189", "http://localhost:5500")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
 });
-//email
+
+// Email
 builder.Services.AddSingleton(new EmailService(
-    smtpHost: "smtp.gmail.com",       // Or your provider
+    smtpHost: "smtp.gmail.com",
     smtpPort: 587,
     fromAddress: "salma.naser1020@gmail.com",
     smtpUser: "salma.naser1020@gmail.com",
-    smtpPassword: "msqo gsmd tezi vznp" // Gmail requires an App Password
+    smtpPassword: "msqo gsmd tezi vznp" // Gmail App Password
 ));
 
 builder.Services.AddAuthorization();
 builder.Services.Configure<FormOptions>(options =>
 {
-  options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10MB limit
+    options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10MB limit
 });
 
 var app = builder.Build();
 
-// URL Rewriting for kebab-case URLs
+// URL Rewriting
 var rewriteOptions = new RewriteOptions()
     .AddRewrite("^$", "welcome.html", skipRemainingRules: true)
     .AddRewrite("^login/?$", "login.html", skipRemainingRules: true)
@@ -118,52 +115,31 @@ var rewriteOptions = new RewriteOptions()
 
 app.UseRewriter(rewriteOptions);
 
-// Static Files for wwwroot
+// Static files
 app.UseDefaultFiles(new DefaultFilesOptions
 {
-  DefaultFileNames = { "welcome.html" }
+    DefaultFileNames = { "welcome.html" }
 });
 app.UseStaticFiles();
-
-// Static Files for posts
 app.UseStaticFiles(new StaticFileOptions
 {
-  FileProvider = new PhysicalFileProvider(
+    FileProvider = new PhysicalFileProvider(
         Path.Combine(builder.Environment.ContentRootPath, "Content")),
-  RequestPath = "/Content"
+    RequestPath = "/Content"
 });
 app.UseImageSharp();
+
 app.UseRouting();
 app.UseCors("AllowFrontend");
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Map API endpoints
+// Map endpoints
 app.MapBlogPostEndpoints();
 app.MapAuthEndpoints();
 app.MapUserEndpoints();
 app.MapAdminEndpoints();
-// routes for comments disabled
 // app.MapCommentsEndpoints();
 app.MapHub<NotificationHub>("/notificationHub");
-
-// Only in development, open browser
-if (app.Environment.IsDevelopment())
-{
-  app.UseHttpsRedirection();
-  var url = "http://localhost:7189";
-  try
-  {
-    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-    {
-      FileName = url,
-      UseShellExecute = true
-    });
-  }
-  catch (Exception ex)
-  {
-    Console.WriteLine($"Failed to open browser: {ex.Message}");
-  }
-}
 
 app.Run();
