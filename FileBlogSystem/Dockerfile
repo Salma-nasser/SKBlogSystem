@@ -19,7 +19,7 @@ COPY wwwroot/ /app/wwwroot/
 
 RUN mkdir -p /app/Content/posts /app/Content/users
 
-EXPOSE 80
+EXPOSE 8080
 ENV ASPNETCORE_URLS=http://+:8080
 VOLUME ["/app/Content/posts", "/app/Content/users"]
 
