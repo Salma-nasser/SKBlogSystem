@@ -26,8 +26,46 @@ public class NotificationService : INotificationService
     if (File.Exists(filePath))
     {
       var existing = await File.ReadAllTextAsync(filePath);
-      notifications = JsonSerializer.Deserialize<List<Notification>>(existing)
-                     ?? new List<Notification>();
+      var items = new List<Notification>();
+      try
+      {
+        using var doc = JsonDocument.Parse(existing);
+        foreach (var elem in doc.RootElement.EnumerateArray())
+        {
+          int idVal;
+          var idProp = elem.GetProperty("Id");
+          if (idProp.ValueKind == JsonValueKind.Number)
+          {
+            if (!idProp.TryGetInt32(out idVal)) continue;
+          }
+          else if (idProp.ValueKind == JsonValueKind.String &&
+                  int.TryParse(idProp.GetString(), out var tmp))
+          {
+            idVal = tmp;
+          }
+          else
+          {
+            continue; // skip invalid IDs
+          }
+          var msg = elem.GetProperty("Message").GetString() ?? string.Empty;
+          var linkVal = elem.GetProperty("Link").GetString() ?? string.Empty;
+          var isRead = elem.GetProperty("IsRead").GetBoolean();
+          var createdAt = elem.GetProperty("CreatedAt").GetDateTime();
+          items.Add(new Notification
+          {
+            Id = idVal,
+            Message = msg,
+            Link = linkVal,
+            IsRead = isRead,
+            CreatedAt = createdAt
+          });
+        }
+      }
+      catch
+      {
+        // ignore parse errors, fallback to empty list
+      }
+      notifications = items;
     }
     else
     {

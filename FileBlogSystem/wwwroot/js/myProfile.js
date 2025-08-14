@@ -1,6 +1,7 @@
 import { renderPosts, safeBase64Decode } from "./utils/renderPost.js";
 import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
+import { initMobileSidebar } from "./utils/mobileSidebar.js";
 import { showMessage, showConfirmation } from "./utils/notifications.js";
 import { authenticatedFetch, HttpError } from "./utils/api.js";
 
@@ -87,6 +88,7 @@ window.addEventListener("DOMContentLoaded", () => {
   // Initialize components
   initializeImageModal();
   initializeThemeToggle();
+  initMobileSidebar();
 
   // Make functions globally accessible for onclick handlers
   window.openModifyPage = openModifyPage;
@@ -121,6 +123,7 @@ window.addEventListener("DOMContentLoaded", () => {
   const changeEmailBtn = document.getElementById("changeEmailBtn");
   const changePasswordBtn = document.getElementById("changePasswordBtn");
   const changePictureBtn = document.getElementById("changePictureBtn");
+  const deleteAccountBtn = document.getElementById("deleteAccountBtn");
 
   // Edit forms
   const changeEmailForm = document.getElementById("changeEmailForm");
@@ -360,13 +363,28 @@ window.addEventListener("DOMContentLoaded", () => {
         changeEmailSection?.classList.toggle("hidden", !show);
         if (show && currentEmailInput)
           currentEmailInput.value = userEmail.textContent;
+        if (show)
+          changeEmailSection?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         break;
       case "password":
         changePasswordSection?.classList.toggle("hidden", !show);
+        if (show)
+          changePasswordSection?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         break;
       case "picture":
         changePictureSection?.classList.toggle("hidden", !show);
         if (show && picturePreview) picturePreview.src = userProfilePic.src;
+        if (show)
+          changePictureSection?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         break;
     }
   }
@@ -413,6 +431,7 @@ window.addEventListener("DOMContentLoaded", () => {
         showDelete: true,
         showModify: true,
         showActions: true,
+        showPublishNow: true,
       });
     } catch (error) {
       if (error.message !== "Session expired") {
@@ -524,6 +543,31 @@ window.addEventListener("DOMContentLoaded", () => {
       );
       const clickedIndex = images.indexOf(e.target.src);
       openImageModal(images, clickedIndex);
+    }
+
+    // Handle Publish Now button clicks for drafts
+    if (e.target.classList.contains("publishNowBtn")) {
+      e.preventDefault();
+      const postCard = e.target.closest(".post-card");
+      const slug = postCard?.dataset.slug || e.target.dataset.slug;
+      if (!slug) return;
+      (async () => {
+        try {
+          const res = await authenticatedFetch(`/api/posts/publish/${slug}`, {
+            method: "PUT",
+          });
+          if (!res.ok) throw new Error(`Failed to publish (${res.status})`);
+          showMessage("Post published successfully", "success");
+          // Refresh lists
+          fetchDraftPosts();
+          fetchPublishedPosts(targetUsername);
+        } catch (err) {
+          if (err.message !== "Session expired") {
+            console.error("Publish error:", err);
+            showMessage("Failed to publish post", "error");
+          }
+        }
+      })();
     }
   });
 
@@ -698,13 +742,28 @@ window.addEventListener("DOMContentLoaded", () => {
         changeEmailSection?.classList.toggle("hidden", !show);
         if (show && currentEmailInput)
           currentEmailInput.value = userEmail.textContent;
+        if (show)
+          changeEmailSection?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         break;
       case "password":
         changePasswordSection?.classList.toggle("hidden", !show);
+        if (show)
+          changePasswordSection?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         break;
       case "picture":
         changePictureSection?.classList.toggle("hidden", !show);
         if (show && picturePreview) picturePreview.src = userProfilePic.src;
+        if (show)
+          changePictureSection?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         break;
     }
   }

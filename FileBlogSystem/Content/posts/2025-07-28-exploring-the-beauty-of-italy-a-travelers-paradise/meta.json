@@ -1,8 +1,9 @@
 {
   "title": "Exploring the Beauty of Italy: A Traveler\u2019s Paradise",
   "description": "Italy is a dream destination for travelers, offering a perfect blend of history, art, cuisine, and breathtaking landscapes. From the romantic canals of Venice to the ancient ruins of Rome and the stunning Amalfi Coast, Italy captivates every visitor. This blog post highlights must-visit destinations, cultural experiences, and travel tips for an unforgettable Italian adventure.",
-  "customUrl": "",
   "author": "Salma",
+  "publishedDate": "2025-07-28T07:47:15.9408206Z",
+  "lastModified": "2025-07-28T08:27:52.0868857Z",
   "tags": [
     "Italy travel",
     "Italian tourism",
@@ -21,14 +22,14 @@
     "Cultural Experiences",
     "Food \u0026 Dining"
   ],
-  "publishedDate": "2025-07-28T07:47:15.9408206Z",
-  "lastModified": "2025-07-28T08:27:52.0868857Z",
   "slug": "exploring-the-beauty-of-italy-a-travelers-paradise",
   "isPublished": true,
   "scheduledDate": null,
   "images": [
     "/assets/italy.jpg"
   ],
-  "likes": [],
+  "likes": [
+    "Salma"
+  ],
   "commentCount": 0
 }

@@ -241,6 +241,112 @@ header h1 a:hover {
   transform: translateY(-1px); /* Subtle lift effect */
 }
 
+/* Mobile sidebar + hamburger */
+.hamburger {
+  display: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px var(--shadow-light);
+}
+.hamburger span {
+  display: block;
+  height: 2px;
+  width: 22px;
+  background: var(--text-color);
+  margin: 4px auto;
+  border-radius: 2px;
+}
+
+.mobile-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 78vw;
+  max-width: 340px;
+  background: var(--bg-secondary);
+  color: var(--text-color);
+  box-shadow: 2px 0 18px var(--shadow-heavy);
+  transform: translateX(-105%);
+  transition: transform 0.25s ease;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+}
+.mobile-sidebar.open {
+  transform: translateX(0);
+}
+.mobile-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border-color);
+}
+.mobile-sidebar .close-btn {
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-color);
+}
+.mobile-sidebar .mobile-menu {
+  list-style: none;
+  padding: 10px 0;
+  margin: 0;
+}
+.mobile-sidebar .mobile-menu li {
+  padding: 8px 18px;
+}
+.mobile-sidebar .mobile-link,
+.mobile-sidebar .mobile-btn {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+  text-align: left;
+}
+.mobile-sidebar .mobile-link:hover,
+.mobile-sidebar .mobile-btn:hover {
+  background: var(--accent-color);
+  color: white;
+  border-color: var(--accent-color);
+}
+
+.mobile-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 1090;
+}
+.mobile-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Hide header actions on small screens; show hamburger */
+@media (max-width: 820px) {
+  .hide-on-mobile {
+    display: none !important;
+  }
+  .hamburger {
+    display: inline-flex;
+    margin-left: 8px;
+  }
+}
+
 .welcome-message {
   font-size: 0.875rem;
   color: var(--text-color);
@@ -557,6 +663,18 @@ main {
 /* Utilities */
 .text-accent-secondary {
   color: var(--accent-secondary);
+}
+
+/* Inline Highlight styling (used by client-side search highlighting) */
+mark.__hl {
+  background: #fff3b0; /* soft pale yellow for light mode */
+  color: inherit;
+  padding: 0 2px;
+  border-radius: 3px;
+}
+body.dark-mode mark.__hl {
+  background: #8b6b2a; /* warm muted yellow-brown for dark mode */
+  color: inherit;
 }
 .text-accent-tertiary {
   color: var(--accent-tertiary);

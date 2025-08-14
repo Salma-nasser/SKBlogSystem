@@ -167,19 +167,20 @@
   margin-bottom: 8px; /* Consistent with other labels */
 }
 
+/* Toggle eye icons positioning */
 #togglePassword,
-#toggleLoginPassword {
+#toggleLoginPassword,
+#toggleConfirmPassword,
+#toggleRegisterConfirmPassword {
   position: absolute;
   right: 10px;
-  top: 50%;
+  top: 70%; /* Center vertically */
   transform: translateY(-50%);
   font-size: 18px;
   color: var(--text-muted); /* Use theme color for better contrast */
   cursor: pointer;
   user-select: none;
-  height: 100%;
-  display: flex;
-  align-items: center;
+  /* Removed fixed height and flex display to allow natural centering */
   transition: color 0.2s ease;
 }
 
@@ -209,12 +210,20 @@ input::-ms-clear {
   border-radius: 4px;
   border: 1px solid var(--success-color);
 }
+/* Center the forgot-password and register links */
+/* Center account switch on auth forms */
+.login-box .account-switch,
+.register-box .account-switch {
+  text-align: center;
+  margin-top: 10px;
+}
 
-.account-switch {
-  text-align: right; /* Align to the right */
+/* Center account switch on registration form */
+.register-box .account-switch {
+  text-align: center;
   margin-top: 1rem;
   font-size: 0.95em;
-  padding-right: 0.5rem; /* Add some right padding */
+  padding-right: 0;
 }
 
 .account-switch a {
@@ -355,4 +364,23 @@ body.dark-mode #modeToggle:hover {
   .account-switch {
     text-align: right; /* Right align on desktop */
   }
+}
+/* Password rules checklist styling */
+#passwordRules {
+  margin-bottom: 20px;
+  list-style: none;
+  padding-left: 0;
+  display: none; /* Shown via JS when applicable */
+}
+#passwordRules li {
+  margin-bottom: 5px;
+  color: var(--text-muted);
+}
+/* Valid rule */
+.password-valid {
+  color: green;
+}
+/* Invalid rule */
+.password-invalid {
+  color: red;
 }

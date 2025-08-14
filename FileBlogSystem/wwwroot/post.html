@@ -3,7 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>View Post</title>
+    <title>%POST_TITLE%</title>
+    <!-- Open Graph / Twitter Meta Tags -->
+    <meta property="og:title" content="%POST_TITLE%" />
+    <meta property="og:description" content="%POST_DESC%" />
+    <meta property="og:url" content="%POST_URL%" />
+    <meta property="og:site_name" content="Aether & Ink" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="author" content="%POST_AUTHOR%" />
     <link rel="stylesheet" href="/css/post.css" />
     <!-- Add marked.js for markdown rendering -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -14,8 +21,8 @@
     <header>
       <h1><a href="/blog">Aether & Ink</a></h1>
       <div class="header-buttons">
-        <button id="backToBlogBtn">Home</button>
-        <button id="logoutBtn">Logout</button>
+        <button id="backToBlogBtn" class="btn btn--ghost">Home</button>
+        <button id="logoutBtn" class="btn btn--ghost">Logout</button>
       </div>
     </header>
     <div id="modeToggle" data-theme="light">☀️</div>

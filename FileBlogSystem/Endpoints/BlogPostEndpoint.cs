@@ -75,66 +75,81 @@ public static class BlogPostEndpoints
             return Results.Ok(drafts);
         });
 
-        app.MapPost("/api/posts/create", [Authorize] async (HttpContext ctx, IBlogPostService service) =>
-        {
-            var userName = ctx.User.Identity?.Name;
-            if (!ctx.Request.HasFormContentType)
+        app.MapPost("/api/posts/create", [Authorize] async (HttpContext ctx, IBlogPostService service, ISearchService search) =>
             {
-                Console.WriteLine("Request does not have form content type.");
-                return Results.BadRequest(new { message = "Request must be multipart/form-data." });
-            }
-            if (string.IsNullOrEmpty(userName))
-                return Results.Unauthorized();
+                var userName = ctx.User.Identity?.Name;
+                if (!ctx.Request.HasFormContentType)
+                {
+                    Console.WriteLine("Request does not have form content type.");
+                    return Results.BadRequest(new { message = "Request must be multipart/form-data." });
+                }
+                if (string.IsNullOrEmpty(userName))
+                    return Results.Unauthorized();
 
-            var parseResult = await ParseFormRequest(ctx, allowSchedule: true);
-            if (parseResult.IsInvalid || parseResult.Request == null)
-                return Results.BadRequest(new { message = parseResult.ErrorMessage });
+                var parseResult = await ParseFormRequest(ctx, allowSchedule: true);
+                if (parseResult.IsInvalid || parseResult.Request == null)
+                    return Results.BadRequest(new { message = parseResult.ErrorMessage });
 
-            var result = await service.CreatePostAsync(parseResult.Request, userName);
+                var result = await service.CreatePostAsync(parseResult.Request, userName);
+                // Refresh index after creating a post
+                search.RebuildIndex(service.GetAllPosts());
 
-            return Results.Created($"/api/posts/{result.Slug}", result);
-        });
+                return Results.Created($"/api/posts/{result.Slug}", result);
+            });
 
-        app.MapPut("/api/posts/modify/{slug}", [Authorize] async (string slug, HttpContext ctx, IBlogPostService service) =>
-        {
-            if (!IsValidSlug(slug))
-                return Results.BadRequest(new { message = "Invalid post identifier." });
-            var userName = ctx.User.Identity?.Name;
-            if (string.IsNullOrEmpty(userName))
-                return Results.Unauthorized();
+        app.MapPut("/api/posts/modify/{slug}", [Authorize] async (string slug, HttpContext ctx, IBlogPostService service, ISearchService search) =>
+            {
+                if (!IsValidSlug(slug))
+                    return Results.BadRequest(new { message = "Invalid post identifier." });
+                var userName = ctx.User.Identity?.Name;
+                if (string.IsNullOrEmpty(userName))
+                    return Results.Unauthorized();
 
-            var parseResult = await ParseFormRequest(ctx, allowSchedule: true);
-            if (parseResult.IsInvalid || parseResult.Request == null)
-                return Results.BadRequest(new { message = parseResult.ErrorMessage });
+                var parseResult = await ParseFormRequest(ctx, allowSchedule: true);
+                if (parseResult.IsInvalid || parseResult.Request == null)
+                    return Results.BadRequest(new { message = parseResult.ErrorMessage });
 
-            var (success, message) = await service.ModifyPostAsync(slug, parseResult.Request, userName);
+                var (success, message) = await service.ModifyPostAsync(slug, parseResult.Request, userName);
 
-            return success ? Results.Ok(new { message }) : Results.BadRequest(new { message });
-        });
+                if (success)
+                {
+                    search.RebuildIndex(service.GetAllPosts());
+                    return Results.Ok(new { message });
+                }
+                return Results.BadRequest(new { message });
+            });
 
 
-        app.MapPut("/api/posts/publish/{slug}", [Authorize] async (string slug, HttpContext ctx, IBlogPostService service) =>
-        {
-            if (!IsValidSlug(slug))
-                return Results.BadRequest(new { message = "Invalid post identifier." });
-            var username = ctx.User.Identity?.Name;
-            if (string.IsNullOrEmpty(username))
-                return Results.Unauthorized();
+        app.MapPut("/api/posts/publish/{slug}", [Authorize] async (string slug, HttpContext ctx, IBlogPostService service, ISearchService search) =>
+            {
+                if (!IsValidSlug(slug))
+                    return Results.BadRequest(new { message = "Invalid post identifier." });
+                var username = ctx.User.Identity?.Name;
+                if (string.IsNullOrEmpty(username))
+                    return Results.Unauthorized();
 
-            var (success, message) = await service.PublishPostAsync(slug, username);
+                var (success, message) = await service.PublishPostAsync(slug, username);
 
-            return success ? Results.Ok(new { message }) : Results.BadRequest(new { message });
-        });
+                if (success)
+                {
+                    search.RebuildIndex(service.GetAllPosts());
+                    return Results.Ok(new { message });
+                }
+                return Results.BadRequest(new { message });
+            });
 
-        app.MapDelete("/api/posts/{slug}", [Authorize(Roles = "Admin")] async (string slug, IBlogPostService service) =>
-        {
-            if (!IsValidSlug(slug))
-                return Results.BadRequest(new { message = "Invalid post identifier." });
-            var deleted = await service.DeletePostAsync(slug);
-            return deleted
-                ? Results.Ok(new { message = "Post deleted successfully." })
-                : Results.NotFound(new { message = "Post not found." });
-        });
+        app.MapDelete("/api/posts/{slug}", [Authorize(Roles = "Admin")] async (string slug, IBlogPostService service, ISearchService search) =>
+            {
+                if (!IsValidSlug(slug))
+                    return Results.BadRequest(new { message = "Invalid post identifier." });
+                var deleted = await service.DeletePostAsync(slug);
+                if (deleted)
+                {
+                    search.RebuildIndex(service.GetAllPosts());
+                    return Results.Ok(new { message = "Post deleted successfully." });
+                }
+                return Results.NotFound(new { message = "Post not found." });
+            });
 
         app.MapGet("/feed.xml", (IBlogPostService blogService) =>
         {
@@ -179,18 +194,21 @@ public static class BlogPostEndpoints
             var posts = service.GetPostsByUser(username, currentUsername);
             return Results.Ok(posts);
         });
-        app.MapDelete("/api/posts/delete/{slug}", [Authorize] async (string slug, HttpContext ctx, IBlogPostService service) =>
-        {
-            if (!IsValidSlug(slug))
-                return Results.BadRequest(new { message = "Invalid post identifier." });
-            var username = ctx.User.Identity?.Name;
-            if (string.IsNullOrEmpty(username))
-                return Results.Unauthorized();
-            var deleted = await service.DeletePostAsync(slug);
-            return deleted
-                ? Results.Ok(new { message = "Post deleted successfully." })
-                : Results.NotFound(new { message = "Post not found." });
-        });
+        app.MapDelete("/api/posts/delete/{slug}", [Authorize] async (string slug, HttpContext ctx, IBlogPostService service, ISearchService search) =>
+            {
+                if (!IsValidSlug(slug))
+                    return Results.BadRequest(new { message = "Invalid post identifier." });
+                var username = ctx.User.Identity?.Name;
+                if (string.IsNullOrEmpty(username))
+                    return Results.Unauthorized();
+                var deleted = await service.DeletePostAsync(slug);
+                if (deleted)
+                {
+                    search.RebuildIndex(service.GetAllPosts());
+                    return Results.Ok(new { message = "Post deleted successfully." });
+                }
+                return Results.NotFound(new { message = "Post not found." });
+            });
 
         // Like endpoints
         app.MapPost("/api/posts/{slug}/like", [Authorize] (string slug, HttpContext ctx, IBlogPostService service, NotificationService notificationService) =>
@@ -222,6 +240,34 @@ public static class BlogPostEndpoints
             if (!IsValidSlug(slug))
                 return Results.BadRequest(new { message = "Invalid post identifier." });
             return service.GetPostLikes(slug);
+        });
+
+        // Full-text search endpoint using Lucene
+        app.MapGet("/api/search", [Authorize] (HttpContext ctx, ISearchService searchService, IBlogPostService blogService) =>
+        {
+            var username = ctx.User.Identity?.Name;
+            if (string.IsNullOrEmpty(username))
+                return Results.Unauthorized();
+
+            var query = ctx.Request.Query["q"].ToString();
+            var filterType = ctx.Request.Query["type"].ToString(); // tag | category
+            var filterValue = ctx.Request.Query["value"].ToString();
+
+            // Basic input constraints
+            if (query?.Length > 200) query = query.Substring(0, 200);
+            if (!string.IsNullOrEmpty(filterType) && filterType != "tag" && filterType != "category")
+            {
+                return Results.BadRequest(new { message = "Invalid filter type." });
+            }
+
+            var hits = searchService.Search(query ?? string.Empty, filterType, filterValue);
+            // Retrieve posts by slug preserving order by score
+            var postsBySlug = hits
+                .Select(h => blogService.GetPostBySlug(h.Slug, username))
+                .Where(p => p != null)
+                .ToList();
+
+            return Results.Ok(postsBySlug);
         });
 
     }

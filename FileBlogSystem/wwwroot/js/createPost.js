@@ -1,4 +1,5 @@
 import { initializeThemeToggle } from "./utils/themeToggle.js";
+import { initMobileSidebar } from "./utils/mobileSidebar.js";
 import { showMessage } from "./utils/notifications.js";
 import { authenticatedFetch, HttpError } from "./utils/api.js";
 
@@ -22,6 +23,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   initializeThemeToggle();
+  initMobileSidebar();
   initializeMarkdownEditor();
   setupEventListeners();
   setupImagePreview();
@@ -375,13 +377,10 @@ async function submitPost(isPublished) {
       formData.append("Images", file);
     });
 
-    const response = await authenticatedFetch(
-      "/api/posts/create",
-      {
-        method: "POST",
-        body: formData,
-      }
-    );
+    const response = await authenticatedFetch("/api/posts/create", {
+      method: "POST",
+      body: formData,
+    });
 
     const result = await response.json();
 

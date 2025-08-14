@@ -1,6 +1,7 @@
 // Admin Dashboard JavaScript
 
 import { initializeThemeToggle } from "./utils/themeToggle.js";
+import { initMobileSidebar } from "./utils/mobileSidebar.js";
 import { authenticatedFetch, HttpError } from "./utils/api.js";
 
 class AdminDashboard {
@@ -13,6 +14,7 @@ class AdminDashboard {
   async init() {
     // Initialize theme toggle
     initializeThemeToggle();
+    initMobileSidebar();
 
     // Check if user is admin
     await this.checkAdminAccess();
@@ -26,39 +28,11 @@ class AdminDashboard {
 
   async checkAdminAccess() {
     try {
-      // Debug: Parse and log JWT token contents
-      try {
-        const base64Url = token.split(".")[1];
-        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-        const jsonPayload = decodeURIComponent(
-          atob(base64)
-            .split("")
-            .map(function (c) {
-              return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-            })
-            .join("")
-        );
-        const payload = JSON.parse(jsonPayload);
-
-        console.log("DEBUG: JWT Token Payload:", payload);
-        console.log(
-          "DEBUG: User Role in Token:",
-          payload.role ||
-            payload[
-              "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
-            ]
-        );
-        console.log(
-          "DEBUG: Username in Token:",
-          payload.unique_name ||
-            payload[
-              "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"
-            ]
-        );
-      } catch (parseError) {
-        console.error("DEBUG: Error parsing JWT token:", parseError);
+      // Retrieve and log JWT token
+      const token = localStorage.getItem("jwtToken");
+      if (token) {
+        console.log("DEBUG: JWT Token:", token);
       }
-
       const response = await authenticatedFetch("/api/admin/check");
 
       console.log("DEBUG: Admin check response status:", response.status);
@@ -67,7 +41,10 @@ class AdminDashboard {
       console.log("DEBUG: Admin check successful:", data);
       this.currentUser = data.username;
     } catch (error) {
-      if (error instanceof HttpError && (error.response.status === 401 || error.response.status === 403)) {
+      if (
+        error instanceof HttpError &&
+        (error.response.status === 401 || error.response.status === 403)
+      ) {
         this.showAccessDenied();
       } else {
         console.error("Error checking admin access:", error);
@@ -108,7 +85,21 @@ class AdminDashboard {
       this.showLoading();
       const response = await authenticatedFetch("/api/admin/users");
 
-      this.users = await response.json();
+      // Parse response and ensure it's an array
+      const data = await response.json();
+      console.log("DEBUG: loaded users data:", data);
+      // Extract user list from response (array, or property 'users', or 'Value')
+      if (Array.isArray(data)) {
+        this.users = data;
+      } else if (Array.isArray(data.users)) {
+        this.users = data.users;
+      } else if (Array.isArray(data.Value)) {
+        this.users = data.Value;
+      } else if (Array.isArray(data.value)) {
+        this.users = data.value;
+      } else {
+        this.users = [];
+      }
       this.renderUsers();
       this.updateStats();
       this.hideLoading();
@@ -177,7 +168,7 @@ class AdminDashboard {
     }
 
     return `
-    <button class="btn" data-username="${user.Username}">
+    <button class="btn promote-btn" data-username="${user.Username}">
       Promote to Admin
     </button>
   `;

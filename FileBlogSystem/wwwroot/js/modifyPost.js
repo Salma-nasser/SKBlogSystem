@@ -1,5 +1,6 @@
 import { showMessage, showConfirmation } from "./utils/notifications.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
+import { initMobileSidebar } from "./utils/mobileSidebar.js";
 import { authenticatedFetch, HttpError } from "./utils/api.js";
 
 let easyMDE;
@@ -267,6 +268,7 @@ document.addEventListener("DOMContentLoaded", () => {
     easyMDE.codemirror.on("change", enableUpdateButton);
 
     initializeThemeToggle();
+    initMobileSidebar();
     if (post.PublishedDate) {
       const parsedDate = new Date(post.PublishedDate);
       if (!isNaN(parsedDate.getTime())) {

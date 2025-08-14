@@ -3,33 +3,82 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ather & Ink</title>
+    <title>Aether & Ink</title>
     <link
       href="https://fonts.googleapis.com/css2?family=Dancing+Script&family=Playfair+Display:wght@400;700&family=Inter:wght@400;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="css/welcome.css" />
+    <link rel="stylesheet" href="/css/shared/shared.css" />
+    <!-- Reuse blog styles for post cards/grid on the welcome page -->
+    <link rel="stylesheet" href="/css/blog.css" />
+    <link rel="stylesheet" href="/css/welcome.css" />
   </head>
   <body>
     <!-- Header -->
     <header>
-      <div class="logo">Ather & Ink</div>
+      <h1 class="blog-name">Aether & Ink</h1>
       <nav>
         <ul>
-          <li><a href="/register" class = "cta-button">Join our Community</a></li>
-          <li><a href="/login" class = "cta-button">Sign In</a></li>
+          <li><a href="/register" class="btn">Join our Community</a></li>
+          <li><a href="/login" class="btn btn-outline">Sign In</a></li>
         </ul>
       </nav>
     </header>
+    <div id="modeToggle" data-theme="light" title="Toggle theme">☀️</div>
 
     <!-- Hero -->
     <section class="hero">
+      <div>
+        <div
+          style="
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+          "
+        ></div>
+      </div>
+    </section>
+
+    <!-- About / Vision -->
+    <section class="featured">
+      <div style="max-width: 900px; margin: 0 auto; text-align: left">
+        <h2>Welcome to Aether & Ink</h2>
+        <p>
+          Aether—once thought to be the mysterious fifth element, invisible and
+          untouchable—has long symbolized the unknown, the boundless, the space
+          between stars and thoughts. Like creativity itself, it defies
+          definition. It drifts, it sparks, it surprises.
+        </p>
+        <p>
+          Here at Aether and Ink, we offer that space: a place where ideas float
+          freely, where imagination finds form. The aether is your canvas, and
+          the ink is your voice. Whether you're sketching stories, shaping code,
+          or illuminating quiet truths, this blog is your invitation to bring
+          life to the smallest details—and to explore the unpredictable beauty
+          of your own mind.
+        </p>
+        <a href="/register" class="btn btn-outline">Start Writing</a>
+      </div>
+    </section>
+
+    <!-- Latest Posts -->
+    <section class="latest">
+      <h2 style="text-align: center">Latest Posts</h2>
+      <div id="latestPosts" class="post-list"></div>
+      <div style="text-align: center; margin-top: 1rem">
+        <a href="/blog" class="btn btn-outline">View all posts</a>
+      </div>
     </section>
 
     <!-- Footer -->
     <footer>
-      <p>© 2025 Ather & Ink. Crafted with care & a dash of russet.</p>
-      <p><a href="#">Privacy Policy</a> · <a href="#">Terms of Use</a></p>
+      <p>© 2025 Aether & Ink. Crafted with care & a dash of russet.</p>
+      <p>
+        <a href="/privacy.html">Privacy Policy</a> ·
+        <a href="/terms.html">Terms of Use</a>
+      </p>
     </footer>
+    <script type="module" src="/js/welcome.js"></script>
   </body>
 </html>

@@ -1,17 +1,37 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <!-- Multi-targeting to support current .NET 7 SDK and future .NET 10 requirement -->
-    <TargetFramework>net10.0</TargetFramework>
+    <!-- Build against both net9.0 (for container runtime) and net10.0 (local preview) -->
+    <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <EnableDefaultContentItems>false</EnableDefaultContentItems>
   </PropertyGroup>
+
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.6" />
+    <PackageReference Include="Lucene.Net" Version="4.8.0-beta00017" />
+    <PackageReference Include="Lucene.Net.Analysis.Common" Version="4.8.0-beta00017" />
+    <PackageReference Include="Lucene.Net.Highlighter" Version="4.8.0-beta00017" />
+    <PackageReference Include="Lucene.Net.QueryParser" Version="4.8.0-beta00017" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.7" />
     <PackageReference Include="SixLabors.ImageSharp.Web" Version="3.2.0" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.12.0" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Include user content files -->
+    <Content Include="Content\**\*">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+    <!-- Include static wwwroot assets -->
+    <Content Include="wwwroot\**\*">
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
   <PropertyGroup>
+  <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+  <SelfContained>false</SelfContained>
+  <PublishTrimmed>false</PublishTrimmed>
   <EnableCompressionInStaticWebAssets>false</EnableCompressionInStaticWebAssets>
+  <InvariantGlobalization>true</InvariantGlobalization>
 </PropertyGroup>
 </Project>

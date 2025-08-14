@@ -1,10 +1,16 @@
 import { initializeThemeToggle } from "./utils/themeToggle.js";
+import { initMobileSidebar } from "./utils/mobileSidebar.js";
 import { showMessage } from "./utils/notifications.js";
 
 initializeThemeToggle();
+initMobileSidebar();
 const registerPasswordInput = document.getElementById("registerPassword");
 const toggleRegisterPassword = document.getElementById("togglePassword");
 const passwordRules = document.getElementById("passwordRules");
+const registerConfirmInput = document.getElementById("registerConfirmPassword");
+const toggleRegisterConfirm = document.getElementById(
+  "toggleRegisterConfirmPassword"
+);
 
 if (registerPasswordInput && toggleRegisterPassword && passwordRules) {
   registerPasswordInput.addEventListener("input", () => {
@@ -37,6 +43,19 @@ if (registerPasswordInput && toggleRegisterPassword && passwordRules) {
   });
 }
 
+// Show/hide confirm icon and implement toggle
+if (registerConfirmInput && toggleRegisterConfirm) {
+  registerConfirmInput.addEventListener("input", () => {
+    toggleRegisterConfirm.style.display =
+      registerConfirmInput.value.length > 0 ? "inline" : "none";
+  });
+  toggleRegisterConfirm.addEventListener("click", () => {
+    const isHidden = registerConfirmInput.type === "password";
+    registerConfirmInput.type = isHidden ? "text" : "password";
+    toggleRegisterConfirm.textContent = isHidden ? "🙈" : "👁️";
+  });
+}
+
 // === REGISTER form submission ===
 const registerForm = document.getElementById("RegisterForm");
 
@@ -47,6 +66,16 @@ if (registerForm) {
     const email = document.getElementById("email").value;
     const username = document.getElementById("username").value;
     const password = registerPasswordInput.value;
+    const confirmPassword = registerConfirmInput
+      ? registerConfirmInput.value
+      : "";
+    // Confirm password match
+    if (password !== confirmPassword) {
+      document.getElementById("errorMessage").innerText =
+        "Passwords do not match.";
+      document.getElementById("errorMessage").style.display = "block";
+      return;
+    }
 
     try {
       const response = await fetch("/api/auth/register", {

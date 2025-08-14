@@ -125,8 +125,9 @@ nav a:hover {
 /* Hero */
 .hero {
   position: relative;
-  height: 80vh;
-  min-height: 500px;
+  /* Flexible hero: auto height with a large min-height */
+  height: auto;
+  min-height: 80vh;
   background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
     url("/placeholders/assets/backdrop.png") center/cover no-repeat;
   display: flex;
@@ -190,6 +191,49 @@ footer {
   margin: 0 auto;
 }
 
+/* Hide likes/interaction bar on the welcome page only */
+.latest .interaction-bar {
+  display: none !important;
+}
+
+/* Safety guards so cards never overlap in the grid */
+.latest .post-list .post-card {
+  overflow: hidden;
+  /* Remove tall min-height from blog.css for compact cards */
+  min-height: 0;
+  height: auto;
+}
+.latest .post-list .post-card img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Make the latest-posts section more compact */
+.latest .post-list .post-card h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+/* Cap image height so a single tall image doesn't make the card huge */
+.latest .post-list .post-images img,
+.latest .post-list .post-body img,
+.latest .post-list .markdown-image {
+  max-height: 220px;
+  object-fit: cover;
+  width: 100%;
+}
+
+/* Reduce truncated body height for concise cards */
+.latest .post-list .post-body.truncated {
+  max-height: 120px;
+}
+
+/* Don't force footer to bottom of a tall card on welcome */
+.latest .post-list .post-footer {
+  margin-top: 10px;
+}
+
 .newsletter {
   background: var(--primary-color);
   color: var(--pure-white);
@@ -203,11 +247,78 @@ footer {
   color: var(--text-muted);
 }
 
+/* Theme toggle positioning and states (aligned with other pages) */
+#modeToggle {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  background-color: var(--button-bg);
+  color: var(--button-text);
+  border: 1px solid var(--accent-color);
+  border-radius: 50%;
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 6px var(--header-shadow);
+  transition: transform 0.6s ease, background-color 0.3s ease, color 0.3s ease;
+  transform-style: preserve-3d;
+  z-index: 1000;
+}
+
+#modeToggle:hover {
+  transform: scale(1.1);
+}
+
+body.dark-mode #modeToggle {
+  background-color: var(--bg-secondary);
+  color: var(--text-color);
+  border-color: var(--primary-color);
+  transform: rotate(180deg);
+}
+
+body.dark-mode #modeToggle:hover {
+  transform: rotate(180deg) scale(1.1);
+}
+
 @media (max-width: 600px) {
   .hero h1 {
     font-size: 2.4rem;
   }
   .hero .tagline {
     font-size: 1.2rem;
+  }
+}
+/* Mobile Responsive Adjustments */
+@media (max-width: 768px) {
+  /* Stack header */
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem 4%;
+    gap: 1rem;
+  }
+  /* Vertical nav buttons */
+  nav ul {
+    flex-direction: column;
+    width: 100%;
+    gap: 0.75rem;
+  }
+  nav li {
+    width: 100%;
+  }
+  .cta-button {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 0.75rem 0;
+  }
+  /* Reduce hero height */
+  .hero {
+    height: 60vh;
+    min-height: auto;
   }
 }

@@ -1,0 +1,40 @@
+/* Force left-aligned layout for the privacy page */
+
+/* Container sizing (optional) */
+main {
+  display: block; /* override shared flex layout */
+  max-width: 900px;
+  margin: 2rem auto;
+}
+
+/* Make inner blocks span full width */
+main section {
+  width: 100%;
+}
+
+/* Ensure all text content is left-aligned */
+main,
+main section,
+main h1,
+main h2,
+main h3,
+main p,
+main ul,
+main li,
+header,
+header h1,
+footer,
+footer p,
+footer a {
+  text-align: left !important;
+}
+
+/* Bullets and spacing for lists */
+main ul {
+  padding-left: 1.25rem;
+  margin-left: 0;
+}
+
+main li {
+  margin: 0.5rem 0;
+}
