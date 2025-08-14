@@ -429,6 +429,7 @@ window.addEventListener("DOMContentLoaded", () => {
         showDelete: true,
         showModify: true,
         showActions: true,
+        showPublishNow: true,
       });
     } catch (error) {
       if (error.message !== "Session expired") {
@@ -540,6 +541,31 @@ window.addEventListener("DOMContentLoaded", () => {
       );
       const clickedIndex = images.indexOf(e.target.src);
       openImageModal(images, clickedIndex);
+    }
+
+    // Handle Publish Now button clicks for drafts
+    if (e.target.classList.contains("publishNowBtn")) {
+      e.preventDefault();
+      const postCard = e.target.closest(".post-card");
+      const slug = postCard?.dataset.slug || e.target.dataset.slug;
+      if (!slug) return;
+      (async () => {
+        try {
+          const res = await authenticatedFetch(`/api/posts/publish/${slug}`, {
+            method: "PUT",
+          });
+          if (!res.ok) throw new Error(`Failed to publish (${res.status})`);
+          showMessage("Post published successfully", "success");
+          // Refresh lists
+          fetchDraftPosts();
+          fetchPublishedPosts(targetUsername);
+        } catch (err) {
+          if (err.message !== "Session expired") {
+            console.error("Publish error:", err);
+            showMessage("Failed to publish post", "error");
+          }
+        }
+      })();
     }
   });
 

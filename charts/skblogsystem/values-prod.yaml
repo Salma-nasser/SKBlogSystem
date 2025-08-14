@@ -1,0 +1,10 @@
+replicaCount: 2
+image:
+  repository: registry.arc-center.run/silverkeytech/skblogsystem/backstage
+  pullPolicy: IfNotPresent
+  tag: backstage-skblogsystem-dev-latest
+
+resources:
+  requests:
+    cpu: 60m
+    memory: 60M
