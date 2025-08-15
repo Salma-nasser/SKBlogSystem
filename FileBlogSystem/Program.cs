@@ -109,15 +109,6 @@ builder.Services.Configure<FormOptions>(options =>
 
 var app = builder.Build();
 
-// Only send HSTS in non-dev
-if (!app.Environment.IsDevelopment())
-{
-  app.UseHsts();
-}
-
-// Redirect HTTP -> HTTPS
-app.UseHttpsRedirection();
-
 // Security headers (applies to all responses)
 app.Use(async (context, next) =>
 {
