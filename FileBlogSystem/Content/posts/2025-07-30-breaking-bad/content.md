@@ -35,16 +35,16 @@ It’s not just clever—it’s part of the show’s ethos. Actions have consequ
 
 **8. The Crime Boss as Corporate Entity**
 In Breaking Bad, the drug world isn’t gritty and chaotic—it’s sleek, organized, and corporate. Los Pollos Hermanos is a legitimate fast-food chain used as a front for meth distribution. Madrigal Electromotive is a multinational company funding it. This flips the “Street-Level Crime” trope—replacing it with sterile boardrooms, ledgers, and polite sociopaths in suits.
-**
-9. Moral Event Horizon**
+
+**9. Moral Event Horizon**
 There are several moments when Walter crosses a line so clearly, there’s no going back. Letting Jane die. Poisoning Brock. Ordering hits from jail. Each act is a moral Rubicon. These moments are critical—they force the audience to re-evaluate their loyalty.
 
 The show asks: how far is too far? And when you realize you’ve passed that point, what do you become?
-**
-10. The Perfect Ending**
+
+**10. The Perfect Ending**
 The ending subverts the "Breaking Bad gets away with it" trope. Walt dies, but not as a martyr or a hero. He dies owning what he did. Not because he was saving Jesse. Not because he was cornered. But because the empire he built was unsustainable—and he finally admitted the truth: “I did it for me.”
 
 It’s not redemption. It’s clarity.
-***
-Final Thought***
+
+***Final Thought***
 Breaking Bad isn’t great despite its tropes—it’s great because it understands them, plays with them, and in many cases, deconstructs them. It respects the intelligence of its audience. It builds tension not with gimmicks, but with slow, deliberate choices that pay off. And in doing so, it turns familiar storytelling devices into tools for something sharper, darker, and more human.

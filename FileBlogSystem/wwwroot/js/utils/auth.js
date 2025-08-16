@@ -41,7 +41,7 @@ class AuthUtils {
 
     if (response.status === 401) {
       this.removeToken();
-      window.location.href = "/login";
+      window.location.href = "/";
       throw new Error("Authentication failed");
     }
 
@@ -77,7 +77,13 @@ class AuthUtils {
     if (!token) return null;
 
     const payload = this.parseJwt(token);
-    return payload?.role || null;
+    if (!payload) return null;
+    // Support both standard and schema-qualified role claims
+    return (
+      payload.role ||
+      payload["http://schemas.microsoft.com/ws/2008/06/identity/claims/role"] ||
+      null
+    );
   }
 
   static isAdmin() {
