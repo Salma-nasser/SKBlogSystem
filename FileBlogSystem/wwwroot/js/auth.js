@@ -1,9 +1,7 @@
 import { initializeThemeToggle } from "./utils/themeToggle.js";
-import { initMobileSidebar } from "./utils/mobileSidebar.js";
 import { showMessage } from "./utils/notifications.js";
 
 initializeThemeToggle();
-initMobileSidebar();
 const registerPasswordInput = document.getElementById("registerPassword");
 const toggleRegisterPassword = document.getElementById("togglePassword");
 const passwordRules = document.getElementById("passwordRules");

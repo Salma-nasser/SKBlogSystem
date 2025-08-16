@@ -48,6 +48,15 @@ document.addEventListener("DOMContentLoaded", () => {
       // Hide badge
       notificationBadge.style.display = "none";
     }
+
+    // Broadcast unread count to the app (sidebar/menu, etc.)
+    try {
+      window.dispatchEvent(
+        new CustomEvent("notifications:unreadCount", { detail: { count } })
+      );
+    } catch (e) {
+      // no-op
+    }
   }
 
   // --- 3. Setup SignalR Connection ---
@@ -65,6 +74,14 @@ document.addEventListener("DOMContentLoaded", () => {
   connection.on("ReceiveNotification", (notification) => {
     console.log("New notification received:", notification);
     showToast(notification.Message);
+    // Let listeners know a new notification arrived (e.g., refresh modal if open)
+    try {
+      window.dispatchEvent(
+        new CustomEvent("notifications:new", { detail: notification })
+      );
+    } catch (e) {
+      // no-op
+    }
   });
 
   // The unread count is updated (from any event)

@@ -90,6 +90,40 @@ window.addEventListener("DOMContentLoaded", () => {
   initializeThemeToggle();
   initMobileSidebar();
 
+  // Show Admin button if viewing own profile AND user has Admin role
+  const adminBtn = document.getElementById("adminBtn");
+  if (adminBtn) {
+    adminBtn.style.display = "none";
+    try {
+      const tokenStr = localStorage.getItem("jwtToken");
+      if (tokenStr && isOwnProfile) {
+        const base64Url = tokenStr.split(".")[1];
+        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+        const jsonPayload = decodeURIComponent(
+          atob(base64)
+            .split("")
+            .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+            .join("")
+        );
+        const payload = JSON.parse(jsonPayload);
+        const role =
+          payload.role ||
+          payload[
+            "http://schemas.microsoft.com/ws/2008/06/identity/claims/role"
+          ];
+        if (role === "Admin") {
+          adminBtn.style.display = "inline-block";
+          adminBtn.addEventListener(
+            "click",
+            () => (window.location.href = "/admin")
+          );
+        }
+      }
+    } catch (e) {
+      console.warn("Could not parse JWT for admin role:", e);
+    }
+  }
+
   // Make functions globally accessible for onclick handlers
   window.openModifyPage = openModifyPage;
   window.deletePost = deletePost;
