@@ -41,7 +41,7 @@ class AuthUtils {
 
     if (response.status === 401) {
       this.removeToken();
-      window.location.href = "/login";
+      window.location.href = "/";
       throw new Error("Authentication failed");
     }
 

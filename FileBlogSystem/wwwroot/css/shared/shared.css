@@ -896,17 +896,27 @@ body.dark-mode .mobile-sidebar .mobile-sidebar-header strong,
 body.dark-mode .mobile-sidebar .close-btn {
   color: var(--primary-color);
 }
+/* Brand color for all drawer items in dark mode (default + all states) */
 body.dark-mode .mobile-sidebar .mobile-link,
-body.dark-mode .mobile-sidebar .mobile-btn {
-  color: var(
-    --primary-color
-  ) !important; /* override generic dark-mode button text */
-  background: var(--bg-secondary);
-  border-color: var(--border-color);
+body.dark-mode .mobile-sidebar .mobile-link:link,
+body.dark-mode .mobile-sidebar .mobile-link:visited,
+body.dark-mode .mobile-sidebar .mobile-link:hover,
+body.dark-mode .mobile-sidebar .mobile-link:focus,
+body.dark-mode .mobile-sidebar .mobile-link:active,
+body.dark-mode .mobile-sidebar .mobile-btn,
+body.dark-mode .mobile-sidebar .mobile-btn:hover,
+body.dark-mode .mobile-sidebar .mobile-btn:focus,
+body.dark-mode .mobile-sidebar .mobile-btn:active,
+body.dark-mode #mobileSidebar .mobile-link,
+body.dark-mode #mobileSidebar .mobile-btn {
+  color: var(--primary-color) !important;
+  background: var(--bg-secondary) !important;
+  border-color: var(--border-color) !important;
+  text-shadow: none !important;
 }
 /* Prevent visited color from darkening links */
 body.dark-mode .mobile-sidebar .mobile-link:visited {
-  color: var(--primary-color);
+  color: var(--primary-color) !important;
 }
 /* Keep text color consistent with header; subtle border emphasis on interaction */
 body.dark-mode .mobile-sidebar .mobile-link:hover,
