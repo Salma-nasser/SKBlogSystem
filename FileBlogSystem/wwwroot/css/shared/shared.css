@@ -801,7 +801,11 @@ select:focus {
     min-height: auto;
   }
   header h1 {
-    font-size: 1.5rem;
+    font-size: 1.75rem; /* keep brand size consistent on mobile */
+  }
+  /* Ensure pages that use a named brand class keep the same size */
+  header .blog-name {
+    font-size: 1.75rem;
   }
   .header-nav {
     flex-wrap: wrap;
@@ -830,7 +834,8 @@ body.dark-mode .badge-warning {
   color: #0f0804; /* Very dark brown for excellent contrast */
 }
 
-body.dark-mode button:not(.close-btn):not(.delete-btn) {
+/* Don't force dark text on mobile drawer buttons */
+body.dark-mode button:not(.close-btn):not(.delete-btn):not(.mobile-btn) {
   color: #0f0804 !important; /* Very dark text on light button backgrounds */
 }
 
@@ -879,4 +884,38 @@ body.dark-mode .clickable-tag.active-filter {
   background-color: var(--primary-color);
   color: white;
   font-weight: bold;
+}
+
+/* --- Mobile sidebar contrast fixes (especially for dark mode) --- */
+/* Ensure text inside the drawer is always readable */
+body.dark-mode .mobile-sidebar {
+  background: var(--bg-secondary);
+  color: #fff;
+}
+body.dark-mode .mobile-sidebar .mobile-sidebar-header strong,
+body.dark-mode .mobile-sidebar .close-btn {
+  color: var(--primary-color);
+}
+body.dark-mode .mobile-sidebar .mobile-link,
+body.dark-mode .mobile-sidebar .mobile-btn {
+  color: var(
+    --primary-color
+  ) !important; /* override generic dark-mode button text */
+  background: var(--bg-secondary);
+  border-color: var(--border-color);
+}
+/* Prevent visited color from darkening links */
+body.dark-mode .mobile-sidebar .mobile-link:visited {
+  color: var(--primary-color);
+}
+/* Keep text color consistent with header; subtle border emphasis on interaction */
+body.dark-mode .mobile-sidebar .mobile-link:hover,
+body.dark-mode .mobile-sidebar .mobile-link:focus,
+body.dark-mode .mobile-sidebar .mobile-link:active,
+body.dark-mode .mobile-sidebar .mobile-btn:hover,
+body.dark-mode .mobile-sidebar .mobile-btn:focus,
+body.dark-mode .mobile-sidebar .mobile-btn:active {
+  background: var(--bg-secondary);
+  color: var(--primary-color) !important;
+  border-color: var(--accent-color);
 }

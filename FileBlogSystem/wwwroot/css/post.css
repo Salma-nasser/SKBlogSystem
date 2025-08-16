@@ -143,6 +143,23 @@ header h1 a:hover {
   max-width: none;
 }
 
+/* Ensure markdown lists align inside the content box */
+.single-post .post-content ul,
+.single-post .post-content ol {
+  margin: 0 0 1rem 0; /* no extra left margin on the whole list */
+  padding-left: 1.25rem; /* create a gutter for outside bullets */
+  list-style-position: outside; /* keep bullets to the left of text */
+}
+
+.single-post .post-content li {
+  margin: 0.35rem 0; /* comfortable spacing between items */
+}
+
+/* Prevent paragraph top margins from pushing text below the bullet */
+.single-post .post-content li > p {
+  margin: 0; /* bullet and text align on the same line */
+}
+
 .single-post .post-content p {
   margin-bottom: 1rem; /* Reduced from 1.2rem */
 }
