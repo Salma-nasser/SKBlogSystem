@@ -221,6 +221,64 @@ if (!document.querySelector("#notification-styles")) {
   document.head.appendChild(style);
 }
 
+// Prompt unauthenticated users to register/sign in
+export function showAuthPrompt(options = {}) {
+  const {
+    title = "Join Aether & Ink",
+    message = "Create a free account to view profiles, follow authors, and engage with posts.",
+    showCancel = true,
+  } = options;
+
+  // Overlay
+  const overlay = document.createElement("div");
+  overlay.style.cssText = `
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 10010; display:flex; align-items:center; justify-content:center;
+    animation: fadeIn 0.2s ease;
+  `;
+
+  // Dialog
+  const dialog = document.createElement("div");
+  dialog.style.cssText = `
+    background: var(--bg-secondary, #fff); color: var(--text-color, #2c1810);
+    padding: 24px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    max-width: 440px; width: calc(100vw - 40px); text-align:center;
+  `;
+  dialog.innerHTML = `
+    <h3 style="margin:0 0 10px 0; color: var(--primary-color, #8b4513);">${title}</h3>
+    <p style="margin:0 0 18px 0; line-height:1.5;">${message}</p>
+    <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+      <button id="authPromptRegister" class="btn" style="min-width:120px;">Register</button>
+      <button id="authPromptLogin" class="btn btn-outline" style="min-width:120px; color: var(--primary-color) !important; background: transparent; border: 2px solid var(--primary-color);">Sign In</button>
+    </div>
+    ${
+      showCancel
+        ? '<div style="margin-top:10px; text-align:center;"><a href="#" id="authPromptCancelLink" style="color: var(--primary-color); text-decoration: underline;">Maybe later</a></div>'
+        : ""
+    }
+  `;
+
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+  dialog.querySelector("#authPromptRegister").onclick = () => {
+    window.location.href = "/register";
+  };
+  dialog.querySelector("#authPromptLogin").onclick = () => {
+    window.location.href = "/login";
+  };
+  const cancelLink = dialog.querySelector("#authPromptCancelLink");
+  if (cancelLink)
+    cancelLink.onclick = (e) => {
+      e.preventDefault();
+      close();
+    };
+}
+
 // === Reusable Notifications Modal (desktop + mobile) ===
 /**
  * Opens the notifications modal and populates it with the user's notifications.

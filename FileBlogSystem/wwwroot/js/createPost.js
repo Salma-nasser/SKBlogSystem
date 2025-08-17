@@ -86,6 +86,7 @@ function initializeMarkdownEditor() {
     autofocus: false,
     minHeight: "300px",
     maxHeight: "600px",
+    autoDownloadFontAwesome: false,
     toolbar: [
       "bold",
       "italic",

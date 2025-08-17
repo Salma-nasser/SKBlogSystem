@@ -12,6 +12,9 @@
     <!-- Reuse blog styles for post cards/grid on the welcome page -->
     <link rel="stylesheet" href="/css/blog.css" />
     <link rel="stylesheet" href="/css/welcome.css" />
+    <!-- Markdown + Sanitizer for rendering excerpts -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
   </head>
   <body>
     <!-- Header -->
@@ -66,8 +69,7 @@
     <section class="latest">
       <h2 style="text-align: center">Latest Posts</h2>
       <div id="latestPosts" class="post-list"></div>
-      <div style="text-align: center; margin-top: 1rem">
-      </div>
+      <div style="text-align: center; margin-top: 1rem"></div>
     </section>
 
     <!-- Footer -->
