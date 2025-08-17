@@ -27,6 +27,11 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
+  
+  <!-- Exclude transient Lucene lock files from publish (causes Kudu rsync failures) -->
+  <ItemGroup>
+    <Content Remove="Content\search-index\**" />
+  </ItemGroup>
   <PropertyGroup>
   <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   <SelfContained>false</SelfContained>
