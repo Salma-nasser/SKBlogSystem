@@ -123,7 +123,7 @@ export function showConfirmation(
   // Create dialog
   const dialog = document.createElement("div");
   dialog.style.cssText = `
-    background: var(--card-bg, white);
+    background: var(--post-bg, white);
     color: var(--text-color, black);
     padding: 24px;
     border-radius: 12px;
@@ -131,35 +131,45 @@ export function showConfirmation(
     max-width: 400px;
     margin: 20px;
     text-align: center;
+    border: 1px solid var(--border-color, rgba(0,0,0,0.1));
   `;
+
+  // Check if dark mode is active to adjust button colors
+  const isDarkMode =
+    document.body.classList.contains("dark-mode") ||
+    document.documentElement.getAttribute("data-theme") === "dark";
 
   dialog.innerHTML = `
     ${
       title
-        ? `<div style="margin-bottom: 12px; font-size: 18px; font-weight: 600; color: var(--accent-color, #c89b7b);">${title}</div>`
+        ? `<div style="margin-bottom: 12px; font-size: 18px; font-weight: 600; color: var(--primary-color, #c89b7b);">${title}</div>`
         : ""
     }
-    <div style="margin-bottom: 20px; font-size: 16px; line-height: 1.5;">${message}</div>
+    <div style="margin-bottom: 20px; font-size: 16px; line-height: 1.5; color: var(--text-color);">${message}</div>
     <div style="display: flex; gap: 12px; justify-content: center;">
       <button id="confirm-yes" style="
-        background: var(--accent-color, #c89b7b);
-        color: white;
+        background: var(--primary-color, #c89b7b);
+        color: ${isDarkMode ? "#0f0804" : "white"};
         border: none;
         padding: 10px 20px;
         border-radius: 6px;
         cursor: pointer;
         font-size: 14px;
-        font-weight: 500;
+        font-weight: 600;
+        transition: all 0.2s ease;
       ">Yes</button>
       <button id="confirm-no" style="
-        background: var(--button-bg, #8c6e63);
-        color: white;
-        border: none;
+        background: ${
+          isDarkMode ? "rgba(255,255,255,0.15)" : "var(--button-bg, #8c6e63)"
+        };
+        color: ${isDarkMode ? "var(--primary-color)" : "white"};
+        border: ${isDarkMode ? "1px solid var(--primary-color)" : "none"};
         padding: 10px 20px;
         border-radius: 6px;
         cursor: pointer;
         font-size: 14px;
-        font-weight: 500;
+        font-weight: 600;
+        transition: all 0.2s ease;
       ">No</button>
     </div>
   `;
@@ -168,14 +178,38 @@ export function showConfirmation(
   document.body.appendChild(overlay);
 
   // Handle clicks
-  dialog.querySelector("#confirm-yes").onclick = () => {
+  const yesButton = dialog.querySelector("#confirm-yes");
+  const noButton = dialog.querySelector("#confirm-no");
+
+  // Add hover effects
+  yesButton.addEventListener("mouseover", function () {
+    this.style.transform = "translateY(-2px)";
+    this.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
+  });
+
+  yesButton.addEventListener("mouseout", function () {
+    this.style.transform = "translateY(0)";
+    this.style.boxShadow = "none";
+  });
+
+  noButton.addEventListener("mouseover", function () {
+    this.style.transform = "translateY(-2px)";
+    this.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
+  });
+
+  noButton.addEventListener("mouseout", function () {
+    this.style.transform = "translateY(0)";
+    this.style.boxShadow = "none";
+  });
+
+  yesButton.onclick = () => {
     overlay.remove();
     if (typeof onConfirm === "function") {
       onConfirm();
     }
   };
 
-  dialog.querySelector("#confirm-no").onclick = () => {
+  noButton.onclick = () => {
     overlay.remove();
     if (typeof onCancelCallback === "function") {
       onCancelCallback();

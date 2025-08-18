@@ -239,6 +239,38 @@ body.dark-mode .post-actions .deleteBtn:hover {
   background-color: var(--primary-hover);
 }
 
+/* Dark mode: make inactive profile nav buttons tan for visibility */
+body.dark-mode .profile-nav button {
+  color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+  background: transparent !important;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.5); /* Add subtle shadow for better text visibility */
+}
+
+body.dark-mode .profile-nav button:not(.active):hover,
+body.dark-mode .profile-nav button:not(.active):focus {
+  background: rgba(212, 184, 150, 0.12) !important; /* tan with alpha */
+  outline: none;
+  box-shadow: 0 0 5px rgba(200, 155, 123, 0.5); /* Glow effect for hover state */
+}
+
+/* Ensure disabled buttons in profile navigation have tan text in dark mode with better visibility */
+body.dark-mode .profile-nav button:disabled,
+body.dark-mode .profile-nav button[disabled] {
+  color: var(--primary-color) !important;
+  opacity: 0.8;
+  cursor: not-allowed;
+  border: 1px dashed var(--primary-color) !important; /* Dashed border for disabled state */
+}
+
+/* Keep active state consistent in dark mode */
+body.dark-mode .profile-nav button.active {
+  background: var(--primary-color) !important;
+  color: #0f0804 !important; /* better contrast on tan */
+  border-color: var(--primary-color) !important;
+  box-shadow: 0 0 8px rgba(200, 155, 123, 0.7); /* Glow effect for active button */
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .posts-grid {
@@ -399,8 +431,6 @@ body.dark-mode .post-actions .deleteBtn:hover {
   align-items: center;
 }
 
-
-
 .user-details p strong {
   flex-shrink: 0; /* don’t shrink too much */
   width: auto;
@@ -443,6 +473,25 @@ body.dark-mode .post-actions .deleteBtn:hover {
 
 .edit-buttons-container .edit-btn {
   margin: 0;
+}
+
+/* Ensure all buttons in edit-buttons-container have tan text in dark mode */
+body.dark-mode .edit-buttons-container button {
+  color: var(--primary-color) !important;
+}
+
+/* Ensure disabled buttons in dark mode always show tan color with better contrast */
+body.dark-mode button:disabled,
+body.dark-mode button[disabled],
+body.dark-mode .edit-buttons-container button:disabled,
+body.dark-mode .edit-buttons-container button[disabled],
+body.dark-mode .profile-nav button:disabled,
+body.dark-mode .profile-nav button[disabled] {
+  color: var(--primary-color) !important;
+  background-color: rgba(139, 69, 19, 0.2) !important;
+  border: 1px solid var(--primary-color) !important;
+  opacity: 0.8;
+  cursor: not-allowed;
 }
 
 /* ========================= */

@@ -1,4 +1,4 @@
-import { renderPosts, safeBase64Decode } from "./utils/renderPost.js";
+﻿import { renderPosts, safeBase64Decode } from "./utils/renderPost.js";
 import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
 import { initMobileSidebar } from "./utils/mobileSidebar.js";
@@ -244,13 +244,29 @@ window.addEventListener("DOMContentLoaded", () => {
     fetchDraftPosts();
   }
   loadUserInfo(targetUsername);
-  function deleteAccount() {
+  async function deleteAccount() {
     try {
-      authenticatedFetch(`/api/users/delete/${currentUsername}`, {
-        method: "PUT",
-      });
+      const response = await authenticatedFetch(
+        `/api/users/delete/${currentUsername}`,
+        {
+          method: "PATCH",
+        }
+      );
+      if (!response.ok) {
+        const msg = await response.text().catch(() => "");
+        throw new Error(msg || `Delete failed (${response.status})`);
+      }
+      showMessage("Your account has been deleted.", "success");
+      // Clear auth and redirect after a short delay
+      localStorage.removeItem("jwtToken");
+      localStorage.removeItem("username");
+      setTimeout(() => {
+        window.location.href = "/welcome";
+      }, 1000);
     } catch (error) {
-      if (error.message !== "Session expired") {
+      if (error instanceof HttpError) {
+        showMessage(error.message || "Failed to delete account.", "error");
+      } else {
         console.error("Error deleting account:", error);
         showMessage("Failed to delete account.", "error");
       }
@@ -265,7 +281,10 @@ window.addEventListener("DOMContentLoaded", () => {
     changePictureBtn?.addEventListener("click", () =>
       toggleEditSection("picture")
     );
+
+    // Delete account with confirmation
     deleteAccountBtn?.addEventListener("click", () => {
+      console.log("Delete account button clicked");
       showConfirmation(
         "Delete Account",
         "Are you sure you want to delete your account?",
@@ -628,11 +647,6 @@ window.addEventListener("DOMContentLoaded", () => {
     }, 1000);
   });
 
-  // Only add edit functionality if it's the user's own profile
-  if (isOwnProfile) {
-    setupEditFunctionality();
-  }
-
   // Initial data loading
   console.log(
     `Loading profile for: ${targetUsername}, isOwnProfile: ${isOwnProfile}`
@@ -642,62 +656,6 @@ window.addEventListener("DOMContentLoaded", () => {
     fetchDraftPosts();
   }
   loadUserInfo(targetUsername);
-
-  function setupEditFunctionality() {
-    // Edit section toggle buttons
-    changeEmailBtn?.addEventListener("click", () => toggleEditSection("email"));
-    changePasswordBtn?.addEventListener("click", () =>
-      toggleEditSection("password")
-    );
-    changePictureBtn?.addEventListener("click", () =>
-      toggleEditSection("picture")
-    );
-
-    // Cancel buttons
-    document
-      .getElementById("cancelEmailChange")
-      ?.addEventListener("click", () => toggleEditSection("email", false));
-    document
-      .getElementById("cancelPasswordChange")
-      ?.addEventListener("click", () => toggleEditSection("password", false));
-    document
-      .getElementById("cancelPictureChange")
-      ?.addEventListener("click", () => toggleEditSection("picture", false));
-
-    // Form submissions
-    changeEmailForm?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      await updateEmail();
-    });
-
-    changePasswordForm?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      await updatePassword();
-    });
-
-    changePictureForm?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      await updateProfilePicture();
-    });
-
-    // Profile picture preview
-    newProfilePictureInput?.addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          picturePreview.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-
-    // Add preview functionality for modify modal images
-    const modifyImagesInput = document.getElementById("modifyImages");
-    modifyImagesInput?.addEventListener("change", (e) => {
-      previewNewImages(e.target.files);
-    });
-  }
 
   function previewNewImages(files) {
     const container = document.getElementById("currentImagesContainer");

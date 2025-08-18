@@ -118,7 +118,9 @@ function setupEventListeners() {
   document.getElementById("backToBlogBtn")?.addEventListener("click", () => {
     window.location.href = "/blog";
   });
-
+  document.getElementById("backToProfileBtn")?.addEventListener("click", () => {
+    window.location.href = "/profile/my-profile";
+  });
   document.getElementById("logoutBtn")?.addEventListener("click", () => {
     logout();
   });
