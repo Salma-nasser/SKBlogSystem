@@ -3,9 +3,10 @@ using FileBlogSystem.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using System.Text.RegularExpressions;
-
+using Microsoft.AspNetCore.RateLimiting;
 namespace FileBlogSystem.Endpoints;
 
+[EnableRateLimiting("Fixed")]
 public static class AdminEndpoints
 {
   // Regex for valid usernames: 3-20 alphanumeric or underscore

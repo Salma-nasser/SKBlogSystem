@@ -2,9 +2,10 @@ using FileBlogSystem.Models;
 using FileBlogSystem.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using System.Text.RegularExpressions;
-
+using Microsoft.AspNetCore.RateLimiting;
 namespace FileBlogSystem.Endpoints;
 
+[EnableRateLimiting("Fixed")]
 public static class AuthEndpoints
 {
   public static void MapAuthEndpoints(this IEndpointRouteBuilder app)

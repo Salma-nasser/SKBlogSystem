@@ -4,8 +4,11 @@ using FileBlogSystem.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.RateLimiting;
 namespace FileBlogSystem.Endpoints;
 
+
+[EnableRateLimiting("Fixed")]
 public static class UserEndpoints
 {
   public static void MapUserEndpoints(this IEndpointRouteBuilder app)
@@ -19,8 +22,8 @@ public static class UserEndpoints
     // OTP code 4-6 alphanumeric
     const string OTPPattern = "^[0-9A-Za-z]{4,6}$";
     static bool IsValidOtp(string o) => Regex.IsMatch(o ?? string.Empty, OTPPattern);
-    // Password at least 6 chars
-    const string PasswordPattern = ".{6,}";
+    // Password at least 8 chars
+    const string PasswordPattern = ".{8,}";
     static bool IsValidPassword(string p) => Regex.IsMatch(p ?? string.Empty, PasswordPattern);
 
     app.MapGet("/api/users/{username}", async (string username, IUserService userService, HttpContext ctx) =>

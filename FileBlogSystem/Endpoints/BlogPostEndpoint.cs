@@ -4,9 +4,10 @@ using Microsoft.AspNetCore.Authorization;
 using System.Xml.Linq;
 using FileBlogSystem.Services;
 using System.Text.RegularExpressions;
-
+using Microsoft.AspNetCore.RateLimiting;
 namespace FileBlogSystem.Endpoints;
 
+[EnableRateLimiting("Fixed")]
 public static class BlogPostEndpoints
 {
     // Validation patterns

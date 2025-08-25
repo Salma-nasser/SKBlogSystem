@@ -11,6 +11,7 @@ using SixLabors.ImageSharp.Web.Middleware;
 using SixLabors.ImageSharp.Web.DependencyInjection;
 using System.IO;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.RateLimiting;
 
 // Create builder
 var builder = WebApplication.CreateBuilder(args);
@@ -92,6 +93,18 @@ builder.Services.AddCors(options =>
   });
 });
 
+// RateLimiting
+builder.Services.AddRateLimiter(RateLimiterOptions =>
+{
+  RateLimiterOptions.AddFixedWindowLimiter("Fixed", options =>
+  {
+    options.PermitLimit = 60;
+    options.Window = TimeSpan.FromMinutes(1);
+    options.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+    options.QueueLimit = 0;
+  });
+});
+
 // Email
 builder.Services.AddSingleton(new EmailService(
     smtpHost: "smtp.gmail.com",
@@ -118,6 +131,8 @@ if (!app.Environment.IsDevelopment())
 // Redirect HTTP -> HTTPS
 app.UseHttpsRedirection();
 
+app.UseRateLimiter();
+
 // Security headers (applies to all responses)
 app.Use(async (context, next) =>
 {
@@ -127,7 +142,6 @@ app.Use(async (context, next) =>
   context.Response.Headers["Permissions-Policy"] =
       "geolocation=(), microphone=(), camera=(), payment=(), usb=(), fullscreen=(self)";
 
-  // Content Security Policy — adjust to your needs
   // Allows your Google Fonts import, images, and WebSocket connections.
   context.Response.Headers["Content-Security-Policy"] =
   "default-src 'self'; " +
