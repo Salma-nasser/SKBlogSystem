@@ -61,7 +61,10 @@ public static class UserEndpoints
     })
     .RequireAuthorization()
     .WithName("DeleteUser");
-    app.MapGet("/notifications", async (HttpContext ctx, INotificationService notificationService) =>
+
+    app.MapGet("/notifications", GetNotificationsAsync );
+
+    async Task<IResult> GetNotificationsAsync(HttpContext ctx, INotificationService notificationService)
     {
       var username = ctx.User.Identity?.Name;
       if (username == null)
@@ -73,7 +76,7 @@ public static class UserEndpoints
         ? await notificationService.GetAllAsync(username)
         : await notificationService.GetUnreadAsync(username);
       return Results.Ok(notifications);
-    });
+    };
 
     app.MapPost("/notifications/read/{id}", async (string id, HttpContext ctx, INotificationService service) =>
     {
@@ -86,6 +89,7 @@ public static class UserEndpoints
       await service.MarkAsReadAsync(username, id);
       return Results.Ok();
     });
+
     app.MapPost("/notifications/mark-all-read", async (HttpContext ctx, INotificationService service) =>
     {
       var username = ctx.User.Identity?.Name;

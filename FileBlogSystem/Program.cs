@@ -190,12 +190,7 @@ app.UseDefaultFiles(new DefaultFilesOptions
   DefaultFileNames = { "welcome.html" }
 });
 app.UseStaticFiles();
-app.UseStaticFiles(new StaticFileOptions
-{
-  FileProvider = new PhysicalFileProvider(
-        Path.Combine(builder.Environment.ContentRootPath, "Content")),
-  RequestPath = "/Content"
-});
+
 app.UseImageSharp();
 
 app.UseRouting();

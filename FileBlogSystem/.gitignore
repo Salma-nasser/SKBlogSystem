@@ -105,3 +105,6 @@ local.settings.json
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# Search Index
+/Content/search-index/*
