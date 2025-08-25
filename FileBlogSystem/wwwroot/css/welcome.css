@@ -129,7 +129,7 @@ nav a:hover {
   height: auto;
   min-height: 80vh;
   background: linear-gradient(rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0.4)),
-    url("/placeholders/assets/backdrop.png") center/cover no-repeat;
+    url("/placeholders/backdropImage.png") center/cover no-repeat;
   display: flex;
   align-items: center;
   justify-content: center;

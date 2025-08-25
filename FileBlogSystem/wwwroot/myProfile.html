@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Your Profile</title>
+    <link rel="stylesheet" href="/css/shared/shared.css" />
     <link rel="stylesheet" href="/css/myProfile.css" />
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/2.4.0/purify.min.js"></script>
@@ -15,7 +16,9 @@
       <h1 id="ProfileTitle">Your Profile</h1>
       <div class="header-actions">
         <button id="backToBlogBtn" class="btn btn--ghost">Home</button>
-        <button id="adminBtn" class="btn btn--ghost" style="display: none">Admin</button>
+        <button id="adminBtn" class="btn btn--ghost" style="display: none">
+          Admin
+        </button>
         <button id="logoutBtn" class="btn btn--ghost">Logout</button>
       </div>
     </header>
@@ -26,7 +29,7 @@
     <section id="userInfoSection" class="user-info">
       <div class="profile-picture-container">
         <img id="userProfilePic" src="" alt="Profile Picture" class="hidden" />
-        <button id="changePictureBtn" class="edit-btn"> 📷</button>
+        <button id="changePictureBtn" class="edit-btn">📷</button>
       </div>
       <div class="user-details">
         <p><strong>Username:</strong> <span id="userUsername"></span></p>

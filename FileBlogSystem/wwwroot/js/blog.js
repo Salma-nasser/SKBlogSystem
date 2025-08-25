@@ -145,7 +145,7 @@ initMobileSidebar();
 window.addEventListener("DOMContentLoaded", () => {
   const token = localStorage.getItem("jwtToken");
   if (!token) {
-    return (window.location.href = "login");
+    return (window.location.href = "/");
   }
   const logoutBtn = document.querySelector(
     'a[href="/logout"], .header-buttons .btn[href="/logout"]'
