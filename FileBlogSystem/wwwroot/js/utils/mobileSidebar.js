@@ -64,6 +64,10 @@ export function initMobileSidebar() {
   // Helpers
   const isAdminUser = () => {
     try {
+      // Prefer shared util if present
+      if (window.AuthUtils && typeof window.AuthUtils.isAdmin === "function") {
+        return window.AuthUtils.isAdmin();
+      }
       const token = localStorage.getItem("jwtToken");
       if (!token) return false;
       const base64Url = token.split(".")[1];
@@ -103,7 +107,11 @@ export function initMobileSidebar() {
 
   // If user is admin but Admin button wasn't visible when cloning, add it explicitly
   const adminAlreadyPresent = actions.some((el) => el.id === "adminBtn");
-  const shouldAddAdmin = isAdminUser() && !adminAlreadyPresent;
+  const onWelcomePage =
+    window.location.pathname === "/" || window.location.pathname === "/welcome";
+  // Only inject Admin if user is admin, it's not already present, and not on the welcome page
+  const shouldAddAdmin =
+    isAdminUser() && !adminAlreadyPresent && !onWelcomePage;
 
   // Hide original actions on mobile; cloned ones will appear in drawer
   actions.forEach((el) => el.classList.add("hide-on-mobile"));
