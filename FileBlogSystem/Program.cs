@@ -47,11 +47,17 @@ builder.Services.Configure<JsonOptions>(options =>
   options.SerializerOptions.WriteIndented = true;
 });
 
+// Repositories
+builder.Services.AddScoped<FileBlogSystem.Repositories.Interfaces.IPostRepository, FileBlogSystem.Repositories.FilePostRepository>();
+builder.Services.AddScoped<FileBlogSystem.Repositories.Interfaces.IUserRepository, FileBlogSystem.Repositories.FileUserRepository>();
+builder.Services.AddScoped<FileBlogSystem.Repositories.Interfaces.ICommentRepository, FileBlogSystem.Repositories.FileCommentRepository>();
+
 // Services
 builder.Services.AddScoped<PasswordService>();
 builder.Services.AddScoped<JwtService>();
-builder.Services.AddScoped<IBlogPostService, BlogPostService>();
+builder.Services.AddScoped<IBlogPostService, FileBlogSystem.Services.BlogPostService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddHostedService<ScheduledPostPublisher>();
 builder.Services.AddSingleton<NotificationService>();

@@ -20,7 +20,7 @@ public static class CommentsEndpoints
     {
       if (string.IsNullOrWhiteSpace(postId) || postId.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
         return Results.BadRequest(new { message = "Invalid post ID." });
-      var comments = await commentService.GetCommentsAsync(postId);
+      var comments = await commentService.GetCommentsForPostAsync(postId);
       return Results.Ok(comments);
     })
     .WithName("GetComments")

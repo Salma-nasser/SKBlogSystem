@@ -21,256 +21,290 @@ public static class BlogPostEndpoints
     private static bool IsValidUsername(string u) => Regex.IsMatch(u ?? string.Empty, UsernamePattern);
     public static void MapBlogPostEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/posts/published", (IBlogPostService service) =>
+        app.MapGet("/api/posts/published", GetPublishedPostsAsync);
+        app.MapGet("/api/posts", GetPostsAsync);
+        app.MapGet("/api/posts/category/{category}", GetPostsByCategoryAsync);
+        app.MapGet("/api/posts/tag/{tag}", GetPostsByTagAsync);
+        app.MapGet("/api/posts/{slug}", GetPostBySlugAsync);
+        app.MapGet("/api/posts/drafts", GetDraftPostsAsync);
+        app.MapPost("/api/posts/create", CreatePostAsync);
+        app.MapPut("/api/posts/modify/{slug}", ModifyPostAsync);
+        app.MapPut("/api/posts/publish/{slug}", PublishPostAsync);
+        app.MapDelete("/api/posts/{slug}", DeletePostAsync);
+        app.MapGet("/feed.xml", GetRssFeedAsync);
+        app.MapGet("/api/posts/user", GetUserPostsAsync);
+        app.MapGet("/api/posts/user/{username}", GetPostsByUserAsync);
+        app.MapDelete("/api/posts/delete/{slug}", DeleteUserPostAsync);
+        app.MapPost("/api/posts/{slug}/like", LikePostAsync)
+            .WithName("LikePost")
+            .WithTags("BlogPosts");
+        app.MapDelete("/api/posts/{slug}/like", UnlikePostAsync);
+        app.MapGet("/api/posts/{slug}/likes", GetPostLikesAsync);
+        app.MapGet("/api/search", SearchPostsAsync);
+    }
+
+    // Endpoint implementations
+    private static IResult GetPublishedPostsAsync(IBlogPostService service)
+    {
+        return Results.Ok(service.GetAllPosts());
+    }
+
+    [Authorize]
+    private static IResult GetPostsAsync(IBlogPostService service, HttpContext ctx)
+    {
+        var currentUsername = ctx.User.Identity?.Name;
+        if (string.IsNullOrEmpty(currentUsername))
+            return Results.Unauthorized();
+        return Results.Ok(service.GetAllPosts(currentUsername));
+    }
+
+    [Authorize]
+    private static IResult GetPostsByCategoryAsync(string category, IBlogPostService service, HttpContext ctx)
+    {
+        if (!IsValidCategory(category))
+            return Results.BadRequest(new { message = "Invalid category parameter." });
+        var currentUsername = ctx.User.Identity?.Name;
+        if (string.IsNullOrEmpty(currentUsername))
+            return Results.Unauthorized();
+        return Results.Ok(service.GetPostsByCategory(category, currentUsername));
+    }
+
+    [Authorize]
+    private static IResult GetPostsByTagAsync(string tag, IBlogPostService service, HttpContext ctx)
+    {
+        if (!IsValidTag(tag))
+            return Results.BadRequest(new { message = "Invalid tag parameter." });
+        var currentUsername = ctx.User.Identity?.Name;
+        if (string.IsNullOrEmpty(currentUsername))
+            return Results.Unauthorized();
+        return Results.Ok(service.GetPostsByTag(tag, currentUsername));
+    }
+
+    private static IResult GetPostBySlugAsync(string slug, IBlogPostService service, HttpContext ctx)
+    {
+        if (!IsValidSlug(slug))
+            return Results.BadRequest(new { message = "Invalid post identifier." });
+        var currentUsername = ctx.User.Identity?.Name;
+        var post = service.GetPostBySlug(slug, currentUsername);
+        return post != null
+            ? Results.Ok(post)
+            : Results.NotFound(new { message = "Post not found." });
+    }
+
+    [Authorize]
+    private static IResult GetDraftPostsAsync(HttpContext ctx, IBlogPostService service)
+    {
+        var userName = ctx.User.Identity?.Name;
+
+        if (string.IsNullOrEmpty(userName))
+            return Results.Unauthorized();
+
+        var drafts = service.GetUserDrafts(userName);
+        return Results.Ok(drafts);
+    }
+
+    [Authorize]
+    private static async Task<IResult> CreatePostAsync(HttpContext ctx, IBlogPostService service, ISearchService search)
+    {
+        var userName = ctx.User.Identity?.Name;
+        if (!ctx.Request.HasFormContentType)
         {
-            return Results.Ok(service.GetAllPosts());
-        });
+            Console.WriteLine("Request does not have form content type.");
+            return Results.BadRequest(new { message = "Request must be multipart/form-data." });
+        }
+        if (string.IsNullOrEmpty(userName))
+            return Results.Unauthorized();
 
-        app.MapGet("/api/posts", [Authorize] (IBlogPostService service, HttpContext ctx) =>
+        var parseResult = await ParseFormRequest(ctx, allowSchedule: true);
+        if (parseResult.IsInvalid || parseResult.Request == null)
+            return Results.BadRequest(new { message = parseResult.ErrorMessage });
+
+        var result = await service.CreatePostAsync(parseResult.Request, userName);
+        // Refresh index after creating a post
+        search.RebuildIndex(service.GetAllPosts());
+
+        return Results.Created($"/api/posts/{result.Slug}", result);
+    }
+
+    [Authorize]
+    private static async Task<IResult> ModifyPostAsync(string slug, HttpContext ctx, IBlogPostService service, ISearchService search)
+    {
+        if (!IsValidSlug(slug))
+            return Results.BadRequest(new { message = "Invalid post identifier." });
+        var userName = ctx.User.Identity?.Name;
+        if (string.IsNullOrEmpty(userName))
+            return Results.Unauthorized();
+
+        var parseResult = await ParseFormRequest(ctx, allowSchedule: true);
+        if (parseResult.IsInvalid || parseResult.Request == null)
+            return Results.BadRequest(new { message = parseResult.ErrorMessage });
+
+        var (success, message) = await service.ModifyPostAsync(slug, parseResult.Request, userName);
+
+        if (success)
         {
-            var currentUsername = ctx.User.Identity?.Name;
-            if (string.IsNullOrEmpty(currentUsername))
-                return Results.Unauthorized();
-            return Results.Ok(service.GetAllPosts(currentUsername));
-        });
+            search.RebuildIndex(service.GetAllPosts());
+            return Results.Ok(new { message });
+        }
+        return Results.BadRequest(new { message });
+    }
 
-        app.MapGet("/api/posts/category/{category}", [Authorize] (string category, IBlogPostService service, HttpContext ctx) =>
+    [Authorize]
+    private static async Task<IResult> PublishPostAsync(string slug, HttpContext ctx, IBlogPostService service, ISearchService search)
+    {
+        if (!IsValidSlug(slug))
+            return Results.BadRequest(new { message = "Invalid post identifier." });
+        var username = ctx.User.Identity?.Name;
+        if (string.IsNullOrEmpty(username))
+            return Results.Unauthorized();
+
+        var (success, message) = await service.PublishPostAsync(slug, username);
+
+        if (success)
         {
-            if (!IsValidCategory(category))
-                return Results.BadRequest(new { message = "Invalid category parameter." });
-            var currentUsername = ctx.User.Identity?.Name;
-            if (string.IsNullOrEmpty(currentUsername))
-                return Results.Unauthorized();
-            return Results.Ok(service.GetPostsByCategory(category, currentUsername));
-        });
+            search.RebuildIndex(service.GetAllPosts());
+            return Results.Ok(new { message });
+        }
+        return Results.BadRequest(new { message });
+    }
 
-        app.MapGet("/api/posts/tag/{tag}", [Authorize] (string tag, IBlogPostService service, HttpContext ctx) =>
+    [Authorize(Roles = "Admin")]
+    private static async Task<IResult> DeletePostAsync(string slug, IBlogPostService service, ISearchService search)
+    {
+        if (!IsValidSlug(slug))
+            return Results.BadRequest(new { message = "Invalid post identifier." });
+        var deleted = await service.DeletePostAsync(slug);
+        if (deleted)
         {
-            if (!IsValidTag(tag))
-                return Results.BadRequest(new { message = "Invalid tag parameter." });
-            var currentUsername = ctx.User.Identity?.Name;
-            if (string.IsNullOrEmpty(currentUsername))
-                return Results.Unauthorized();
-            return Results.Ok(service.GetPostsByTag(tag, currentUsername));
-        });
+            search.RebuildIndex(service.GetAllPosts());
+            return Results.Ok(new { message = "Post deleted successfully." });
+        }
+        return Results.NotFound(new { message = "Post not found." });
+    }
 
-        app.MapGet("/api/posts/{slug}", (string slug, IBlogPostService service, HttpContext ctx) =>
-        {
-            if (!IsValidSlug(slug))
-                return Results.BadRequest(new { message = "Invalid post identifier." });
-            var currentUsername = ctx.User.Identity?.Name;
-            var post = service.GetPostBySlug(slug, currentUsername);
-            return post != null
-                ? Results.Ok(post)
-                : Results.NotFound(new { message = "Post not found." });
-        });
+    private static IResult GetRssFeedAsync(IBlogPostService blogService)
+    {
+        var posts = blogService.GetAllPosts(); // Fetch all published posts from your database
 
-        app.MapGet("/api/posts/drafts", [Authorize] (HttpContext ctx, IBlogPostService service) =>
-        {
-            var userName = ctx.User.Identity?.Name;
-
-            if (string.IsNullOrEmpty(userName))
-                return Results.Unauthorized();
-
-            var drafts = service.GetUserDrafts(userName);
-            return Results.Ok(drafts);
-        });
-
-        app.MapPost("/api/posts/create", [Authorize] async (HttpContext ctx, IBlogPostService service, ISearchService search) =>
-            {
-                var userName = ctx.User.Identity?.Name;
-                if (!ctx.Request.HasFormContentType)
-                {
-                    Console.WriteLine("Request does not have form content type.");
-                    return Results.BadRequest(new { message = "Request must be multipart/form-data." });
-                }
-                if (string.IsNullOrEmpty(userName))
-                    return Results.Unauthorized();
-
-                var parseResult = await ParseFormRequest(ctx, allowSchedule: true);
-                if (parseResult.IsInvalid || parseResult.Request == null)
-                    return Results.BadRequest(new { message = parseResult.ErrorMessage });
-
-                var result = await service.CreatePostAsync(parseResult.Request, userName);
-                // Refresh index after creating a post
-                search.RebuildIndex(service.GetAllPosts());
-
-                return Results.Created($"/api/posts/{result.Slug}", result);
-            });
-
-        app.MapPut("/api/posts/modify/{slug}", [Authorize] async (string slug, HttpContext ctx, IBlogPostService service, ISearchService search) =>
-            {
-                if (!IsValidSlug(slug))
-                    return Results.BadRequest(new { message = "Invalid post identifier." });
-                var userName = ctx.User.Identity?.Name;
-                if (string.IsNullOrEmpty(userName))
-                    return Results.Unauthorized();
-
-                var parseResult = await ParseFormRequest(ctx, allowSchedule: true);
-                if (parseResult.IsInvalid || parseResult.Request == null)
-                    return Results.BadRequest(new { message = parseResult.ErrorMessage });
-
-                var (success, message) = await service.ModifyPostAsync(slug, parseResult.Request, userName);
-
-                if (success)
-                {
-                    search.RebuildIndex(service.GetAllPosts());
-                    return Results.Ok(new { message });
-                }
-                return Results.BadRequest(new { message });
-            });
-
-
-        app.MapPut("/api/posts/publish/{slug}", [Authorize] async (string slug, HttpContext ctx, IBlogPostService service, ISearchService search) =>
-            {
-                if (!IsValidSlug(slug))
-                    return Results.BadRequest(new { message = "Invalid post identifier." });
-                var username = ctx.User.Identity?.Name;
-                if (string.IsNullOrEmpty(username))
-                    return Results.Unauthorized();
-
-                var (success, message) = await service.PublishPostAsync(slug, username);
-
-                if (success)
-                {
-                    search.RebuildIndex(service.GetAllPosts());
-                    return Results.Ok(new { message });
-                }
-                return Results.BadRequest(new { message });
-            });
-
-        app.MapDelete("/api/posts/{slug}", [Authorize(Roles = "Admin")] async (string slug, IBlogPostService service, ISearchService search) =>
-            {
-                if (!IsValidSlug(slug))
-                    return Results.BadRequest(new { message = "Invalid post identifier." });
-                var deleted = await service.DeletePostAsync(slug);
-                if (deleted)
-                {
-                    search.RebuildIndex(service.GetAllPosts());
-                    return Results.Ok(new { message = "Post deleted successfully." });
-                }
-                return Results.NotFound(new { message = "Post not found." });
-            });
-
-        app.MapGet("/feed.xml", (IBlogPostService blogService) =>
-        {
-            var posts = blogService.GetAllPosts(); // Fetch all published posts from your database
-
-            var rss = new XDocument(
-                new XElement("rss", new XAttribute("version", "2.0"),
-                    new XElement("channel",
-                        new XElement("title", "My Blog"),
-                        new XElement("link", "https://localhost:7189"),
-                        new XElement("description", "Latest posts from My Blog"),
-                        posts.Select(post =>
-                            new XElement("item",
-                                new XElement("title", post.Title),
-                                new XElement("link", $"https://localhost:7189/blog.html?id={post.Slug}"),
-                                new XElement("description", post.Body.Length > 100 ? post.Body.Substring(0, 100) + "..." : post.Body),
-                                new XElement("pubDate", post.PublishedDate.ToUniversalTime().ToString("r"))
-                            )
+        var rss = new XDocument(
+            new XElement("rss", new XAttribute("version", "2.0"),
+                new XElement("channel",
+                    new XElement("title", "My Blog"),
+                    new XElement("link", "https://localhost:7189"),
+                    new XElement("description", "Latest posts from My Blog"),
+                    posts.Select(post =>
+                        new XElement("item",
+                            new XElement("title", post.Title),
+                            new XElement("link", $"https://localhost:7189/blog.html?id={post.Slug}"),
+                            new XElement("description", post.Body.Length > 100 ? post.Body.Substring(0, 100) + "..." : post.Body),
+                            new XElement("pubDate", post.PublishedDate.ToUniversalTime().ToString("r"))
                         )
                     )
                 )
-            );
+            )
+        );
 
-            return Results.Content(rss.ToString(), "application/rss+xml");
-        });
-        app.MapGet("/api/posts/user", [Authorize] (HttpContext ctx, IBlogPostService service) =>
+        return Results.Content(rss.ToString(), "application/rss+xml");
+    }
+
+    [Authorize]
+    private static IResult GetUserPostsAsync(HttpContext ctx, IBlogPostService service)
+    {
+        var username = ctx.User.Identity?.Name;
+        if (string.IsNullOrEmpty(username))
+            return Results.Unauthorized();
+
+        var posts = service.GetPostsByUser(username);
+        return Results.Ok(posts);
+    }
+
+    [Authorize]
+    private static IResult GetPostsByUserAsync(string username, HttpContext ctx, IBlogPostService service)
+    {
+        if (!IsValidUsername(username))
+            return Results.BadRequest(new { message = "Invalid username parameter." });
+        var currentUsername = ctx.User.Identity?.Name;
+        if (string.IsNullOrEmpty(currentUsername))
+            return Results.Unauthorized();
+        var posts = service.GetPostsByUser(username, currentUsername);
+        return Results.Ok(posts);
+    }
+
+    [Authorize]
+    private static async Task<IResult> DeleteUserPostAsync(string slug, HttpContext ctx, IBlogPostService service, ISearchService search)
+    {
+        if (!IsValidSlug(slug))
+            return Results.BadRequest(new { message = "Invalid post identifier." });
+        var username = ctx.User.Identity?.Name;
+        if (string.IsNullOrEmpty(username))
+            return Results.Unauthorized();
+        var deleted = await service.DeletePostAsync(slug);
+        if (deleted)
         {
-            var username = ctx.User.Identity?.Name;
-            if (string.IsNullOrEmpty(username))
-                return Results.Unauthorized();
+            search.RebuildIndex(service.GetAllPosts());
+            return Results.Ok(new { message = "Post deleted successfully." });
+        }
+        return Results.NotFound(new { message = "Post not found." });
+    }
 
-            var posts = service.GetPostsByUser(username);
-            return Results.Ok(posts);
-        });
-        app.MapGet("/api/posts/user/{username}", [Authorize] (string username, HttpContext ctx, IBlogPostService service) =>
+    [Authorize]
+    private static IResult LikePostAsync(string slug, HttpContext ctx, IBlogPostService service, NotificationService notificationService)
+    {
+        if (!IsValidSlug(slug))
+            return Results.BadRequest(new { message = "Invalid post identifier." });
+        var userName = ctx.User.Identity?.Name;
+        if (string.IsNullOrEmpty(userName))
+            return Results.Unauthorized();
+
+        return service.LikePost(slug, userName, notificationService);
+    }
+
+    [Authorize]
+    private static IResult UnlikePostAsync(string slug, HttpContext ctx, IBlogPostService service)
+    {
+        if (!IsValidSlug(slug))
+            return Results.BadRequest(new { message = "Invalid post identifier." });
+        var userName = ctx.User.Identity?.Name;
+        if (string.IsNullOrEmpty(userName))
+            return Results.Unauthorized();
+
+        return service.UnlikePost(slug, userName);
+    }
+
+    [Authorize]
+    private static IResult GetPostLikesAsync(string slug, IBlogPostService service)
+    {
+        if (!IsValidSlug(slug))
+            return Results.BadRequest(new { message = "Invalid post identifier." });
+        return service.GetPostLikes(slug);
+    }
+
+    [Authorize]
+    private static IResult SearchPostsAsync(HttpContext ctx, ISearchService searchService, IBlogPostService blogService)
+    {
+        var username = ctx.User.Identity?.Name;
+        if (string.IsNullOrEmpty(username))
+            return Results.Unauthorized();
+
+        var query = ctx.Request.Query["q"].ToString();
+        var filterType = ctx.Request.Query["type"].ToString(); // tag | category
+        var filterValue = ctx.Request.Query["value"].ToString();
+
+        // Basic input constraints
+        if (query?.Length > 200) query = query.Substring(0, 200);
+        if (!string.IsNullOrEmpty(filterType) && filterType != "tag" && filterType != "category")
         {
-            if (!IsValidUsername(username))
-                return Results.BadRequest(new { message = "Invalid username parameter." });
-            var currentUsername = ctx.User.Identity?.Name;
-            if (string.IsNullOrEmpty(currentUsername))
-                return Results.Unauthorized();
-            var posts = service.GetPostsByUser(username, currentUsername);
-            return Results.Ok(posts);
-        });
-        app.MapDelete("/api/posts/delete/{slug}", [Authorize] async (string slug, HttpContext ctx, IBlogPostService service, ISearchService search) =>
-            {
-                if (!IsValidSlug(slug))
-                    return Results.BadRequest(new { message = "Invalid post identifier." });
-                var username = ctx.User.Identity?.Name;
-                if (string.IsNullOrEmpty(username))
-                    return Results.Unauthorized();
-                var deleted = await service.DeletePostAsync(slug);
-                if (deleted)
-                {
-                    search.RebuildIndex(service.GetAllPosts());
-                    return Results.Ok(new { message = "Post deleted successfully." });
-                }
-                return Results.NotFound(new { message = "Post not found." });
-            });
+            return Results.BadRequest(new { message = "Invalid filter type." });
+        }
 
-        // Like endpoints
-        app.MapPost("/api/posts/{slug}/like", [Authorize] (string slug, HttpContext ctx, IBlogPostService service, NotificationService notificationService) =>
-        {
-            if (!IsValidSlug(slug))
-                return Results.BadRequest(new { message = "Invalid post identifier." });
-            var userName = ctx.User.Identity?.Name;
-            if (string.IsNullOrEmpty(userName))
-                return Results.Unauthorized();
+        var hits = searchService.Search(query ?? string.Empty, filterType, filterValue);
+        // Retrieve posts by slug preserving order by score
+        var postsBySlug = hits
+            .Select(h => blogService.GetPostBySlug(h.Slug, username))
+            .Where(p => p != null)
+            .ToList();
 
-            return service.LikePost(slug, userName, notificationService);
-        })
-        .WithName("LikePost")
-        .WithTags("BlogPosts");
-
-        app.MapDelete("/api/posts/{slug}/like", [Authorize] (string slug, HttpContext ctx, IBlogPostService service) =>
-        {
-            if (!IsValidSlug(slug))
-                return Results.BadRequest(new { message = "Invalid post identifier." });
-            var userName = ctx.User.Identity?.Name;
-            if (string.IsNullOrEmpty(userName))
-                return Results.Unauthorized();
-
-            return service.UnlikePost(slug, userName);
-        });
-
-        app.MapGet("/api/posts/{slug}/likes", [Authorize] (string slug, IBlogPostService service) =>
-        {
-            if (!IsValidSlug(slug))
-                return Results.BadRequest(new { message = "Invalid post identifier." });
-            return service.GetPostLikes(slug);
-        });
-
-        // Full-text search endpoint using Lucene
-        app.MapGet("/api/search", [Authorize] (HttpContext ctx, ISearchService searchService, IBlogPostService blogService) =>
-        {
-            var username = ctx.User.Identity?.Name;
-            if (string.IsNullOrEmpty(username))
-                return Results.Unauthorized();
-
-            var query = ctx.Request.Query["q"].ToString();
-            var filterType = ctx.Request.Query["type"].ToString(); // tag | category
-            var filterValue = ctx.Request.Query["value"].ToString();
-
-            // Basic input constraints
-            if (query?.Length > 200) query = query.Substring(0, 200);
-            if (!string.IsNullOrEmpty(filterType) && filterType != "tag" && filterType != "category")
-            {
-                return Results.BadRequest(new { message = "Invalid filter type." });
-            }
-
-            var hits = searchService.Search(query ?? string.Empty, filterType, filterValue);
-            // Retrieve posts by slug preserving order by score
-            var postsBySlug = hits
-                .Select(h => blogService.GetPostBySlug(h.Slug, username))
-                .Where(p => p != null)
-                .ToList();
-
-            return Results.Ok(postsBySlug);
-        });
-
+        return Results.Ok(postsBySlug);
     }
     private static async Task<ParseResult> ParseFormRequest(HttpContext ctx, bool allowSchedule)
     {

@@ -1,87 +1,209 @@
 using FileBlogSystem.Models;
 using FileBlogSystem.Interfaces;
-using System.Text.Json;
-using System.Text.Json.Nodes;
-using System.IO;
-using System.Collections.Generic;
+using FileBlogSystem.Repositories.Interfaces;
 
 namespace FileBlogSystem.Services;
 
 public class CommentService : ICommentService
 {
-  private readonly string _postsDirectory;
-  private readonly IBlogPostService _blogPostService;
-  private readonly INotificationService _notificationService;
+    private readonly ICommentRepository _commentRepository;
+    private readonly IPostRepository _postRepository;
+    private readonly INotificationService _notificationService;
+    private readonly ILogger<CommentService> _logger;
 
-  public CommentService(IWebHostEnvironment env, IConfiguration configuration, IBlogPostService blogPostService, INotificationService notificationService)
-  {
-    string contentRoot = configuration["ContentDirectory"] ?? "Content";
-    // Construct the full path to the 'posts' directory, where comments will be stored.
-    _postsDirectory = Path.Combine(env.ContentRootPath, contentRoot, "posts");
-    _blogPostService = blogPostService;
-    _notificationService = notificationService;
-  }
-
-  public async Task<Comment?> AddCommentAsync(string postId, string content, string authorUsername)
-  {
-    var post = await _blogPostService.GetPostByIdAsync(postId);
-    if (post == null)
+    public CommentService(
+        ICommentRepository commentRepository,
+        IPostRepository postRepository,
+        INotificationService notificationService,
+        ILogger<CommentService> logger)
     {
-      return null; // Post not found
+        _commentRepository = commentRepository;
+        _postRepository = postRepository;
+        _notificationService = notificationService;
+        _logger = logger;
     }
 
-    var commentsDirectory = Path.Combine(_postsDirectory, postId, "comments");
-    Directory.CreateDirectory(commentsDirectory);
-
-    var newComment = new Comment { Content = content, Author = authorUsername };
-
-    var commentFilePath = Path.Combine(commentsDirectory, $"{newComment.Id}.json");
-    var json = JsonSerializer.Serialize(newComment, new JsonSerializerOptions { WriteIndented = true });
-    await File.WriteAllTextAsync(commentFilePath, json);
-
-    // Update comment count in post metadata
-    var postMetaPath = Path.Combine(_postsDirectory, postId, "meta.json");
-    if (File.Exists(postMetaPath))
+    public async Task<Comment?> AddCommentAsync(string postSlug, string content, string authorUsername)
     {
-      var metaContent = await File.ReadAllTextAsync(postMetaPath);
-      var metaNode = JsonNode.Parse(metaContent)?.AsObject();
-      if (metaNode != null)
-      {
-        // Safely parse existing commentCount
-        var countNode = metaNode["commentCount"];
-        int count = 0;
-        if (countNode != null && int.TryParse(countNode.ToString(), out var parsed))
+        try
         {
-          count = parsed;
+            // Check if post exists
+            var post = await _postRepository.GetPostBySlugAsync(postSlug);
+            if (post == null)
+            {
+                return null; // Post not found
+            }
+
+            // Create new comment
+            var newComment = new Comment
+            {
+                Content = content,
+                Author = authorUsername,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            // Save comment
+            string commentId = await _commentRepository.CreateCommentAsync(postSlug, newComment);
+            newComment.Id = commentId;
+
+            // Send notification to post author if it's not the same user
+            if (!post.Author.Equals(authorUsername, StringComparison.OrdinalIgnoreCase))
+            {
+                await _notificationService.SendNotificationAsync(
+                    post.Author,
+                    $"{authorUsername} commented on your post '{post.Title}'",
+                    $"/post/{postSlug}"
+                );
+            }
+
+            return newComment;
         }
-        metaNode["commentCount"] = count + 1;
-        await File.WriteAllTextAsync(postMetaPath, metaNode.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
-      }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding comment to post: {PostSlug}", postSlug);
+            return null;
+        }
     }
 
-    // Send notification to the post author, but not if they are commenting on their own post.
-    if (!string.Equals(post.Author, authorUsername, StringComparison.OrdinalIgnoreCase))
+    public async Task<IEnumerable<Comment>> GetCommentsForPostAsync(string postSlug)
     {
-      var message = $"User '{authorUsername}' commented on your post: '{post.Title}'.";
-      var link = $"/post/{post.Slug}"; // Use the post's slug for a user-friendly link
-      await _notificationService.SendNotificationAsync(post.Author, message, link);
+        try
+        {
+            return await _commentRepository.GetCommentsByPostSlugAsync(postSlug);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting comments for post: {PostSlug}", postSlug);
+            return Enumerable.Empty<Comment>();
+        }
     }
-    return newComment;
-  }
-  // Retrieve all comments for a given post
-  public async Task<List<Comment>> GetCommentsAsync(string postId)
-  {
-    var comments = new List<Comment>();
-    var commentsDirectory = Path.Combine(_postsDirectory, postId, "comments");
-    if (!Directory.Exists(commentsDirectory)) return comments;
-    var files = Directory.GetFiles(commentsDirectory, "*.json");
-    foreach (var file in files)
+
+    public async Task<Comment?> GetCommentByIdAsync(string commentId)
     {
-      var json = await File.ReadAllTextAsync(file);
-      var comment = JsonSerializer.Deserialize<Comment>(json);
-      if (comment != null) comments.Add(comment);
+        try
+        {
+            return await _commentRepository.GetCommentByIdAsync(commentId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting comment by ID: {CommentId}", commentId);
+            return null;
+        }
     }
-    comments.Sort((a, b) => a.CreatedAt.CompareTo(b.CreatedAt));
-    return comments;
-  }
+
+    public async Task<bool> UpdateCommentAsync(string commentId, string newContent, string currentUsername)
+    {
+        try
+        {
+            var comment = await _commentRepository.GetCommentByIdAsync(commentId);
+            if (comment == null)
+            {
+                return false;
+            }
+
+            // Check if user owns the comment
+            if (!comment.Author.Equals(currentUsername, StringComparison.OrdinalIgnoreCase))
+            {
+                return false; // Unauthorized
+            }
+
+            comment.Content = newContent;
+
+            // Find which post this comment belongs to by checking all posts
+            // This is a temporary solution - ideally we'd store post reference
+            var allPosts = await _postRepository.GetAllPostsAsync();
+            foreach (var post in allPosts)
+            {
+                var postComments = await _commentRepository.GetCommentsByPostSlugAsync(post.Slug);
+                if (postComments.Any(c => c.Id == commentId))
+                {
+                    return await _commentRepository.UpdateCommentAsync(post.Slug, comment);
+                }
+            }
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating comment: {CommentId}", commentId);
+            return false;
+        }
+    }
+
+    public async Task<bool> DeleteCommentAsync(string commentId, string currentUsername, bool isAdmin = false)
+    {
+        try
+        {
+            var comment = await _commentRepository.GetCommentByIdAsync(commentId);
+            if (comment == null)
+            {
+                return false;
+            }
+
+            // Check if user owns the comment or is admin
+            bool isOwner = comment.Author.Equals(currentUsername, StringComparison.OrdinalIgnoreCase);
+            if (!isOwner && !isAdmin)
+            {
+                return false; // Unauthorized
+            }
+
+            return await _commentRepository.DeleteCommentAsync(commentId);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error deleting comment: {CommentId}", commentId);
+            return false;
+        }
+    }
+
+    public async Task<IEnumerable<Comment>> GetCommentsByUserAsync(string username)
+    {
+        try
+        {
+            return await _commentRepository.GetCommentsByUserAsync(username);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting comments for user: {Username}", username);
+            return Enumerable.Empty<Comment>();
+        }
+    }
+
+    public async Task<int> GetCommentsCountForPostAsync(string postSlug)
+    {
+        try
+        {
+            return await _commentRepository.GetCommentsCountByPostSlugAsync(postSlug);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting comments count for post: {PostSlug}", postSlug);
+            return 0;
+        }
+    }
+
+    public async Task<IEnumerable<Comment>> GetAllCommentsAsync()
+    {
+        try
+        {
+            return await _commentRepository.GetAllCommentsAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting all comments");
+            return Enumerable.Empty<Comment>();
+        }
+    }
+
+    public async Task<bool> ApproveCommentAsync(string commentId)
+    {
+        // Comment approval not supported in current model
+        return await Task.FromResult(false);
+    }
+
+    public async Task<bool> RejectCommentAsync(string commentId)
+    {
+        // Comment rejection not supported in current model
+        return await Task.FromResult(false);
+    }
 }
