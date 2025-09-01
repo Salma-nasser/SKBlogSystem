@@ -65,7 +65,7 @@ public static class UserEndpoints
     .RequireAuthorization()
     .WithName("DeleteUser");
 
-    app.MapGet("/notifications", GetNotificationsAsync );
+    app.MapGet("/notifications", GetNotificationsAsync);
 
     async Task<IResult> GetNotificationsAsync(HttpContext ctx, INotificationService notificationService)
     {
@@ -79,7 +79,8 @@ public static class UserEndpoints
         ? await notificationService.GetAllAsync(username)
         : await notificationService.GetUnreadAsync(username);
       return Results.Ok(notifications);
-    };
+    }
+    ;
 
     app.MapPost("/notifications/read/{id}", async (string id, HttpContext ctx, INotificationService service) =>
     {
@@ -130,6 +131,35 @@ public static class UserEndpoints
       if (!IsValidUsername(request.Username) || !IsValidPassword(request.NewPassword))
         return Results.BadRequest(new { message = "Valid username and password (min 6 chars) are required." });
       return await userService.ResetPassword(request.Username, request.NewPassword);
+    });
+
+    // Serve user profile images securely
+    app.MapGet("/api/users/{username}/assets/{filename}", async (string username, string filename, IWebHostEnvironment env) =>
+    {
+      if (!IsValidUsername(username))
+        return Results.BadRequest(new { message = "Invalid username parameter." });
+      var safeFile = Path.GetFileName(filename);
+      if (string.IsNullOrEmpty(safeFile) || safeFile != filename)
+        return Results.BadRequest(new { message = "Invalid filename." });
+
+      var allowed = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+      var ext = Path.GetExtension(safeFile).ToLowerInvariant();
+      if (!allowed.Contains(ext))
+        return Results.BadRequest(new { message = "File type not allowed." });
+
+      var contentPath = Path.Combine(env.ContentRootPath, "Content", "users", username, "assets", safeFile);
+      if (!System.IO.File.Exists(contentPath))
+        return Results.NotFound();
+
+      var mime = ext switch
+      {
+        ".jpg" or ".jpeg" => "image/jpeg",
+        ".png" => "image/png",
+        ".webp" => "image/webp",
+        _ => "application/octet-stream"
+      };
+      var bytes = await System.IO.File.ReadAllBytesAsync(contentPath);
+      return Results.File(bytes, mime);
     });
   }
 }

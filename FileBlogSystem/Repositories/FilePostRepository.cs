@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Collections.Concurrent;
 using FileBlogSystem.Models;
 using FileBlogSystem.Repositories.Interfaces;
 
@@ -9,6 +10,9 @@ namespace FileBlogSystem.Repositories
     private readonly string _postsPath;
     private readonly string _usersPath;
     private readonly ILogger<FilePostRepository> _logger;
+    // Per-post locks to serialize writes and avoid lost updates under concurrency
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> _postLocks = new(StringComparer.OrdinalIgnoreCase);
+    private static SemaphoreSlim GetLock(string slug) => _postLocks.GetOrAdd(slug, _ => new SemaphoreSlim(1, 1));
 
     public FilePostRepository(IConfiguration configuration, IWebHostEnvironment env, ILogger<FilePostRepository> logger)
     {
@@ -142,21 +146,22 @@ namespace FileBlogSystem.Repositories
         // Save metadata
         var metadata = new
         {
-          post.Id,
           post.Title,
-          post.Slug,
-          post.Author,
-          PublishedDate = post.PublishedDate,
-          LastModified = post.LastModified,
-          post.IsPublished,
-          post.Categories,
-          post.Tags,
           Description = post.Description,
-          post.Likes,
-          ScheduledDate = post.ScheduledDate
+          CustomUrl = post.Slug,
+          AuthorUsername = post.Author,
+          post.Tags,
+          Categories = post.Categories,
+          PublishedDate = post.PublishedDate,
+          ModifiedDate = post.LastModified,
+          post.Slug,
+          post.IsPublished,
+          ScheduledDate = post.ScheduledDate,
+          Images = post.Images, // Use the actual images from the post
+          Likes = post.Likes
         };
 
-        string metadataPath = Path.Combine(postDirectory, "metadata.json");
+        string metadataPath = Path.Combine(postDirectory, "meta.json");
         string metadataJson = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
         await File.WriteAllTextAsync(metadataPath, metadataJson);
 
@@ -164,7 +169,8 @@ namespace FileBlogSystem.Repositories
         string contentPath = Path.Combine(postDirectory, "content.md");
         await File.WriteAllTextAsync(contentPath, post.Body);
 
-        return post.Id;
+        // Return slug as identifier
+        return post.Slug;
       }
       catch (Exception ex)
       {
@@ -177,57 +183,97 @@ namespace FileBlogSystem.Repositories
     {
       try
       {
-        var existingPost = await GetPostBySlugAsync(post.Slug);
-        if (existingPost == null)
-          return false;
-
-        // Find the existing directory
-        string? postDirectory = null;
-        foreach (var directory in Directory.GetDirectories(_postsPath))
+        var gate = GetLock(post.Slug);
+        await gate.WaitAsync();
+        try
         {
-          var tempPost = await LoadPostAsync(directory);
-          if (tempPost != null && tempPost.Slug.Equals(post.Slug, StringComparison.OrdinalIgnoreCase))
-          {
-            postDirectory = directory;
-            break;
-          }
+          return await UpdatePostUnlockedAsync(post);
         }
-
-        if (postDirectory == null)
-          return false;
-
-        // Update metadata
-        var metadata = new
+        finally
         {
-          post.Id,
-          post.Title,
-          post.Slug,
-          post.Author,
-          PublishedDate = post.PublishedDate,
-          LastModified = post.LastModified,
-          post.IsPublished,
-          post.Categories,
-          post.Tags,
-          Description = post.Description,
-          post.Likes,
-          ScheduledDate = post.ScheduledDate
-        };
-
-        string metadataPath = Path.Combine(postDirectory, "metadata.json");
-        string metadataJson = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
-        await File.WriteAllTextAsync(metadataPath, metadataJson);
-
-        // Update content
-        string contentPath = Path.Combine(postDirectory, "content.md");
-        await File.WriteAllTextAsync(contentPath, post.Body);
-
-        return true;
+          gate.Release();
+        }
       }
       catch (Exception ex)
       {
         _logger.LogError(ex, "Error updating post: {PostSlug}", post.Slug);
         return false;
       }
+    }
+
+    // Internal update that assumes caller holds the per-post lock
+    private async Task<bool> UpdatePostUnlockedAsync(Post post)
+    {
+      var existingPost = await GetPostBySlugAsync(post.Slug);
+      if (existingPost == null)
+        return false;
+
+      // Find the existing directory
+      string? postDirectory = null;
+      foreach (var directory in Directory.GetDirectories(_postsPath))
+      {
+        var tempPost = await LoadPostAsync(directory);
+        if (tempPost != null && tempPost.Slug.Equals(post.Slug, StringComparison.OrdinalIgnoreCase))
+        {
+          postDirectory = directory;
+          break;
+        }
+      }
+
+      if (postDirectory == null)
+        return false;
+
+      // Update metadata (preserve existing images if any exist on disk)
+      var existingMetaPath = Path.Combine(postDirectory, "meta.json");
+      List<string> existingImages = new();
+      if (File.Exists(existingMetaPath))
+      {
+        try
+        {
+          var metaJson = await File.ReadAllTextAsync(existingMetaPath);
+          var metaDoc = JsonSerializer.Deserialize<JsonElement>(metaJson);
+          if (metaDoc.ValueKind == JsonValueKind.Object)
+          {
+            if (metaDoc.TryGetProperty("Images", out var imgs) || metaDoc.TryGetProperty("images", out imgs))
+            {
+              if (imgs.ValueKind == JsonValueKind.Array)
+              {
+                existingImages = imgs.EnumerateArray().Select(i => i.GetString() ?? string.Empty).Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+              }
+            }
+          }
+        }
+        catch { /* ignore */ }
+      }
+
+      var imagesToWrite = (post.Images != null && post.Images.Any()) ? post.Images : existingImages;
+
+      var metadata = new
+      {
+        post.Title,
+        Description = post.Description,
+        CustomUrl = post.Slug,
+        AuthorUsername = post.Author,
+        post.Tags,
+        Categories = post.Categories,
+        PublishedDate = post.PublishedDate,
+        ModifiedDate = post.LastModified,
+        post.Slug,
+        post.IsPublished,
+        ScheduledDate = post.ScheduledDate,
+        Images = imagesToWrite,
+        Likes = post.Likes
+      };
+
+      string metadataPath = Path.Combine(postDirectory, "meta.json");
+      string metadataJson = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
+      await File.WriteAllTextAsync(metadataPath, metadataJson);
+
+      // Update content
+      string contentPath = Path.Combine(postDirectory, "content.md");
+      await File.WriteAllTextAsync(contentPath, post.Body);
+
+      return true;
     }
 
     public async Task<bool> DeletePostAsync(string slug)
@@ -282,17 +328,26 @@ namespace FileBlogSystem.Repositories
     {
       try
       {
-        var post = await GetPostBySlugAsync(slug);
-        if (post == null)
-          return false;
-
-        if (!post.Likes.Contains(username, StringComparer.OrdinalIgnoreCase))
+        var gate = GetLock(slug);
+        await gate.WaitAsync();
+        try
         {
-          post.Likes.Add(username);
-          return await UpdatePostAsync(post);
-        }
+          var post = await GetPostBySlugAsync(slug);
+          if (post == null)
+            return false;
 
-        return true; // Already liked
+          if (!post.Likes.Contains(username, StringComparer.OrdinalIgnoreCase))
+          {
+            post.Likes.Add(username);
+            return await UpdatePostUnlockedAsync(post);
+          }
+
+          return true; // Already liked
+        }
+        finally
+        {
+          gate.Release();
+        }
       }
       catch (Exception ex)
       {
@@ -305,20 +360,29 @@ namespace FileBlogSystem.Repositories
     {
       try
       {
-        var post = await GetPostBySlugAsync(slug);
-        if (post == null)
-          return false;
-
-        var itemToRemove = post.Likes.FirstOrDefault(like =>
-            like.Equals(username, StringComparison.OrdinalIgnoreCase));
-
-        if (itemToRemove != null)
+        var gate = GetLock(slug);
+        await gate.WaitAsync();
+        try
         {
-          post.Likes.Remove(itemToRemove);
-          return await UpdatePostAsync(post);
-        }
+          var post = await GetPostBySlugAsync(slug);
+          if (post == null)
+            return false;
 
-        return true; // Already not liked
+          var itemToRemove = post.Likes.FirstOrDefault(like =>
+              like.Equals(username, StringComparison.OrdinalIgnoreCase));
+
+          if (itemToRemove != null)
+          {
+            post.Likes.Remove(itemToRemove);
+            return await UpdatePostUnlockedAsync(post);
+          }
+
+          return true; // Already not liked
+        }
+        finally
+        {
+          gate.Release();
+        }
       }
       catch (Exception ex)
       {
@@ -358,7 +422,7 @@ namespace FileBlogSystem.Repositories
     {
       try
       {
-        string metadataPath = Path.Combine(directory, "metadata.json");
+        string metadataPath = Path.Combine(directory, "meta.json");
         string contentPath = Path.Combine(directory, "content.md");
 
         if (!File.Exists(metadataPath) || !File.Exists(contentPath))
@@ -369,21 +433,41 @@ namespace FileBlogSystem.Repositories
 
         var metadata = JsonSerializer.Deserialize<JsonElement>(metadataJson);
 
-        string title = metadata.GetProperty("Title").GetString() ?? string.Empty;
-        string description = metadata.TryGetProperty("Description", out var descProp) ? descProp.GetString() ?? string.Empty : string.Empty;
-        string author = metadata.GetProperty("Author").GetString() ?? string.Empty;
-        DateTime publishedDate = metadata.TryGetProperty("PublishedDate", out var pubProp) ? pubProp.GetDateTime() : DateTime.UtcNow;
-        DateTime? lastModified = metadata.TryGetProperty("LastModified", out var modProp) ? modProp.GetDateTime() : null;
-        var tags = metadata.GetProperty("Tags").EnumerateArray().Select(x => x.GetString() ?? string.Empty).ToList();
-        var categories = metadata.GetProperty("Categories").EnumerateArray().Select(x => x.GetString() ?? string.Empty).ToList();
-        string slug = metadata.GetProperty("Slug").GetString() ?? string.Empty;
-        bool isPublished = metadata.GetProperty("IsPublished").GetBoolean();
-        DateTime? scheduledDate = metadata.TryGetProperty("ScheduledDate", out var schedProp) && schedProp.ValueKind != JsonValueKind.Null ? schedProp.GetDateTime() : null;
+        // Handle both PascalCase and camelCase property names for compatibility
+        string title = GetJsonProperty(metadata, "Title", "title") ?? string.Empty;
+        string description = GetJsonProperty(metadata, "Description", "description") ?? string.Empty;
+        string author = GetJsonProperty(metadata, "AuthorUsername", "author") ?? string.Empty;
+        DateTime publishedDate = GetJsonDateProperty(metadata, "PublishedDate", "publishedDate") ?? DateTime.UtcNow;
+        DateTime? lastModified = GetJsonDateProperty(metadata, "ModifiedDate", "lastModified");
+        var tags = GetJsonArrayProperty(metadata, "Tags", "tags");
+        var categories = GetJsonArrayProperty(metadata, "Categories", "categories");
+        string slug = GetJsonProperty(metadata, "Slug", "slug") ?? string.Empty;
+        bool isPublished = GetJsonBoolProperty(metadata, "IsPublished", "isPublished") ?? false;
+        DateTime? scheduledDate = GetJsonDateProperty(metadata, "ScheduledDate", "scheduledDate");
+
+        // Images: try to read and normalize to API URLs if they are stored as relative paths
+        var images = GetJsonArrayProperty(metadata, "Images", "images");
+        if (images.Any())
+        {
+          // If images are stored as "/assets/filename.jpg" or similar, convert them to the secure endpoint
+          images = images.Select(img =>
+          {
+            if (string.IsNullOrWhiteSpace(img)) return img;
+            if (img.StartsWith("/api/posts/", StringComparison.OrdinalIgnoreCase)) return img;
+            // Try to build from known slug
+            var fileName = Path.GetFileName(img);
+            return $"/api/posts/{slug}/assets/{fileName}";
+          }).ToList();
+        }
+
+        // Likes: read from metadata if present
+        var likesFromMeta = GetJsonArrayProperty(metadata, "Likes", "likes");
 
         var post = new Post(title, description, content, author, publishedDate, lastModified, tags, categories, slug, isPublished, scheduledDate)
         {
-          Id = metadata.GetProperty("Id").GetString() ?? string.Empty,
-          Likes = metadata.TryGetProperty("Likes", out var likesProp) ? likesProp.EnumerateArray().Select(x => x.GetString() ?? string.Empty).ToList() : new List<string>()
+          Id = slug, // Use slug as ID since there's no separate ID field
+          Likes = likesFromMeta ?? new List<string>(),
+          Images = images
         };
 
         return post;
@@ -432,6 +516,43 @@ namespace FileBlogSystem.Repositories
 
       var invalidChars = Path.GetInvalidFileNameChars();
       return new string(input.Where(c => !invalidChars.Contains(c)).ToArray());
+    }
+
+    // Helper methods for handling both PascalCase and camelCase property names
+    private static string? GetJsonProperty(JsonElement element, string pascalCase, string camelCase)
+    {
+      if (element.TryGetProperty(pascalCase, out var pascalProp))
+        return pascalProp.GetString();
+      if (element.TryGetProperty(camelCase, out var camelProp))
+        return camelProp.GetString();
+      return null;
+    }
+
+    private static DateTime? GetJsonDateProperty(JsonElement element, string pascalCase, string camelCase)
+    {
+      if (element.TryGetProperty(pascalCase, out var pascalProp) && pascalProp.ValueKind != JsonValueKind.Null)
+        return pascalProp.GetDateTime();
+      if (element.TryGetProperty(camelCase, out var camelProp) && camelProp.ValueKind != JsonValueKind.Null)
+        return camelProp.GetDateTime();
+      return null;
+    }
+
+    private static bool? GetJsonBoolProperty(JsonElement element, string pascalCase, string camelCase)
+    {
+      if (element.TryGetProperty(pascalCase, out var pascalProp))
+        return pascalProp.GetBoolean();
+      if (element.TryGetProperty(camelCase, out var camelProp))
+        return camelProp.GetBoolean();
+      return null;
+    }
+
+    private static List<string> GetJsonArrayProperty(JsonElement element, string pascalCase, string camelCase)
+    {
+      if (element.TryGetProperty(pascalCase, out var pascalProp))
+        return pascalProp.EnumerateArray().Select(x => x.GetString() ?? string.Empty).ToList();
+      if (element.TryGetProperty(camelCase, out var camelProp))
+        return camelProp.EnumerateArray().Select(x => x.GetString() ?? string.Empty).ToList();
+      return new List<string>();
     }
   }
 }

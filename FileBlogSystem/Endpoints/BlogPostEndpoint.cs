@@ -41,6 +41,7 @@ public static class BlogPostEndpoints
         app.MapDelete("/api/posts/{slug}/like", UnlikePostAsync);
         app.MapGet("/api/posts/{slug}/likes", GetPostLikesAsync);
         app.MapGet("/api/search", SearchPostsAsync);
+        app.MapGet("/api/posts/{slug}/assets/{filename}", GetPostAssetAsync);
     }
 
     // Endpoint implementations
@@ -363,5 +364,56 @@ public static class BlogPostEndpoints
     {
         public static ParseResult Invalid(string message) => new(true, message, null);
         public static ParseResult Valid(CreatePostRequest request) => new(false, string.Empty, request);
+    }
+
+    // Secure endpoint to serve only post assets
+    private static async Task<IResult> GetPostAssetAsync(string slug, string filename, IWebHostEnvironment env, IBlogPostService service)
+    {
+        if (!IsValidSlug(slug))
+            return Results.BadRequest(new { message = "Invalid post identifier." });
+
+        // Verify the post exists
+        var post = service.GetPostBySlug(slug, null);
+        if (post == null)
+            return Results.NotFound();
+
+        // Sanitize filename to prevent directory traversal
+        var sanitizedFilename = Path.GetFileName(filename);
+        if (string.IsNullOrEmpty(sanitizedFilename) || sanitizedFilename != filename)
+            return Results.BadRequest(new { message = "Invalid filename." });
+
+        // Only allow image file extensions
+        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+        var extension = Path.GetExtension(sanitizedFilename).ToLowerInvariant();
+        if (!allowedExtensions.Contains(extension))
+            return Results.BadRequest(new { message = "File type not allowed." });
+
+        // Build the secure path
+        var contentPath = Path.Combine(env.ContentRootPath, "Content", "posts");
+
+        // Find the post directory (it might have a date prefix)
+        var postDirectory = Directory.GetDirectories(contentPath)
+            .FirstOrDefault(dir => Path.GetFileName(dir).EndsWith($"-{slug}"));
+
+        if (postDirectory == null)
+            return Results.NotFound();
+
+        var assetPath = Path.Combine(postDirectory, "assets", sanitizedFilename);
+
+        if (!File.Exists(assetPath))
+            return Results.NotFound();
+
+        // Get MIME type
+        var mimeType = extension switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".webp" => "image/webp",
+            ".gif" => "image/gif",
+            _ => "application/octet-stream"
+        };
+
+        var fileBytes = await File.ReadAllBytesAsync(assetPath);
+        return Results.File(fileBytes, mimeType);
     }
 }

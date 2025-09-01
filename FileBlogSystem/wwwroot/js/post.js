@@ -142,17 +142,40 @@ function renderSinglePost(post) {
 
     imagesHtml = `
       <div class="single-post-images ${layoutClass}">
-        ${post.Images.map(
-          (imagePath, index) =>
-            `<img 
-            src="/Content/posts/${dateOnly}-${post.Slug}${imagePath}" 
-            alt="Post Image ${index + 1}" 
-            class="post-image" 
-            loading="lazy"
-            data-index="${index}"
-            onerror="this.style.display='none'"
-          />`
-        ).join("")}
+        ${post.Images.map((imagePath, index) => {
+          // If backend already sent secure/absolute URL, use it directly
+          if (
+            typeof imagePath === "string" &&
+            (imagePath.startsWith("http://") ||
+              imagePath.startsWith("https://") ||
+              imagePath.startsWith("/api/posts/"))
+          ) {
+            return `
+                <img 
+                  src="${imagePath}" 
+                  alt="Post Image ${index + 1}" 
+                  class="post-image" 
+                  loading="lazy"
+                  data-index="${index}"
+                  onerror="this.style.display='none'"
+                />`;
+          }
+
+          // Fallback: legacy relative stored path -> map to secure endpoint by filename
+          const str = String(imagePath || "");
+          const parts = str.split("/");
+          const fileName = parts[parts.length - 1];
+          const secureUrl = `/api/posts/${post.Slug}/assets/${fileName}`;
+          return `
+              <img 
+                src="${secureUrl}" 
+                alt="Post Image ${index + 1}" 
+                class="post-image" 
+                loading="lazy"
+                data-index="${index}"
+                onerror="this.style.display='none'"
+              />`;
+        }).join("")}
       </div>
     `;
   }

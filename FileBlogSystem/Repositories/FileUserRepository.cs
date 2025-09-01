@@ -1,6 +1,7 @@
 using System.Text.Json;
 using FileBlogSystem.Models;
 using FileBlogSystem.Repositories.Interfaces;
+using FileBlogSystem.Services;
 
 namespace FileBlogSystem.Repositories
 {
@@ -31,6 +32,10 @@ namespace FileBlogSystem.Repositories
         string profileJson = await File.ReadAllTextAsync(profilePath);
         var userInfo = JsonSerializer.Deserialize<JsonElement>(profileJson);
 
+        // Normalize legacy profile picture paths to secure API endpoint
+        string rawPic = userInfo.TryGetProperty("ProfilePictureUrl", out var picProp) ? picProp.GetString() ?? string.Empty : string.Empty;
+        string normalizedPic = NormalizeProfilePictureUrl(username, rawPic);
+
         return new User
         {
           Username = userInfo.GetProperty("Username").GetString() ?? string.Empty,
@@ -40,7 +45,7 @@ namespace FileBlogSystem.Repositories
           CreatedAt = userInfo.TryGetProperty("CreatedAt", out var createdProp) ? createdProp.GetDateTime() : DateTime.UtcNow,
           IsActive = userInfo.TryGetProperty("IsActive", out var activeProp) ? activeProp.GetBoolean() : true,
           Bio = userInfo.TryGetProperty("Bio", out var bioProp) ? bioProp.GetString() ?? string.Empty : string.Empty,
-          ProfilePictureUrl = userInfo.TryGetProperty("ProfilePictureUrl", out var picProp) ? picProp.GetString() ?? string.Empty : string.Empty
+          ProfilePictureUrl = normalizedPic
         };
       }
       catch (Exception ex)
@@ -69,6 +74,8 @@ namespace FileBlogSystem.Repositories
           if (userInfo.TryGetProperty("Email", out var emailProp) &&
               emailProp.GetString()?.Equals(email, StringComparison.OrdinalIgnoreCase) == true)
           {
+            string rawPic = userInfo.TryGetProperty("ProfilePictureUrl", out var picProp) ? picProp.GetString() ?? string.Empty : string.Empty;
+            string normalizedPic = NormalizeProfilePictureUrl(userInfo.GetProperty("Username").GetString() ?? string.Empty, rawPic);
             return new User
             {
               Username = userInfo.GetProperty("Username").GetString() ?? string.Empty,
@@ -78,7 +85,7 @@ namespace FileBlogSystem.Repositories
               CreatedAt = userInfo.TryGetProperty("CreatedAt", out var createdProp) ? createdProp.GetDateTime() : DateTime.UtcNow,
               IsActive = userInfo.TryGetProperty("IsActive", out var activeProp) ? activeProp.GetBoolean() : true,
               Bio = userInfo.TryGetProperty("Bio", out var bioProp) ? bioProp.GetString() ?? string.Empty : string.Empty,
-              ProfilePictureUrl = userInfo.TryGetProperty("ProfilePictureUrl", out var picProp) ? picProp.GetString() ?? string.Empty : string.Empty
+              ProfilePictureUrl = normalizedPic
             };
           }
         }
@@ -110,6 +117,8 @@ namespace FileBlogSystem.Repositories
           string profileJson = await File.ReadAllTextAsync(profilePath);
           var userInfo = JsonSerializer.Deserialize<JsonElement>(profileJson);
 
+          string rawPic = userInfo.TryGetProperty("ProfilePictureUrl", out var picProp) ? picProp.GetString() ?? string.Empty : string.Empty;
+          string normalizedPic = NormalizeProfilePictureUrl(userInfo.GetProperty("Username").GetString() ?? string.Empty, rawPic);
           var user = new User
           {
             Username = userInfo.GetProperty("Username").GetString() ?? string.Empty,
@@ -118,7 +127,7 @@ namespace FileBlogSystem.Repositories
             CreatedAt = userInfo.TryGetProperty("CreatedAt", out var createdProp) ? createdProp.GetDateTime() : DateTime.UtcNow,
             IsActive = userInfo.TryGetProperty("IsActive", out var activeProp) ? activeProp.GetBoolean() : true,
             Bio = userInfo.TryGetProperty("Bio", out var bioProp) ? bioProp.GetString() ?? string.Empty : string.Empty,
-            ProfilePictureUrl = userInfo.TryGetProperty("ProfilePictureUrl", out var picProp) ? picProp.GetString() ?? string.Empty : string.Empty
+            ProfilePictureUrl = normalizedPic
           };
 
           users.Add(user);
@@ -220,22 +229,22 @@ namespace FileBlogSystem.Repositories
       }
     }
 
-    public async Task<bool> DeleteUserAsync(string username)
+    public Task<bool> DeleteUserAsync(string username)
     {
       try
       {
         string userDirectory = Path.Combine(_usersPath, SanitizeDirectoryName(username));
 
         if (!Directory.Exists(userDirectory))
-          return false;
+          return Task.FromResult(false);
 
         Directory.Delete(userDirectory, true);
-        return true;
+        return Task.FromResult(true);
       }
       catch (Exception ex)
       {
         _logger.LogError(ex, "Error deleting user: {Username}", username);
-        return false;
+        return Task.FromResult(false);
       }
     }
 
@@ -337,7 +346,7 @@ namespace FileBlogSystem.Repositories
       }
     }
 
-    public async Task<bool> ClearOtpAsync(string username)
+    public Task<bool> ClearOtpAsync(string username)
     {
       try
       {
@@ -349,12 +358,12 @@ namespace FileBlogSystem.Repositories
           File.Delete(otpPath);
         }
 
-        return true;
+        return Task.FromResult(true);
       }
       catch (Exception ex)
       {
         _logger.LogError(ex, "Error clearing OTP for user: {Username}", username);
-        return false;
+        return Task.FromResult(false);
       }
     }
 
@@ -376,7 +385,44 @@ namespace FileBlogSystem.Repositories
       if (!string.IsNullOrEmpty(profileData.Bio))
         user.Bio = profileData.Bio;
 
+      // Handle profile picture update if provided
+      if (!string.IsNullOrEmpty(profileData.ProfilePictureBase64) && !string.IsNullOrEmpty(profileData.ProfilePictureFileName))
+      {
+        try
+        {
+          string userDirectory = Path.Combine(_usersPath, SanitizeDirectoryName(username));
+          string assetsDirectory = Path.Combine(userDirectory, "assets");
+          Directory.CreateDirectory(assetsDirectory);
+
+          // Prefix files with username_ to reduce collisions
+          string savedFile = await ImageService.SaveAndCompressFromBase64Async(
+              profileData.ProfilePictureBase64,
+              profileData.ProfilePictureFileName,
+              assetsDirectory,
+              SanitizeDirectoryName(username) + "_");
+
+          // Store secure endpoint URL
+          user.ProfilePictureUrl = $"/api/users/{SanitizeDirectoryName(username)}/assets/{savedFile}";
+        }
+        catch (Exception ex)
+        {
+          _logger.LogError(ex, "Error saving profile picture for user: {Username}", username);
+          // Continue without failing entire update
+        }
+      }
+
       return await UpdateUserAsync(user);
+    }
+
+    private static string NormalizeProfilePictureUrl(string username, string raw)
+    {
+      if (string.IsNullOrWhiteSpace(raw)) return string.Empty;
+      if (raw.StartsWith("/api/users/", StringComparison.OrdinalIgnoreCase)) return raw;
+      // Legacy path like /Content/users/{username}/assets/{file}
+      var fileName = Path.GetFileName(raw);
+      if (string.IsNullOrEmpty(fileName)) return string.Empty;
+      var safeUser = new string((username ?? string.Empty).Where(c => !Path.GetInvalidFileNameChars().Contains(c)).ToArray());
+      return $"/api/users/{safeUser}/assets/{fileName}";
     }
 
     // Private helper methods

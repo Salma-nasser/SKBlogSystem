@@ -204,7 +204,6 @@ app.MapGet("/post/{slug}", async (string slug, IBlogPostService service, HttpCon
   return Results.Content(html, "text/html");
 });
 // Static Files for wwwroot
-
 app.UseDefaultFiles(new DefaultFilesOptions
 {
   DefaultFileNames = { "welcome.html" }

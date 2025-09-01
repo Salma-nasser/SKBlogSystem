@@ -399,11 +399,10 @@ body.dark-mode .post-actions .deleteBtn:hover {
   align-items: center;
 }
 
-
-
 .user-details p strong {
   flex-shrink: 0; /* don’t shrink too much */
   width: auto;
+  margin-right: 0.4rem; /* ensure a single visible space after colon */
 }
 
 .user-details p span {

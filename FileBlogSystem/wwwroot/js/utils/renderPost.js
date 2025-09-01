@@ -131,18 +131,27 @@ function renderMarkdownWithImageHandling(
         // Handle relative paths for post images
         let imageSrc = hrefStr;
 
-        // If it's a relative path starting with /assets/, convert to full post path
-        if (hrefStr.startsWith("/assets/") && postSlug && publishedDate) {
-          const dateOnly = new Date(publishedDate).toISOString().split("T")[0];
-          imageSrc = `/Content/posts/${dateOnly}-${postSlug}${hrefStr}`;
+        // If it's a relative path starting with /assets/ or assets/, convert to secure asset endpoint
+        if (
+          (hrefStr.startsWith("/assets/") || hrefStr.startsWith("assets/")) &&
+          postSlug
+        ) {
+          const parts = hrefStr.split("/");
+          const fileName = parts[parts.length - 1];
+          imageSrc = `/api/posts/${postSlug}/assets/${fileName}`;
         }
         // If it's already a full URL or absolute path, use as-is
         else if (
           hrefStr.startsWith("http://") ||
           hrefStr.startsWith("https://") ||
-          hrefStr.startsWith("/Content/")
+          hrefStr.startsWith("/api/posts/")
         ) {
           imageSrc = hrefStr;
+        } else if (hrefStr.startsWith("/Content/") && postSlug) {
+          // Legacy absolute path that won't be served; map by filename to secure endpoint
+          const parts = hrefStr.split("/");
+          const fileName = parts[parts.length - 1];
+          imageSrc = `/api/posts/${postSlug}/assets/${fileName}`;
         }
 
         return `<img src="${imageSrc}" alt="${
@@ -264,16 +273,34 @@ export function renderPosts(posts, containerId, options = {}) {
 
     let imgHtml = "";
     if (post.Images?.length) {
-      const dateOnly = new Date(post.PublishedDate).toISOString().split("T")[0];
       imgHtml = `
         <div class="post-images post-images-${post.Images.length}">
-          ${post.Images.map(
-            (image, index) => `
-            <img src="/Content/posts/${dateOnly}-${post.Slug}${image}"
-                alt="Image ${index + 1} for blog post: ${post.Title}"
-                class="post-image" />
-          `
-          ).join("")}
+          ${post.Images.map((image, index) => {
+            // If backend provided absolute/secure URL, use as-is
+            if (
+              typeof image === "string" &&
+              (image.startsWith("http://") ||
+                image.startsWith("https://") ||
+                image.startsWith("/api/posts/"))
+            ) {
+              return `
+                  <img src="${image}"
+                      alt="Image ${index + 1} for blog post: ${post.Title}"
+                      class="post-image" />
+                `;
+            }
+
+            // Fallback for legacy relative paths: derive filename and use secure endpoint
+            const str = String(image || "");
+            const parts = str.split("/");
+            const fileName = parts[parts.length - 1];
+            const secureUrl = `/api/posts/${post.Slug}/assets/${fileName}`;
+            return `
+                <img src="${secureUrl}"
+                    alt="Image ${index + 1} for blog post: ${post.Title}"
+                    class="post-image" />
+              `;
+          }).join("")}
         </div>
       `;
     }
