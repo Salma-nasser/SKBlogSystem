@@ -12,8 +12,8 @@ public static class CommentsEndpoints
   public static void MapCommentsEndpoints(this IEndpointRouteBuilder app)
   {
     var commentsGroup = app.MapGroup("/api/posts/{postId}/comments")
-                           .WithTags("Comments")
-                           .RequireAuthorization();
+                          .WithTags("Comments")
+                          .RequireAuthorization();
 
     // GET: retrieve all comments for a post
     commentsGroup.MapGet("/", async (string postId, ICommentService commentService) =>

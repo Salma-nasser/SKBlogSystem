@@ -17,13 +17,13 @@ public static class AdminEndpoints
   {
     // Endpoint Definitions
     app.MapGet("/api/admin/users", GetAllUsersAsync)
-       .WithName("GetAllUsers");
+      .WithName("GetAllUsers");
 
     app.MapPut("/api/admin/users/promote/{username}", PromoteUserToAdminAsync)
-       .WithName("PromoteUser");
+      .WithName("PromoteUser");
 
     app.MapGet("/api/admin/check", CheckAdminStatus)
-       .WithName("CheckAdmin");
+      .WithName("CheckAdmin");
   }
 
   // Endpoint Implementation Functions

@@ -12,19 +12,19 @@ public static class AuthEndpoints
   {
     // Endpoint Definitions
     app.MapPost("/api/auth/login", LoginUserAsync)
-       .AllowAnonymous()
-       .WithName("Login")
-       .WithTags("Authentication");
+      .AllowAnonymous()
+      .WithName("Login")
+      .WithTags("Authentication");
 
     app.MapPost("/api/auth/register", RegisterUserAsync)
-       .AllowAnonymous()
-       .WithName("Register")
-       .WithTags("Authentication");
+      .AllowAnonymous()
+      .WithName("Register")
+      .WithTags("Authentication");
 
     app.MapPut("/api/users/{username}/password", ChangeUserPasswordAsync)
-       .RequireAuthorization()
-       .WithName("ChangePassword")
-       .WithTags("Users");
+      .RequireAuthorization()
+      .WithName("ChangePassword")
+      .WithTags("Users");
   }
 
   // Endpoint Implementation Functions
