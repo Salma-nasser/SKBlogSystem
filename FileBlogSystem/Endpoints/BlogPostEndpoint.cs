@@ -21,20 +21,22 @@ public static class BlogPostEndpoints
     private static bool IsValidUsername(string u) => Regex.IsMatch(u ?? string.Empty, UsernamePattern);
     public static void MapBlogPostEndpoints(this IEndpointRouteBuilder app)
     {
-        app.MapGet("/api/posts/published", GetPublishedPostsAsync);
-        app.MapGet("/api/posts", GetPostsAsync);
-        app.MapGet("/api/posts/category/{category}", GetPostsByCategoryAsync);
-        app.MapGet("/api/posts/tag/{tag}", GetPostsByTagAsync);
-        app.MapGet("/api/posts/{slug}", GetPostBySlugAsync);
-        app.MapGet("/api/posts/drafts", GetDraftPostsAsync);
-        app.MapPost("/api/posts/create", CreatePostAsync);
-        app.MapPut("/api/posts/modify/{slug}", ModifyPostAsync);
-        app.MapPut("/api/posts/publish/{slug}", PublishPostAsync);
-        app.MapDelete("/api/posts/{slug}", DeletePostAsync);
+        var Posts = app.MapGroup("/api/posts");
+        Posts.MapGet("/published", GetPublishedPostsAsync);
+        Posts.MapGet("/", GetPostsAsync);
+        Posts.MapGet("/category/{category}", GetPostsByCategoryAsync);
+        Posts.MapGet("/tag/{tag}", GetPostsByTagAsync);
+        Posts.MapGet("/{slug}", GetPostBySlugAsync);
+        Posts.MapGet("/drafts", GetDraftPostsAsync);
+        Posts.MapPost("/create", CreatePostAsync);
+        Posts.MapPut("/modify/{slug}", ModifyPostAsync);
+        Posts.MapPut("/publish/{slug}", PublishPostAsync);
+        Posts.MapDelete("/{slug}", DeletePostAsync);
         app.MapGet("/feed.xml", GetRssFeedAsync);
         app.MapGet("/api/posts/user", GetUserPostsAsync);
         app.MapGet("/api/posts/user/{username}", GetPostsByUserAsync);
-        app.MapDelete("/api/posts/delete/{slug}", DeleteUserPostAsync);
+        app.MapDelete("/api/posts/delete/{slug}", DeleteUserPostAsync)
+            .WithName("DeleteUserPost");
         app.MapPost("/api/posts/{slug}/like", LikePostAsync)
             .WithName("LikePost")
             .WithTags("BlogPosts");

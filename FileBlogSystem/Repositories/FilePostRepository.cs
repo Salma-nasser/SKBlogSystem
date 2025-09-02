@@ -147,18 +147,18 @@ namespace FileBlogSystem.Repositories
         var metadata = new
         {
           post.Title,
-          Description = post.Description,
+          post.Description,
           CustomUrl = post.Slug,
           AuthorUsername = post.Author,
           post.Tags,
-          Categories = post.Categories,
-          PublishedDate = post.PublishedDate,
+          post.Categories,
+          post.PublishedDate,
           ModifiedDate = post.LastModified,
           post.Slug,
           post.IsPublished,
-          ScheduledDate = post.ScheduledDate,
-          Images = post.Images, // Use the actual images from the post
-          Likes = post.Likes
+          post.ScheduledDate,
+          post.Images,
+          post.Likes
         };
 
         string metadataPath = Path.Combine(postDirectory, "meta.json");
@@ -262,18 +262,18 @@ namespace FileBlogSystem.Repositories
       var metadata = new
       {
         post.Title,
-        Description = post.Description,
+        post.Description,
         CustomUrl = post.Slug,
         AuthorUsername = post.Author,
         post.Tags,
-        Categories = post.Categories,
-        PublishedDate = post.PublishedDate,
+        post.Categories,
+        post.PublishedDate,
         ModifiedDate = post.LastModified,
         post.Slug,
         post.IsPublished,
-        ScheduledDate = post.ScheduledDate,
+        post.ScheduledDate,
         Images = imagesToWrite,
-        Likes = post.Likes
+        post.Likes
       };
 
       string metadataPath = Path.Combine(postDirectory, "meta.json");

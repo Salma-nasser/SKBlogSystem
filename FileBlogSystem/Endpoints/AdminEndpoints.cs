@@ -17,17 +17,17 @@ public static class AdminEndpoints
   {
     // Endpoint Definitions
     app.MapGet("/api/admin/users", GetAllUsersAsync)
-      .WithName("GetAllUsers");
+          .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
+          .WithName("GetAllUsers");
 
     app.MapPut("/api/admin/users/promote/{username}", PromoteUserToAdminAsync)
-      .WithName("PromoteUser");
+          .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
+          .WithName("PromoteUser");
 
     app.MapGet("/api/admin/check", CheckAdminStatus)
+          .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
       .WithName("CheckAdmin");
   }
-
-  // Endpoint Implementation Functions
-  [Authorize(Roles = "Admin")]
   private static async Task<IResult> GetAllUsersAsync(IAdminService adminService, HttpContext ctx)
   {
     var currentUser = ctx.User.Identity?.Name;
@@ -38,7 +38,6 @@ public static class AdminEndpoints
     return Results.Ok(users);
   }
 
-  [Authorize(Roles = "Admin")]
   private static async Task<IResult> PromoteUserToAdminAsync(string username, IAdminService adminService, HttpContext ctx)
   {
     var currentUser = ctx.User.Identity?.Name;
@@ -51,8 +50,6 @@ public static class AdminEndpoints
     var result = await adminService.PromoteUserToAdmin(username, currentUser);
     return result;
   }
-
-  [Authorize(Roles = "Admin")]
   private static IResult CheckAdminStatus(HttpContext ctx)
   {
     var currentUser = ctx.User.Identity?.Name;
