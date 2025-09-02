@@ -138,8 +138,6 @@ public class BlogPostService : IBlogPostService
           scheduledDate: request.ScheduledDate
       );
 
-      var imageMarkdown = new List<string>();
-
       // Handle image uploads if any
       if (request.Images != null && request.Images.Any())
       {
@@ -156,10 +154,6 @@ public class BlogPostService : IBlogPostService
               var savedFileName = await ImageService.SaveAndCompressAsync(image, assetsDirectory);
               var imageUrl = $"/api/posts/{finalSlug}/assets/{savedFileName}";
               post.Images.Add(imageUrl);
-
-              // Add markdown for the image to embed in content
-              var altText = Path.GetFileNameWithoutExtension(savedFileName);
-              imageMarkdown.Add($"![{altText}]({imageUrl})");
             }
             catch (Exception ex)
             {
@@ -167,12 +161,6 @@ public class BlogPostService : IBlogPostService
             }
           }
         }
-      }
-
-      // Append images to the post body if any were uploaded
-      if (imageMarkdown.Any())
-      {
-        post.Body += "\n\n" + string.Join("\n\n", imageMarkdown);
       }
 
       // Persist the post (repository should not change slug)
@@ -184,12 +172,12 @@ public class BlogPostService : IBlogPostService
       }
       post.Slug = finalSlug;
 
-      return new { success = true, slug = post.Slug, message = "Post created successfully" };
+      return new { Success = true, Slug = post.Slug, Message = "Post created successfully" };
     }
     catch (Exception ex)
     {
       _logger.LogError(ex, "Error creating post");
-      return new { success = false, message = "Failed to create post" };
+      return new { Success = false, Message = "Failed to create post" };
     }
   }
 
@@ -215,6 +203,67 @@ public class BlogPostService : IBlogPostService
       post.Categories = updatedData.Categories ?? new List<string>();
       post.Tags = updatedData.Tags ?? new List<string>();
       post.LastModified = DateTime.UtcNow;
+
+      // Images: merge kept images (normalized) + newly uploaded ones saved to assets
+      var finalImages = new List<string>();
+
+      // 1) Normalize kept images coming from the client
+      if (updatedData.KeptImages != null && updatedData.KeptImages.Count > 0)
+      {
+        foreach (var kept in updatedData.KeptImages)
+        {
+          if (string.IsNullOrWhiteSpace(kept)) continue;
+          // If already secure URL keep as is, else map by filename to secure endpoint
+          var normalized = kept.StartsWith("/api/posts/", StringComparison.OrdinalIgnoreCase)
+            ? kept
+            : $"/api/posts/{slug}/assets/{Path.GetFileName(kept)}";
+          if (!string.IsNullOrWhiteSpace(normalized) && !finalImages.Contains(normalized, StringComparer.OrdinalIgnoreCase))
+          {
+            finalImages.Add(normalized);
+          }
+        }
+      }
+
+      // 2) Save any newly uploaded images into this post's assets folder
+      if (updatedData.Images != null && updatedData.Images.Any())
+      {
+        // Find the existing post folder by slug (e.g., yyyy-MM-dd-slug)
+        var postsRoot = Path.Combine(_env.ContentRootPath, "Content", "posts");
+        string? postFolder = Directory.GetDirectories(postsRoot)
+          .FirstOrDefault(d => Path.GetFileName(d).EndsWith("-" + slug, StringComparison.OrdinalIgnoreCase));
+
+        // If not found, fallback to published date pattern
+        if (postFolder == null)
+        {
+          var directoryName = $"{post.PublishedDate:yyyy-MM-dd}-{slug}";
+          postFolder = Path.Combine(postsRoot, directoryName);
+        }
+
+        var assetsDirectory = Path.Combine(postFolder, "assets");
+        Directory.CreateDirectory(assetsDirectory);
+
+        foreach (var image in updatedData.Images)
+        {
+          if (image == null || image.Length <= 0) continue;
+          try
+          {
+            var savedFileName = await ImageService.SaveAndCompressAsync(image, assetsDirectory);
+            var imageUrl = $"/api/posts/{slug}/assets/{savedFileName}";
+            finalImages.Add(imageUrl);
+          }
+          catch (Exception ex)
+          {
+            _logger.LogError(ex, "Error saving modified image: {FileName}", image.FileName);
+          }
+        }
+      }
+
+      // Ensure consistent secure URLs and de-duplication
+      post.Images = finalImages
+        .Where(s => !string.IsNullOrWhiteSpace(s))
+        .Select(s => s.Trim())
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToList();
 
       bool success = await _postRepository.UpdatePostAsync(post);
       return success ? (true, "Post updated successfully") : (false, "Failed to update post");

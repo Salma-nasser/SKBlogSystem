@@ -35,8 +35,8 @@
 
 .posts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem; /* Increased gap for better spacing */
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem; /* Slightly tighter to reduce white gaps */
   padding: 1rem;
   width: 100%;
   box-sizing: border-box; /* Ensures padding is included in width */
@@ -125,6 +125,7 @@
   overflow: hidden; /* Prevents content from overflowing */
   min-height: 0; /* Fixes flexbox overflow issues */
   min-width: 0;
+  height: auto; /* Size to fit content */
 }
 
 .post-body p {
@@ -140,6 +141,22 @@
   font-style: italic;
   color: var(--text-muted);
   margin-bottom: 1rem;
+}
+
+/* Ensure content area grows and footer sits at bottom */
+.post-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.post-footer {
+  margin-top: auto; /* Push footer to the bottom of the card */
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 /* Read More Controls */

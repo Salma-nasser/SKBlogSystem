@@ -247,6 +247,17 @@ namespace FileBlogSystem.Repositories
       }
 
       var imagesToWrite = (post.Images != null && post.Images.Any()) ? post.Images : existingImages;
+      // Normalize to secure endpoint form by mapping filename
+      if (imagesToWrite != null && imagesToWrite.Any())
+      {
+        imagesToWrite = imagesToWrite
+          .Where(s => !string.IsNullOrWhiteSpace(s))
+          .Select(s => s.StartsWith("/api/posts/", StringComparison.OrdinalIgnoreCase)
+            ? s
+            : $"/api/posts/{post.Slug}/assets/{Path.GetFileName(s)}")
+          .Distinct(StringComparer.OrdinalIgnoreCase)
+          .ToList();
+      }
 
       var metadata = new
       {

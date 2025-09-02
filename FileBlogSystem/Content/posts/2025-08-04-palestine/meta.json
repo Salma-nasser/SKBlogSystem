@@ -11,11 +11,12 @@
     "Politics"
   ],
   "PublishedDate": "2025-08-04T07:52:34.7051316Z",
-  "ModifiedDate": "2025-08-04T07:56:49.0950911Z",
+  "ModifiedDate": "2025-09-02T09:43:09.0223304Z",
   "Slug": "palestine",
   "IsPublished": true,
   "ScheduledDate": null,
   "Images": [
     "/api/posts/palestine/assets/flag.jpg"
-  ]
+  ],
+  "Likes": []
 }

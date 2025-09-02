@@ -1,0 +1,23 @@
+{
+  "Title": "books and audiobooks",
+  "Description": "This is an insight into books and audiobooks",
+  "CustomUrl": "books-and-audiobooks",
+  "AuthorUsername": "Salma",
+  "Tags": [
+    "books",
+    "audiobooks",
+    "ListenOrRead"
+  ],
+  "Categories": [
+    "Reading"
+  ],
+  "PublishedDate": "2025-09-02T10:25:23.5305441Z",
+  "ModifiedDate": "2025-09-02T10:25:23.5306796Z",
+  "Slug": "books-and-audiobooks",
+  "IsPublished": true,
+  "ScheduledDate": null,
+  "Images": [
+    "/api/posts/books-and-audiobooks/assets/Frame_3.png"
+  ],
+  "Likes": []
+}

@@ -121,6 +121,12 @@ public static class BlogPostEndpoints
             return Results.BadRequest(new { message = parseResult.ErrorMessage });
 
         var result = await service.CreatePostAsync(parseResult.Request, userName);
+        // If creation failed, don't attempt to access Slug on the dynamic object
+        if (result is null || (result.Success is bool s && !s))
+        {
+            return Results.BadRequest(result ?? new { Message = "Failed to create post" });
+        }
+
         // Refresh index after creating a post
         search.RebuildIndex(service.GetAllPosts());
 

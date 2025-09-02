@@ -433,7 +433,7 @@ function setupLikesInteraction(slug) {
                           : ""
                       }
                     </div>
-                    <a href="profile/${user.username}" style="
+                    <a href="/profile/${user.username}" style="
                       padding: 5px 12px;
                       background: var(--accent-color, #c89b7b);
                       color: white;

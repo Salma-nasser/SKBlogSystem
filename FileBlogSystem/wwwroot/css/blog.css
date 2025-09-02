@@ -98,7 +98,8 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   max-width: 1000px;
   width: 100%;
-  min-height: 400px;
+  /* Allow the card to shrink to fit its content to reduce large whitespace */
+  min-height: 0;
   height: auto;
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color);
