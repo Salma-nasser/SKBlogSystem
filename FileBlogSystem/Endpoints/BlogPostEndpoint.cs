@@ -32,18 +32,18 @@ public static class BlogPostEndpoints
         Posts.MapPut("/modify/{slug}", ModifyPostAsync);
         Posts.MapPut("/publish/{slug}", PublishPostAsync);
         Posts.MapDelete("/{slug}", DeletePostAsync);
-        app.MapGet("/feed.xml", GetRssFeedAsync);
-        app.MapGet("/api/posts/user", GetUserPostsAsync);
-        app.MapGet("/api/posts/user/{username}", GetPostsByUserAsync);
-        app.MapDelete("/api/posts/delete/{slug}", DeleteUserPostAsync)
+        Posts.MapGet("/feed.xml", GetRssFeedAsync);
+        Posts.MapGet("/user", GetUserPostsAsync);
+        Posts.MapGet("/user/{username}", GetPostsByUserAsync);
+        Posts.MapDelete("/delete/{slug}", DeleteUserPostAsync)
             .WithName("DeleteUserPost");
-        app.MapPost("/api/posts/{slug}/like", LikePostAsync)
+        Posts.MapPost("/{slug}/like", LikePostAsync)
             .WithName("LikePost")
             .WithTags("BlogPosts");
-        app.MapDelete("/api/posts/{slug}/like", UnlikePostAsync);
-        app.MapGet("/api/posts/{slug}/likes", GetPostLikesAsync);
-        app.MapGet("/api/search", SearchPostsAsync);
-        app.MapGet("/api/posts/{slug}/assets/{filename}", GetPostAssetAsync);
+        Posts.MapDelete("/{slug}/like", UnlikePostAsync);
+        Posts.MapGet("/{slug}/likes", GetPostLikesAsync);
+        Posts.MapGet("/search", SearchPostsAsync);
+        Posts.MapGet("/{slug}/assets/{filename}", GetPostAssetAsync);
     }
 
     // Endpoint implementations

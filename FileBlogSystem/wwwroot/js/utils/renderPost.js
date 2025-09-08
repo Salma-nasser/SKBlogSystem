@@ -418,22 +418,22 @@ export function renderPosts(posts, containerId, options = {}) {
 
     card.innerHTML = `
       <div class="post-content-wrapper">
-        <h3><a href="/post/${post.Slug}">${post.Title}</a></h3>
-        <div class="post-description">${renderMarkdown(
-          post.Description || ""
-        )}</div>
-        ${imgHtml}
-        ${bodyHtml}
+      <h2><a href="/post/${post.Slug}">${post.Title}</a></h2>
+      <div class="post-description">${renderMarkdown(
+        post.Description || ""
+      )}</div>
+      ${imgHtml}
+      ${bodyHtml}
       </div>
       
       <div class="post-footer">
-        ${authorHtml}
-        <div class="meta-info">
-          <div><strong>Tags:</strong> ${tagsHtml || "—"}</div>
-          <div><strong>Categories:</strong> ${catsHtml || "—"}</div>
-        </div>
-        ${interactionBarHtml}
-        <div class="post-actions">${actionsHtml}</div>
+      ${authorHtml}
+      <div class="meta-info">
+        <div><strong>Tags:</strong> ${tagsHtml || "—"}</div>
+        <div><strong>Categories:</strong> ${catsHtml || "—"}</div>
+      </div>
+      ${interactionBarHtml}
+      <div class="post-actions">${actionsHtml}</div>
       </div>
     `;
 
@@ -548,7 +548,7 @@ export function renderPosts(posts, containerId, options = {}) {
     overflow-y: auto;
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
   ">
-    <h3 style="
+    <h2 style="
       margin: 0 0 20px 0;
       font-size: 1.5rem;
       color: var(--text-color, #333);
@@ -556,7 +556,7 @@ export function renderPosts(posts, containerId, options = {}) {
       padding-bottom: 10px;
     ">Liked by ${likers.length} ${
           likers.length === 1 ? "person" : "people"
-        }</h3>
+        }</h2>
     <ul style="
       list-style: none;
       padding: 0;
@@ -701,7 +701,7 @@ export function renderPosts(posts, containerId, options = {}) {
       e.preventDefault();
       const postCard = link.closest(".post-card");
       const postBody = postCard.querySelector(".post-body");
-      const postTitle = postCard.querySelector("h3 a").textContent;
+      const postTitle = postCard.querySelector("h2 a").textContent;
       const action = link.dataset.action;
 
       if (action === "expand") {

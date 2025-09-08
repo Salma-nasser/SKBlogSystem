@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.RateLimiting;
 namespace FileBlogSystem.Endpoints;
 
-[EnableRateLimiting("Fixed")]
+[EnableRateLimiting("AuthFixed")]
 public static class AuthEndpoints
 {
   public static void MapAuthEndpoints(this IEndpointRouteBuilder app)

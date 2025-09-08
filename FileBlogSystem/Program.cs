@@ -99,12 +99,23 @@ builder.Services.AddCors(options =>
   });
 });
 
-// RateLimiting
+// RateLimiting fixed
 builder.Services.AddRateLimiter(RateLimiterOptions =>
 {
   RateLimiterOptions.AddFixedWindowLimiter("Fixed", options =>
   {
     options.PermitLimit = 60;
+    options.Window = TimeSpan.FromMinutes(1);
+    options.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+    options.QueueLimit = 0;
+  });
+});
+//RateLimiting for Login and Register endpoints
+builder.Services.AddRateLimiter(RateLimiterOptions =>
+{
+  RateLimiterOptions.AddFixedWindowLimiter("AuthFixed", options =>
+  {
+    options.PermitLimit = 10;
     options.Window = TimeSpan.FromMinutes(1);
     options.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
     options.QueueLimit = 0;

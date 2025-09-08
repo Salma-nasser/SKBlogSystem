@@ -1,10 +1,13 @@
 import { renderPosts } from "./utils/renderPost.js";
 import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
-import { showMessage } from "./utils/notifications.js";
+import {
+  showMessage,
+  openNotificationsModal,
+  getAllNotifications,
+} from "./utils/notifications.js";
 import { initMobileSidebar } from "./utils/mobileSidebar.js";
 import { authenticatedFetch } from "./utils/api.js";
-import { openNotificationsModal } from "./utils/notifications.js";
 let currentPage = 1;
 const pageSize = 5;
 let allPosts = [];
@@ -333,7 +336,9 @@ async function reloadPosts() {
   try {
     let posts;
     if (searchQuery || activeFilter) {
-      const res = await authenticatedFetch(`/api/search?${params.toString()}`);
+      const res = await authenticatedFetch(
+        `/api/posts/search?${params.toString()}`
+      );
       posts = await res.json();
     } else {
       const res = await authenticatedFetch("/api/posts");

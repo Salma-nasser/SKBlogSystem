@@ -18,5 +18,7 @@
   "Images": [
     "/api/posts/palestine/assets/flag.jpg"
   ],
-  "Likes": []
+  "Likes": [
+    "Mohammed"
+  ]
 }

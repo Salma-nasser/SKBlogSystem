@@ -19,5 +19,7 @@
   "Images": [
     "/api/posts/books-and-audiobooks/assets/Frame_3.png"
   ],
-  "Likes": []
+  "Likes": [
+    "Mohammed"
+  ]
 }
