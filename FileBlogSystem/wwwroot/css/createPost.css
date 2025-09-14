@@ -432,6 +432,17 @@ body.dark-mode #modeToggle:hover {
   margin: 2px;
   border-radius: 4px;
   transition: all 0.2s ease;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.EasyMDEContainer .editor-toolbar button::before {
+  font-family: FontAwesome !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  color: var(--text-color) !important;
+  opacity: 1 !important;
 }
 
 .EasyMDEContainer .editor-toolbar button:hover {
@@ -586,6 +597,138 @@ body.dark-mode .EasyMDEContainer .CodeMirror .cm-code {
   background-color: rgba(212, 184, 150, 0.1);
   padding: 1px 3px;
   border-radius: 3px;
+}
+
+/* Compact layout and EasyMDE toolbar visibility overrides */
+.create-post-header {
+  padding: 1.5rem !important;
+  margin-bottom: 1.25rem !important;
+}
+
+.create-post-form {
+  padding: 1.5rem !important;
+}
+
+.form-row {
+  gap: 0.75rem !important;
+}
+
+.form-group {
+  margin-bottom: 1rem !important;
+}
+
+.image-help-info {
+  margin: 0.75rem 0 !important;
+}
+
+/* EasyMDE toolbar: ensure icons are visible in both themes */
+.EasyMDEContainer .editor-toolbar {
+  background: var(--card-background) !important;
+  border-color: var(--input-border) !important;
+  padding: 6px 8px !important;
+}
+
+.EasyMDEContainer .editor-toolbar button,
+.EasyMDEContainer .editor-toolbar a {
+  color: var(--text-color) !important;
+  opacity: 1 !important;
+}
+
+.EasyMDEContainer .editor-toolbar button i,
+.EasyMDEContainer .editor-toolbar button .fa,
+.EasyMDEContainer .editor-toolbar a i,
+.EasyMDEContainer .editor-toolbar a .fa {
+  color: var(--text-color) !important;
+}
+
+.EasyMDEContainer .editor-toolbar button:hover i,
+.EasyMDEContainer .editor-toolbar button:hover .fa,
+.EasyMDEContainer .editor-toolbar a:hover i,
+.EasyMDEContainer .editor-toolbar a:hover .fa {
+  color: var(--primary-color) !important;
+}
+
+/* Dark mode overrides */
+body.dark-mode .EasyMDEContainer .editor-toolbar {
+  background: var(--bg-secondary) !important;
+  border-color: var(--input-border) !important;
+}
+
+body.dark-mode .EasyMDEContainer .editor-toolbar button,
+body.dark-mode .EasyMDEContainer .editor-toolbar a {
+  color: var(--text-color) !important;
+}
+
+body.dark-mode .EasyMDEContainer .editor-toolbar button i,
+body.dark-mode .EasyMDEContainer .editor-toolbar button .fa,
+body.dark-mode .EasyMDEContainer .editor-toolbar a i,
+body.dark-mode .EasyMDEContainer .editor-toolbar a .fa {
+  color: var(--text-color) !important;
+}
+
+body.dark-mode .EasyMDEContainer .editor-toolbar button:hover i,
+body.dark-mode .EasyMDEContainer .editor-toolbar button:hover .fa,
+body.dark-mode .EasyMDEContainer .editor-toolbar a:hover i,
+body.dark-mode .EasyMDEContainer .editor-toolbar a:hover .fa {
+  color: var(--primary-color) !important;
+}
+
+/* EasyMDE toolbar fallback glyphs (no FontAwesome needed) */
+.EasyMDEContainer .editor-toolbar .fa-bold:before {
+  content: "B" !important;
+  font-weight: 700;
+}
+.EasyMDEContainer .editor-toolbar .fa-italic:before {
+  content: "I" !important;
+  font-style: italic;
+}
+.EasyMDEContainer .editor-toolbar .fa-header:before {
+  content: "H" !important;
+  font-weight: 700;
+}
+.EasyMDEContainer .editor-toolbar .fa-quote-left:before {
+  content: "\201C\201D" !important;
+}
+.EasyMDEContainer .editor-toolbar .fa-code:before {
+  content: "</>" !important;
+  font-family: monospace;
+  font-weight: 700;
+}
+.EasyMDEContainer .editor-toolbar .fa-list-ul:before {
+  content: "•" !important;
+  font-weight: 700;
+}
+.EasyMDEContainer .editor-toolbar .fa-list-ol:before {
+  content: "1." !important;
+  font-weight: 700;
+}
+.EasyMDEContainer .editor-toolbar .fa-link:before {
+  content: "🔗" !important;
+}
+.EasyMDEContainer .editor-toolbar .fa-table:before {
+  content: "▦" !important;
+}
+.EasyMDEContainer .editor-toolbar .fa-eye:before {
+  content: "👁" !important;
+}
+.EasyMDEContainer .editor-toolbar .fa-columns:before {
+  content: "⇄" !important;
+}
+.EasyMDEContainer .editor-toolbar .fa-arrows-alt:before {
+  content: "⛶" !important;
+}
+.EasyMDEContainer .editor-toolbar .fa-question-circle:before {
+  content: "?" !important;
+  font-weight: 700;
+}
+
+/* Make sure fallback glyphs match theme colors */
+.EasyMDEContainer .editor-toolbar .fa:before {
+  color: var(--text-color) !important;
+}
+.EasyMDEContainer .editor-toolbar a:hover.fa:before,
+.EasyMDEContainer .editor-toolbar button:hover.fa:before {
+  color: var(--primary-color) !important;
 }
 
 /* Responsive Design */

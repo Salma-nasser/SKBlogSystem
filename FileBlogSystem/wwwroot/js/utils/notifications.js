@@ -123,7 +123,7 @@ export function showConfirmation(
   // Create dialog
   const dialog = document.createElement("div");
   dialog.style.cssText = `
-    background: var(--card-bg, white);
+    background: var(--post-bg, white);
     color: var(--text-color, black);
     padding: 24px;
     border-radius: 12px;
@@ -131,35 +131,45 @@ export function showConfirmation(
     max-width: 400px;
     margin: 20px;
     text-align: center;
+    border: 1px solid var(--border-color, rgba(0,0,0,0.1));
   `;
+
+  // Check if dark mode is active to adjust button colors
+  const isDarkMode =
+    document.body.classList.contains("dark-mode") ||
+    document.documentElement.getAttribute("data-theme") === "dark";
 
   dialog.innerHTML = `
     ${
       title
-        ? `<div style="margin-bottom: 12px; font-size: 18px; font-weight: 600; color: var(--accent-color, #c89b7b);">${title}</div>`
+        ? `<div style="margin-bottom: 12px; font-size: 18px; font-weight: 600; color: var(--primary-color, #c89b7b);">${title}</div>`
         : ""
     }
-    <div style="margin-bottom: 20px; font-size: 16px; line-height: 1.5;">${message}</div>
+    <div style="margin-bottom: 20px; font-size: 16px; line-height: 1.5; color: var(--text-color);">${message}</div>
     <div style="display: flex; gap: 12px; justify-content: center;">
       <button id="confirm-yes" style="
-        background: var(--accent-color, #c89b7b);
-        color: white;
+        background: var(--primary-color, #c89b7b);
+        color: ${isDarkMode ? "#0f0804" : "white"};
         border: none;
         padding: 10px 20px;
         border-radius: 6px;
         cursor: pointer;
         font-size: 14px;
-        font-weight: 500;
+        font-weight: 600;
+        transition: all 0.2s ease;
       ">Yes</button>
       <button id="confirm-no" style="
-        background: var(--button-bg, #8c6e63);
-        color: white;
-        border: none;
+        background: ${
+          isDarkMode ? "rgba(255,255,255,0.15)" : "var(--button-bg, #8c6e63)"
+        };
+        color: ${isDarkMode ? "var(--primary-color)" : "white"};
+        border: ${isDarkMode ? "1px solid var(--primary-color)" : "none"};
         padding: 10px 20px;
         border-radius: 6px;
         cursor: pointer;
         font-size: 14px;
-        font-weight: 500;
+        font-weight: 600;
+        transition: all 0.2s ease;
       ">No</button>
     </div>
   `;
@@ -168,14 +178,38 @@ export function showConfirmation(
   document.body.appendChild(overlay);
 
   // Handle clicks
-  dialog.querySelector("#confirm-yes").onclick = () => {
+  const yesButton = dialog.querySelector("#confirm-yes");
+  const noButton = dialog.querySelector("#confirm-no");
+
+  // Add hover effects
+  yesButton.addEventListener("mouseover", function () {
+    this.style.transform = "translateY(-2px)";
+    this.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
+  });
+
+  yesButton.addEventListener("mouseout", function () {
+    this.style.transform = "translateY(0)";
+    this.style.boxShadow = "none";
+  });
+
+  noButton.addEventListener("mouseover", function () {
+    this.style.transform = "translateY(-2px)";
+    this.style.boxShadow = "0 4px 8px rgba(0,0,0,0.2)";
+  });
+
+  noButton.addEventListener("mouseout", function () {
+    this.style.transform = "translateY(0)";
+    this.style.boxShadow = "none";
+  });
+
+  yesButton.onclick = () => {
     overlay.remove();
     if (typeof onConfirm === "function") {
       onConfirm();
     }
   };
 
-  dialog.querySelector("#confirm-no").onclick = () => {
+  noButton.onclick = () => {
     overlay.remove();
     if (typeof onCancelCallback === "function") {
       onCancelCallback();
@@ -219,6 +253,64 @@ if (!document.querySelector("#notification-styles")) {
     }
   `;
   document.head.appendChild(style);
+}
+
+// Prompt unauthenticated users to register/sign in
+export function showAuthPrompt(options = {}) {
+  const {
+    title = "Join Aether & Ink",
+    message = "Create a free account to view profiles, follow authors, and engage with posts.",
+    showCancel = true,
+  } = options;
+
+  // Overlay
+  const overlay = document.createElement("div");
+  overlay.style.cssText = `
+    position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+    z-index: 10010; display:flex; align-items:center; justify-content:center;
+    animation: fadeIn 0.2s ease;
+  `;
+
+  // Dialog
+  const dialog = document.createElement("div");
+  dialog.style.cssText = `
+    background: var(--bg-secondary, #fff); color: var(--text-color, #2c1810);
+    padding: 24px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    max-width: 440px; width: calc(100vw - 40px); text-align:center;
+  `;
+  dialog.innerHTML = `
+    <h3 style="margin:0 0 10px 0; color: var(--primary-color, #8b4513);">${title}</h3>
+    <p style="margin:0 0 18px 0; line-height:1.5;">${message}</p>
+    <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+      <button id="authPromptRegister" class="btn" style="min-width:120px;">Register</button>
+      <button id="authPromptLogin" class="btn btn-outline" style="min-width:120px; color: var(--primary-color) !important; background: transparent; border: 2px solid var(--primary-color);">Sign In</button>
+    </div>
+    ${
+      showCancel
+        ? '<div style="margin-top:10px; text-align:center;"><a href="#" id="authPromptCancelLink" style="color: var(--primary-color); text-decoration: underline;">Maybe later</a></div>'
+        : ""
+    }
+  `;
+
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+
+  const close = () => overlay.remove();
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+  dialog.querySelector("#authPromptRegister").onclick = () => {
+    window.location.href = "/register";
+  };
+  dialog.querySelector("#authPromptLogin").onclick = () => {
+    window.location.href = "/login";
+  };
+  const cancelLink = dialog.querySelector("#authPromptCancelLink");
+  if (cancelLink)
+    cancelLink.onclick = (e) => {
+      e.preventDefault();
+      close();
+    };
 }
 
 // === Reusable Notifications Modal (desktop + mobile) ===

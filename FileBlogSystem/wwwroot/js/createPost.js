@@ -86,6 +86,7 @@ function initializeMarkdownEditor() {
     autofocus: false,
     minHeight: "300px",
     maxHeight: "600px",
+    autoDownloadFontAwesome: false,
     toolbar: [
       "bold",
       "italic",
@@ -117,7 +118,9 @@ function setupEventListeners() {
   document.getElementById("backToBlogBtn")?.addEventListener("click", () => {
     window.location.href = "/blog";
   });
-
+  document.getElementById("backToProfileBtn")?.addEventListener("click", () => {
+    window.location.href = "/profile/my-profile";
+  });
   document.getElementById("logoutBtn")?.addEventListener("click", () => {
     logout();
   });

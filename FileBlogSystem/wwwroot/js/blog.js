@@ -127,12 +127,22 @@ function getPageFromURL() {
   return Math.max(1, page);
 }
 
-function updateURL(page) {
+function getSortFromURL() {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get("sort") || "latest";
+}
+
+function updateURL(page, sort) {
   const url = new URL(window.location);
   if (page === 1) {
     url.searchParams.delete("page");
   } else {
     url.searchParams.set("page", page);
+  }
+  // Only change sort when explicitly provided; otherwise keep existing
+  if (typeof sort !== "undefined") {
+    if (sort === null) url.searchParams.delete("sort");
+    else url.searchParams.set("sort", sort);
   }
   window.history.pushState({}, "", url);
 }
@@ -161,6 +171,17 @@ window.addEventListener("DOMContentLoaded", () => {
   }
   // Initialize page from URL
   initializePageFromURL();
+  // Initialize sort select from URL
+  const initialSort = getSortFromURL();
+  const sortSelectEl = document.getElementById("sortSelect");
+  if (sortSelectEl) {
+    sortSelectEl.value = initialSort;
+    sortSelectEl.addEventListener("change", () => {
+      currentPage = 1;
+      updateURL(currentPage, sortSelectEl.value);
+      reloadPosts();
+    });
+  }
 
   // Handle browser back/forward navigation
   window.addEventListener("popstate", () => {
@@ -353,11 +374,48 @@ async function reloadPosts() {
       return post.IsPublished && (!sched || sched <= now);
     });
 
-    renderPosts(paginate(visible, currentPage, pageSize), "postsContainer", {
+    // Apply sorting and date-range filters from UI or URL
+    const sort =
+      document.getElementById("sortSelect")?.value || getSortFromURL();
+    let filtered = visible.slice();
+    if (sort === "last_week") {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 7);
+      filtered = filtered.filter((p) => {
+        const pd = p.PublishedDate
+          ? new Date(p.PublishedDate)
+          : new Date(p.CreatedDate || 0);
+        return pd >= cutoff;
+      });
+    } else if (sort === "last_month") {
+      const cutoff = new Date();
+      cutoff.setMonth(cutoff.getMonth() - 1);
+      filtered = filtered.filter((p) => {
+        const pd = p.PublishedDate
+          ? new Date(p.PublishedDate)
+          : new Date(p.CreatedDate || 0);
+        return pd >= cutoff;
+      });
+    }
+
+    // Sort by published date (or created date fallback)
+    filtered.sort((a, b) => {
+      const da = a.PublishedDate
+        ? new Date(a.PublishedDate)
+        : new Date(a.CreatedDate || 0);
+      const db = b.PublishedDate
+        ? new Date(b.PublishedDate)
+        : new Date(b.CreatedDate || 0);
+      if (sort === "oldest") return da - db;
+      // default to latest
+      return db - da;
+    });
+
+    renderPosts(paginate(filtered, currentPage, pageSize), "postsContainer", {
       showDelete: false,
       showModify: false,
     });
-    updatePagination(visible.length);
+    updatePagination(filtered.length);
     // Update status line and apply highlights
     updateSearchStatus(searchQuery, activeFilter);
     applyHighlights(searchQuery);

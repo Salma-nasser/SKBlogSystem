@@ -187,6 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
         element: document.getElementById("content"),
         spellChecker: false,
         placeholder: "Write your post content here...",
+        autoDownloadFontAwesome: false,
         autosave: {
           enabled: true,
           uniqueId: "modifyPostContent",

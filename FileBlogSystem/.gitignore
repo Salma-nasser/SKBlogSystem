@@ -105,9 +105,7 @@ local.settings.json
 Thumbs.db
 ehthumbs.db
 Desktop.ini
-
-# Search Index
+#lucene search index
 /Content/search-index/*
-
-# Node modules
-node_modules/
+#node modules
+/node_modules/

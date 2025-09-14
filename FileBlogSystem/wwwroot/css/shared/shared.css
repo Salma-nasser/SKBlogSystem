@@ -467,6 +467,9 @@ button:disabled,
   opacity: 0.5;
   cursor: not-allowed;
   transform: none !important;
+  color: var(--primary-color) !important;
+  background: rgba(212, 184, 150, 0.15) !important; /* subtle tan tint */
+  border-color: var(--primary-color) !important;
 }
 
 .btn-secondary {
@@ -837,6 +840,15 @@ body.dark-mode .badge-warning {
 /* Don't force dark text on mobile drawer buttons */
 body.dark-mode button:not(.close-btn):not(.delete-btn):not(.mobile-btn) {
   color: #0f0804 !important; /* Very dark text on light button backgrounds */
+}
+
+/* Ensure disabled buttons have tan text in dark mode */
+body.dark-mode button:disabled,
+body.dark-mode .btn:disabled {
+  color: var(--primary-color) !important;
+  background: rgba(139, 69, 19, 0.2) !important;
+  border-color: var(--primary-color) !important;
+  opacity: 0.7;
 }
 
 body.dark-mode .read-more-link {
