@@ -33,7 +33,6 @@
     <Content Remove="Content\search-index\**" />
   </ItemGroup>
   <PropertyGroup>
-  <RuntimeIdentifier>win-x64</RuntimeIdentifier>
   <SelfContained>false</SelfContained>
   <PublishTrimmed>false</PublishTrimmed>
   <EnableCompressionInStaticWebAssets>false</EnableCompressionInStaticWebAssets>

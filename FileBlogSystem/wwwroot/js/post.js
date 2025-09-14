@@ -4,6 +4,7 @@ import { initializeThemeToggle } from "./utils/themeToggle.js";
 import { initMobileSidebar } from "./utils/mobileSidebar.js";
 import { showMessage } from "./utils/notifications.js";
 import { authenticatedFetch } from "./utils/api.js";
+import { formatDateIntlOnly, formatDateIntlWithTime } from "./utils/date.js";
 
 // Helper to split camelCase and concatenated labels and capitalize each word
 function formatLabel(str) {
@@ -115,16 +116,10 @@ function renderSinglePost(post) {
 
   const publishedDate = post.PublishedDate || post.CreatedDate;
   const formattedDate = publishedDate
-    ? new Date(publishedDate).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      })
+    ? formatDateIntlWithTime(publishedDate)
     : "";
 
-  const dateOnly = publishedDate
-    ? new Date(publishedDate).toISOString().split("T")[0]
-    : "";
+  const dateOnly = publishedDate ? formatDateIntlOnly(publishedDate) : "";
 
   // Generate images HTML with proper layout classes
   let imagesHtml = "";
@@ -142,17 +137,40 @@ function renderSinglePost(post) {
 
     imagesHtml = `
       <div class="single-post-images ${layoutClass}">
-        ${post.Images.map(
-          (imagePath, index) =>
-            `<img 
-            src="/Content/posts/${dateOnly}-${post.Slug}${imagePath}" 
-            alt="Post Image ${index + 1}" 
-            class="post-image" 
-            loading="lazy"
-            data-index="${index}"
-            onerror="this.style.display='none'"
-          />`
-        ).join("")}
+        ${post.Images.map((imagePath, index) => {
+          // If backend already sent secure/absolute URL, use it directly
+          if (
+            typeof imagePath === "string" &&
+            (imagePath.startsWith("http://") ||
+              imagePath.startsWith("https://") ||
+              imagePath.startsWith("/api/posts/"))
+          ) {
+            return `
+                <img 
+                  src="${imagePath}" 
+                  alt="Post Image ${index + 1}" 
+                  class="post-image" 
+                  loading="lazy"
+                  data-index="${index}"
+                  onerror="this.style.display='none'"
+                />`;
+          }
+
+          // Fallback: legacy relative stored path -> map to secure endpoint by filename
+          const str = String(imagePath || "");
+          const parts = str.split("/");
+          const fileName = parts[parts.length - 1];
+          const secureUrl = `/api/posts/${post.Slug}/assets/${fileName}`;
+          return `
+              <img 
+                src="${secureUrl}" 
+                alt="Post Image ${index + 1}" 
+                class="post-image" 
+                loading="lazy"
+                data-index="${index}"
+                onerror="this.style.display='none'"
+              />`;
+        }).join("")}
       </div>
     `;
   }
@@ -410,7 +428,7 @@ function setupLikesInteraction(slug) {
                           : ""
                       }
                     </div>
-                    <a href="profile/${user.username}" style="
+                    <a href="/profile/${user.username}" style="
                       padding: 5px 12px;
                       background: var(--accent-color, #c89b7b);
                       color: white;

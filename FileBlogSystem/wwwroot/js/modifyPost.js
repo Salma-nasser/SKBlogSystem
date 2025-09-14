@@ -64,7 +64,20 @@ document.addEventListener("DOMContentLoaded", () => {
       wrapper.style.width = "120px";
       // Image
       const imgEl = document.createElement("img");
-      imgEl.src = `/Content/posts/${dateOnly}-${postSlug}${img}`;
+      // Use backend-provided URL if absolute; otherwise map legacy path to secure endpoint by filename
+      if (
+        typeof img === "string" &&
+        (img.startsWith("http://") ||
+          img.startsWith("https://") ||
+          img.startsWith("/api/posts/"))
+      ) {
+        imgEl.src = img;
+      } else {
+        const str = String(img || "");
+        const parts = str.split("/");
+        const fileName = parts[parts.length - 1];
+        imgEl.src = `/api/posts/${postSlug}/assets/${fileName}`;
+      }
       imgEl.alt = "Post image";
       imgEl.className = "preview-thumb";
       imgEl.style.width = "120px";

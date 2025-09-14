@@ -3,6 +3,7 @@
 import { initializeThemeToggle } from "./utils/themeToggle.js";
 import { initMobileSidebar } from "./utils/mobileSidebar.js";
 import { authenticatedFetch, HttpError } from "./utils/api.js";
+import { formatDateIntlWithTime } from "./utils/date.js";
 
 class AdminDashboard {
   constructor() {
@@ -300,12 +301,7 @@ class AdminDashboard {
       return "Never";
     }
 
-    const date = new Date(dateString);
-    return (
-      date.toLocaleDateString() +
-      " " +
-      date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
-    );
+    return formatDateIntlWithTime(dateString);
   }
 
   escapeHtml(text) {

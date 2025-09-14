@@ -1,639 +1,277 @@
-using System.Text.Json;
 using FileBlogSystem.Models;
 using FileBlogSystem.Interfaces;
+using FileBlogSystem.Repositories.Interfaces;
+using System.Text.RegularExpressions;
 
 namespace FileBlogSystem.Services;
 
 public class BlogPostService : IBlogPostService
 {
-  private readonly string _rootPath;
-  private readonly string _usersDirectory; // Added field for users directory
+  private readonly IPostRepository _postRepository;
+  private readonly IUserRepository _userRepository;
+  private readonly ILogger<BlogPostService> _logger;
+  private readonly IWebHostEnvironment _env;
 
-  public BlogPostService(IConfiguration configuration, IWebHostEnvironment env)
+  public BlogPostService(
+      IPostRepository postRepository,
+      IUserRepository userRepository,
+      ILogger<BlogPostService> logger,
+      IWebHostEnvironment env)
   {
-    string? contentRoot = configuration["ContentDirectory"] ?? "Content";
-    _rootPath = Path.Combine(env.ContentRootPath, contentRoot, "posts");
-    _usersDirectory = Path.Combine(env.ContentRootPath, contentRoot, "users"); // Initialize users directory
+    _postRepository = postRepository;
+    _userRepository = userRepository;
+    _logger = logger;
+    _env = env;
+  }
 
-    if (!Directory.Exists(_rootPath))
+  public IEnumerable<Post> GetAllPosts(string? currentUsername = null)
+  {
+    try
     {
-      Directory.CreateDirectory(_rootPath);
-      Console.WriteLine($"Created blog posts directory: {_rootPath}");
+      var posts = _postRepository.GetAllPostsAsync().Result;
+      var visible = posts.Where(p => p.IsPublished || (currentUsername != null && p.Author == currentUsername)).ToList();
+      if (!string.IsNullOrEmpty(currentUsername))
+      {
+        foreach (var p in visible)
+        {
+          p.LikedByCurrentUser = p.Likes.Any(l => l.Equals(currentUsername, StringComparison.OrdinalIgnoreCase));
+        }
+      }
+      return visible;
     }
-
-    Console.WriteLine($"Blog posts directory path: {_rootPath}");
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error getting all posts");
+      return Enumerable.Empty<Post>();
+    }
   }
 
   public IEnumerable<Post> GetPostsByCategory(string category, string currentUsername)
   {
-    if (!Directory.Exists(_rootPath)) yield break;
-
-    foreach (var dir in Directory.GetDirectories(_rootPath, "*", SearchOption.AllDirectories))
+    try
     {
-      Post? post = null;
-      try
-      {
-        post = LoadPost(dir);
-      }
-      catch (Exception ex)
-      {
-        Console.WriteLine($"Error loading post from {dir}: {ex.Message}");
-      }
-
-      if (post != null && post.IsPublished && post.Categories.Contains(category, StringComparer.OrdinalIgnoreCase))
-      {
-        // Check if author is active
-        if (!IsUserActive(post.Author))
-          continue;
-        if (!string.IsNullOrEmpty(currentUsername))
-        {
-          post.LikedByCurrentUser = post.Likes.Contains(currentUsername, StringComparer.OrdinalIgnoreCase);
-        }
-        yield return post;
-      }
+      var posts = GetAllPosts(currentUsername);
+      return posts.Where(p => p.Categories != null && p.Categories.Contains(category, StringComparer.OrdinalIgnoreCase));
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error getting posts by category: {Category}", category);
+      return Enumerable.Empty<Post>();
     }
   }
 
   public IEnumerable<Post> GetPostsByTag(string tag, string currentUsername)
   {
-    if (!Directory.Exists(_rootPath)) yield break;
-
-    foreach (var dir in Directory.GetDirectories(_rootPath, "*", SearchOption.AllDirectories))
+    try
     {
-      Post? post = null;
-      try
-      {
-        post = LoadPost(dir);
-      }
-      catch (Exception ex)
-      {
-        Console.WriteLine($"Error loading post from {dir}: {ex.Message}");
-      }
-
-      if (post != null && post.IsPublished && post.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase))
-      {
-        // Check if author is active
-        if (!IsUserActive(post.Author))
-          continue;
-        if (!string.IsNullOrEmpty(currentUsername))
-        {
-          post.LikedByCurrentUser = post.Likes.Contains(currentUsername, StringComparer.OrdinalIgnoreCase);
-        }
-        yield return post;
-      }
+      var posts = GetAllPosts(currentUsername);
+      return posts.Where(p => p.Tags != null && p.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase));
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error getting posts by tag: {Tag}", tag);
+      return Enumerable.Empty<Post>();
     }
   }
 
   public Post? GetPostBySlug(string slug, string? currentUsername)
   {
-    if (!Directory.Exists(_rootPath)) return null;
-
-    foreach (var dir in Directory.GetDirectories(_rootPath))
-    {
-      try
-      {
-        var post = LoadPost(dir);
-        if (post != null && post.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase))
-        {
-          // Check if author is active
-          if (!IsUserActive(post.Author))
-            continue;
-          if (!string.IsNullOrEmpty(currentUsername))
-          {
-            post.LikedByCurrentUser = post.Likes.Contains(currentUsername, StringComparer.OrdinalIgnoreCase);
-          }
-          return post;
-        }
-      }
-      catch (Exception ex)
-      {
-        Console.WriteLine($"Error loading post from {dir}: {ex.Message}");
-      }
-    }
-
-    return null;
-  }
-
-  public IEnumerable<Post> GetUserDrafts(string username)
-  {
-    if (!Directory.Exists(_rootPath)) yield break;
-
-    foreach (var dir in Directory.GetDirectories(_rootPath, "*", SearchOption.AllDirectories))
-    {
-      Post? post = null;
-      try
-      {
-        post = LoadPost(dir);
-      }
-      catch (Exception ex)
-      {
-        Console.WriteLine($"Error loading post from {dir}: {ex.Message}");
-      }
-
-      if (post != null && !post.IsPublished && post.Author.Equals(username, StringComparison.OrdinalIgnoreCase))
-      {
-        if (!IsUserActive(post.Author))
-          continue;
-        yield return post;
-      }
-    }
-  }
-
-  public IEnumerable<Post> GetPostsByUser(string username, string? currentUsername = null)
-  {
-    if (!Directory.Exists(_rootPath)) yield break;
-
-    foreach (var dir in Directory.GetDirectories(_rootPath, "*", SearchOption.AllDirectories))
-    {
-      Post? post = null;
-      try
-      {
-        post = LoadPost(dir);
-      }
-      catch (Exception ex)
-      {
-        Console.WriteLine($"Error loading post from {dir}: {ex.Message}");
-      }
-
-      if (post != null && post.Author.Equals(username, StringComparison.OrdinalIgnoreCase) && post.IsPublished)
-      {
-        if (!IsUserActive(post.Author))
-          continue;
-        if (!string.IsNullOrEmpty(username))
-        {
-          post.LikedByCurrentUser = post.Likes.Contains(username, StringComparer.OrdinalIgnoreCase);
-        }
-        yield return post;
-      }
-    }
-  }
-  private Post? LoadPost(string folder)
-  {
     try
     {
-      var metaPath = Path.Combine(folder, "meta.json");
-      var bodyPath = Path.Combine(folder, "content.md");
+      var post = _postRepository.GetPostBySlugAsync(slug).Result;
+      if (post == null) return null;
 
-      if (!File.Exists(metaPath) || !File.Exists(bodyPath))
-        return null;
-
-      var metaJson = File.ReadAllText(metaPath);
-      using var doc = JsonDocument.Parse(metaJson);
-
-      var root = doc.RootElement;
-
-      string GetSafeString(string propertyName)
+      // Check if user can access this post
+      if (!post.IsPublished && (currentUsername == null || post.Author != currentUsername))
       {
-        // Try lowercase first, then uppercase (for backwards compatibility)
-        if (root.TryGetProperty(propertyName, out var prop))
-          return prop.GetString() ?? "";
-        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
-          return upperProp.GetString() ?? "";
-        return "";
-      }
-
-      DateTime GetSafeDateTime(string propertyName, DateTime defaultValue = default)
-      {
-        if (root.TryGetProperty(propertyName, out var prop))
-          return prop.GetDateTime();
-        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
-          return upperProp.GetDateTime();
-        return defaultValue;
-      }
-
-      DateTime? GetSafeNullableDateTime(string propertyName)
-      {
-        if (root.TryGetProperty(propertyName, out var prop) && prop.ValueKind != JsonValueKind.Null)
-          return prop.GetDateTime();
-        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp) && upperProp.ValueKind != JsonValueKind.Null)
-          return upperProp.GetDateTime();
         return null;
       }
 
-      bool GetSafeBool(string propertyName, bool defaultValue = false)
+      if (!string.IsNullOrEmpty(currentUsername))
       {
-        if (root.TryGetProperty(propertyName, out var prop))
-          return prop.GetBoolean();
-        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
-          return upperProp.GetBoolean();
-        return defaultValue;
+        post.LikedByCurrentUser = post.Likes.Any(l => l.Equals(currentUsername, StringComparison.OrdinalIgnoreCase));
       }
-
-      List<string> GetSafeStringArray(string propertyName)
-      {
-        if (root.TryGetProperty(propertyName, out var prop))
-          return prop.EnumerateArray().Select(t => t.GetString() ?? "").ToList();
-        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
-          return upperProp.EnumerateArray().Select(t => t.GetString() ?? "").ToList();
-        return new List<string>();
-      }
-
-      int GetSafeInt(string propertyName, int defaultValue = 0)
-      {
-        if (root.TryGetProperty(propertyName, out var prop))
-          return prop.GetInt32();
-        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
-          return upperProp.GetInt32();
-        return defaultValue;
-      }
-
-      var title = GetSafeString("title");
-      var description = GetSafeString("description");
-      var author = GetSafeString("author");
-      if (string.IsNullOrEmpty(author))
-        author = GetSafeString("author");
-      var slug = GetSafeString("slug");
-
-      var publishedDate = GetSafeDateTime("publishedDate", DateTime.UtcNow);
-      var lastModified = GetSafeNullableDateTime("lastModified") ?? GetSafeNullableDateTime("modifiedDate");
-      var isPublished = GetSafeBool("isPublished");
-      var scheduledDate = GetSafeNullableDateTime("scheduledDate");
-
-      var tags = GetSafeStringArray("tags");
-      var categories = GetSafeStringArray("categories");
-      var images = GetSafeStringArray("images");
-      var likes = GetSafeStringArray("likes");
-      var commentCount = GetSafeInt("commentCount");
-
-      // Read the body content from content.md
-      var body = File.ReadAllText(bodyPath);
-      var post = new Post(title, description, body ?? string.Empty, author, publishedDate, lastModified, tags, categories, slug, isPublished, scheduledDate);
-
-      post.Id = Path.GetFileName(folder);
-      post.Images = images;
-      post.Likes = likes;
-      post.CommentCount = commentCount;
       return post;
     }
     catch (Exception ex)
     {
-      Console.WriteLine($"Error reading post from {folder}: {ex.Message}");
+      _logger.LogError(ex, "Error getting post by slug: {Slug}", slug);
       return null;
     }
   }
 
-  public Task<Post?> GetPostByIdAsync(string postId)
-  {
-    // The postId is the directory name (e.g., "2023-10-27-my-post-slug")
-    var postDirectory = Path.Combine(_rootPath, postId);
-    if (!Directory.Exists(postDirectory))
-    {
-      return Task.FromResult<Post?>(null);
-    }
-
-    // Use the existing LoadPost method which handles reading meta.json and content.md
-    var post = LoadPost(postDirectory);
-
-    return Task.FromResult(post);
-  }
-
-  public async Task<dynamic> CreatePostAsync(CreatePostRequest request, string author)
+  public IEnumerable<Post> GetUserDrafts(string username)
   {
     try
     {
-      var date = DateTime.UtcNow;
-      // Clean customUrl input
-      var cleanedCustomUrl = !string.IsNullOrWhiteSpace(request.CustomUrl)
-          ? GenerateSlugFromTitle(request.CustomUrl)
-          : null;
-      var baseSlug = string.IsNullOrWhiteSpace(cleanedCustomUrl)
-          ? GenerateSlugFromTitle(request.Title)
-          : cleanedCustomUrl;
-
-      // Generate a unique slug to avoid collisions
-      var slug = GenerateUniqueSlug(baseSlug);
-
-      var folder = Path.Combine(_rootPath, $"{date:yyyy-MM-dd}-{slug}");
-
-      Directory.CreateDirectory(folder);
-      var assetsDirectory = Path.Combine(folder, "assets");
-      Directory.CreateDirectory(assetsDirectory);
-
-      var savedImages = new List<string>();
-
-      if (request.Images != null && request.Images.Count > 0)
-      {
-        foreach (var image in request.Images)
-        {
-          var savedPath = await ImageService.SaveAndCompressAsync(image, assetsDirectory);
-          if (savedPath != null)
-            savedImages.Add(savedPath);
-        }
-      }
-
-      if (request.ScheduledDate != null)
-      {
-        request.IsPublished = false;
-        request.ScheduledDate = request.ScheduledDate.Value.ToUniversalTime();
-      }
-
-      // Sanitize tags and categories
-      var sanitizedTags = request.Tags?.Select(t => t.Trim()).Where(t => !string.IsNullOrEmpty(t)).ToList() ?? new List<string>();
-      var sanitizedCategories = request.Categories?.Select(c => c.Trim()).Where(c => !string.IsNullOrEmpty(c)).ToList() ?? new List<string>();
-      var postMeta = new
-      {
-        title = request.Title,
-        description = request.Description,
-        customUrl = cleanedCustomUrl ?? string.Empty,
-        author = author,
-        tags = sanitizedTags,
-        categories = sanitizedCategories,
-        publishedDate = date,
-        lastModified = (DateTime?)null,
-        slug = slug,
-        isPublished = request.IsPublished,
-        scheduledDate = request.ScheduledDate,
-        images = savedImages.Select(img => $"/assets/{img}"),
-        likes = new List<string>(),
-        commentCount = 0
-      };
-
-      var meta = JsonSerializer.Serialize(postMeta, new JsonSerializerOptions { WriteIndented = true });
-      await File.WriteAllTextAsync(Path.Combine(folder, "meta.json"), meta);
-      await File.WriteAllTextAsync(Path.Combine(folder, "content.md"), request.Body);
-
-      return new
-      {
-        Id = folder,
-        Slug = slug,
-        CustomUrl = cleanedCustomUrl ?? string.Empty,
-        Date = date,
-        request.Title,
-        request.Description,
-        request.Body,
-        Author = author,
-        Tags = sanitizedTags,
-        Categories = sanitizedCategories,
-        PublishedDate = date,
-        request.IsPublished,
-        request.ScheduledDate,
-        Images = savedImages.Select(img => $"/assets/{img}")
-      };
+      var posts = _postRepository.GetPostsByUserAsync(username).Result;
+      return posts.Where(p => !p.IsPublished);
     }
     catch (Exception ex)
     {
-      Console.WriteLine($"Error creating post: {ex.Message}");
-      Console.WriteLine(ex.StackTrace);
-      throw new Exception($"An error occurred while creating the post: {ex.Message}", ex);
+      _logger.LogError(ex, "Error getting user drafts for: {Username}", username);
+      return Enumerable.Empty<Post>();
     }
   }
+
+  public async Task<dynamic> CreatePostAsync(CreatePostRequest request, string authorUsername)
+  {
+    try
+    {
+      // Determine base slug and generate a unique final slug first
+      var baseSlug = GenerateSlug(string.IsNullOrWhiteSpace(request.CustomUrl) ? request.Title : request.CustomUrl!);
+      var finalSlug = await _postRepository.GenerateUniqueSlugAsync(baseSlug);
+
+      // Use current UTC date for folder naming (even for drafts) to avoid 0001-01-01
+      var folderDate = DateTime.UtcNow;
+      var post = new Post(
+          title: request.Title,
+          description: request.Description,
+          body: request.Body,
+          author: authorUsername,
+          publishedDate: (request.IsPublished ?? false) ? folderDate : folderDate,
+          lastModified: DateTime.UtcNow,
+          tags: request.Tags ?? new List<string>(),
+          categories: request.Categories ?? new List<string>(),
+          slug: finalSlug,
+          isPublished: request.IsPublished ?? false,
+          scheduledDate: request.ScheduledDate
+      );
+
+      // Handle image uploads if any
+      if (request.Images != null && request.Images.Any())
+      {
+        foreach (var image in request.Images)
+        {
+          if (image.Length > 0)
+          {
+            // Save under the finalized slug and date-based directory
+            var directoryName = $"{folderDate:yyyy-MM-dd}-{finalSlug}";
+            var assetsDirectory = Path.Combine(_env.ContentRootPath, "Content", "posts", directoryName, "assets");
+
+            try
+            {
+              var savedFileName = await ImageService.SaveAndCompressAsync(image, assetsDirectory);
+              var imageUrl = $"/api/posts/{finalSlug}/assets/{savedFileName}";
+              post.Images.Add(imageUrl);
+            }
+            catch (Exception ex)
+            {
+              _logger.LogError(ex, "Error saving image: {FileName}", image.FileName);
+            }
+          }
+        }
+      }
+
+      // Persist the post (repository should not change slug)
+      string postId = await _postRepository.CreatePostAsync(post);
+      if (string.IsNullOrEmpty(postId))
+      {
+        // Fall back to slug if repository returns empty
+        postId = finalSlug;
+      }
+      post.Slug = finalSlug;
+
+      return new { Success = true, Slug = post.Slug, Message = "Post created successfully" };
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error creating post");
+      return new { Success = false, Message = "Failed to create post" };
+    }
+  }
+
   public async Task<(bool Success, string Message)> ModifyPostAsync(string slug, CreatePostRequest updatedData, string currentUsername)
   {
     try
     {
-      var folder = Directory.GetDirectories(_rootPath)
-          .FirstOrDefault(dir => dir.EndsWith(slug, StringComparison.OrdinalIgnoreCase));
-
-      if (folder == null)
-        return (false, "Post not found.");
-
-      var metaPath = Path.Combine(folder, "meta.json");
-      var bodyPath = Path.Combine(folder, "content.md");
-      var assetsDirectory = Path.Combine(folder, "assets");
-
-      if (!File.Exists(metaPath) || !File.Exists(bodyPath))
-        return (false, "Post files are missing or corrupted.");
-
-      JsonElement root = default;
-      bool rootAssigned = false;
-
-      // Use retry logic for file access to handle temporary locks
-      for (int attempt = 0; attempt < 3; attempt++)
+      var post = await _postRepository.GetPostBySlugAsync(slug);
+      if (post == null)
       {
-        try
+        return (false, "Post not found");
+      }
+
+      if (post.Author != currentUsername)
+      {
+        return (false, "Unauthorized");
+      }
+
+      // Update post properties
+      post.Title = updatedData.Title;
+      post.Body = updatedData.Body;
+      post.Description = updatedData.Description;
+      post.Categories = updatedData.Categories ?? new List<string>();
+      post.Tags = updatedData.Tags ?? new List<string>();
+      post.LastModified = DateTime.UtcNow;
+
+      // Images: merge kept images (normalized) + newly uploaded ones saved to assets
+      var finalImages = new List<string>();
+
+      // 1) Normalize kept images coming from the client
+      if (updatedData.KeptImages != null && updatedData.KeptImages.Count > 0)
+      {
+        foreach (var kept in updatedData.KeptImages)
         {
-          var metaJson = await File.ReadAllTextAsync(metaPath);
-          using var doc = JsonDocument.Parse(metaJson);
-          root = doc.RootElement.Clone(); // Clone to avoid disposal issues
-          rootAssigned = true;
-          break;
+          if (string.IsNullOrWhiteSpace(kept)) continue;
+          // If already secure URL keep as is, else map by filename to secure endpoint
+          var normalized = kept.StartsWith("/api/posts/", StringComparison.OrdinalIgnoreCase)
+            ? kept
+            : $"/api/posts/{slug}/assets/{Path.GetFileName(kept)}";
+          if (!string.IsNullOrWhiteSpace(normalized) && !finalImages.Contains(normalized, StringComparer.OrdinalIgnoreCase))
+          {
+            finalImages.Add(normalized);
+          }
         }
-        catch (IOException ex) when (attempt < 2)
+      }
+
+      // 2) Save any newly uploaded images into this post's assets folder
+      if (updatedData.Images != null && updatedData.Images.Any())
+      {
+        // Find the existing post folder by slug (e.g., yyyy-MM-dd-slug)
+        var postsRoot = Path.Combine(_env.ContentRootPath, "Content", "posts");
+        string? postFolder = Directory.GetDirectories(postsRoot)
+          .FirstOrDefault(d => Path.GetFileName(d).EndsWith("-" + slug, StringComparison.OrdinalIgnoreCase));
+
+        // If not found, fallback to published date pattern
+        if (postFolder == null)
         {
-          Console.WriteLine($"File access attempt {attempt + 1} failed: {ex.Message}. Retrying...");
-          await Task.Delay(100); // Wait 100ms before retry
+          var directoryName = $"{post.PublishedDate:yyyy-MM-dd}-{slug}";
+          postFolder = Path.Combine(postsRoot, directoryName);
         }
-        catch (IOException ex) when (attempt == 2)
-        {
-          throw new IOException($"Failed to access file after 3 attempts: {ex.Message}", ex);
-        }
-      }
 
-      if (!rootAssigned)
-        return (false, "Failed to read post metadata after multiple attempts.");
-
-      // Use the same safe property access pattern as in LoadPost
-      string GetSafeString(string propertyName)
-      {
-        if (root.TryGetProperty(propertyName, out var prop))
-          return prop.GetString() ?? "";
-        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
-          return upperProp.GetString() ?? "";
-        return "";
-      }
-
-      DateTime GetSafeDateTime(string propertyName, DateTime defaultValue = default)
-      {
-        if (root.TryGetProperty(propertyName, out var prop))
-          return prop.GetDateTime();
-        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
-          return upperProp.GetDateTime();
-        return defaultValue;
-      }
-
-      List<string> GetSafeStringArray(string propertyName)
-      {
-        if (root.TryGetProperty(propertyName, out var prop))
-          return prop.EnumerateArray().Select(t => t.GetString() ?? "").ToList();
-        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
-          return upperProp.EnumerateArray().Select(t => t.GetString() ?? "").ToList();
-        return new List<string>();
-      }
-
-      bool GetSafeBool(string propertyName, bool defaultValue = false)
-      {
-        if (root.TryGetProperty(propertyName, out var prop))
-          return prop.GetBoolean();
-        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
-          return upperProp.GetBoolean();
-        return defaultValue;
-      }
-
-      int GetSafeInt(string propertyName, int defaultValue = 0)
-      {
-        if (root.TryGetProperty(propertyName, out var prop))
-          return prop.GetInt32();
-        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
-          return upperProp.GetInt32();
-        return defaultValue;
-      }
-
-      // Now use the safe accessors
-      var authorUsername = GetSafeString("author");
-      if (string.IsNullOrEmpty(authorUsername))
-        authorUsername = GetSafeString("author");
-
-      var publishedDate = GetSafeDateTime("publishedDate", DateTime.UtcNow);
-      var existingLikes = GetSafeStringArray("likes");
-      var commentCount = GetSafeInt("commentCount");
-
-      if (!string.Equals(authorUsername, currentUsername, StringComparison.OrdinalIgnoreCase))
-        return (false, "Unauthorized: only the author can modify this post.");
-
-      // Get existing images first
-      var existingImages = GetSafeStringArray("images");
-      var keptImages = updatedData.KeptImages ?? new List<string>();
-      var newImages = new List<string>();
-
-      if (!Directory.Exists(assetsDirectory))
+        var assetsDirectory = Path.Combine(postFolder, "assets");
         Directory.CreateDirectory(assetsDirectory);
 
-      // Save new images if any
-      if (updatedData.Images != null && updatedData.Images.Count > 0)
-      {
         foreach (var image in updatedData.Images)
         {
-          var savedPath = await ImageService.SaveAndCompressAsync(image, assetsDirectory);
-          if (savedPath != null)
-            newImages.Add(savedPath);
-        }
-      }
-
-      // Determine which files to keep (from KeptImages)
-      var keptFileNames = new HashSet<string>(keptImages.Select(img => Path.GetFileName(img)), StringComparer.OrdinalIgnoreCase);
-      // Remove files not in KeptImages or newImages
-      foreach (var file in Directory.GetFiles(assetsDirectory))
-      {
-        var fileName = Path.GetFileName(file);
-        if (!keptFileNames.Contains(fileName) && !newImages.Contains(fileName))
-        {
-          try { File.Delete(file); }
-          catch (Exception ex)
-          {
-            Console.WriteLine($"Warning: Could not delete image file {file}: {ex.Message}");
-          }
-        }
-      }
-
-      // Final image list: kept + new
-      var finalImages = new List<string>();
-      finalImages.AddRange(keptFileNames.Select(f => f));
-      finalImages.AddRange(newImages);
-
-      // Use updated data or fall back to existing data using safe accessors
-      // Only override slug when a customUrl is provided; otherwise keep existing
-      var existingSlug = GetSafeString("slug");
-      var existingCustomUrl = GetSafeString("customUrl");
-      var overrideSlug = !string.IsNullOrWhiteSpace(updatedData.CustomUrl);
-      string cleanedCustomUrl;
-      if (overrideSlug)
-      {
-        // Clean provided customUrl
-        cleanedCustomUrl = GenerateSlugFromTitle(updatedData.CustomUrl!.Trim());
-        if (string.Equals(cleanedCustomUrl, "untitled", StringComparison.OrdinalIgnoreCase))
-        {
-          return (false, "Invalid custom URL: please specify a unique, non-default slug.");
-        }
-        // Rename folder only if slug changed
-        var oldFolderName = Path.GetFileName(folder);
-        var datePart = oldFolderName.Length >= 10 ? oldFolderName.Substring(0, 10) : oldFolderName;
-        var newFolderName = $"{datePart}-{cleanedCustomUrl}";
-        var newFolderPath = Path.Combine(_rootPath, newFolderName);
-        if (!folder.Equals(newFolderPath, StringComparison.OrdinalIgnoreCase))
-        {
-          Directory.Move(folder, newFolderPath);
-          folder = newFolderPath;
-          metaPath = Path.Combine(folder, "meta.json");
-          bodyPath = Path.Combine(folder, "content.md");
-          assetsDirectory = Path.Combine(folder, "assets");
-        }
-      }
-      else
-      {
-        // No new slug provided: fallback to existing slug to avoid empty values
-        cleanedCustomUrl = !string.IsNullOrWhiteSpace(existingCustomUrl) ? existingCustomUrl : existingSlug;
-      }
-      // Use updated data or fallback to existing
-      var title = string.IsNullOrWhiteSpace(updatedData.Title) ? GetSafeString("title") : updatedData.Title;
-      var description = string.IsNullOrWhiteSpace(updatedData.Description) ? GetSafeString("description") : updatedData.Description;
-      // Sanitize tags and categories
-      var rawTags = (updatedData.Tags == null || updatedData.Tags.Count == 0) ? GetSafeStringArray("tags") : updatedData.Tags;
-      var tags = rawTags.Select(t => t.Trim()).Where(t => !string.IsNullOrEmpty(t)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-      var rawCategories = (updatedData.Categories == null || updatedData.Categories.Count == 0) ? GetSafeStringArray("categories") : updatedData.Categories;
-      var categories = rawCategories.Select(c => c.Trim()).Where(c => !string.IsNullOrEmpty(c)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
-
-      var isPublished = updatedData.IsPublished ?? GetSafeBool("isPublished");
-      var scheduledDate = updatedData.ScheduledDate;
-
-      // If a post is being scheduled (or re-scheduled), it must be a draft.
-      // The frontend sends a null/empty date to clear it.
-      if (scheduledDate.HasValue)
-      {
-        isPublished = false;
-        scheduledDate = scheduledDate.Value.ToUniversalTime();
-      }
-
-      // Create the updated metadata - use the final images list (kept + new)
-      var updatedMeta = new
-      {
-        title = title,
-        description = description,
-        customUrl = cleanedCustomUrl,
-        author = authorUsername,
-        tags = tags,
-        categories = categories,
-        publishedDate = publishedDate,
-        lastModified = DateTime.UtcNow,
-        slug = cleanedCustomUrl,
-        isPublished = isPublished,
-        scheduledDate = scheduledDate,
-        images = finalImages.Select(img => $"/assets/{img}"),
-        likes = existingLikes,
-        commentCount = commentCount
-      };
-
-      var newMeta = JsonSerializer.Serialize(updatedMeta, new JsonSerializerOptions { WriteIndented = true });
-
-      // Use retry logic for file writing to handle temporary locks
-      for (int attempt = 0; attempt < 3; attempt++)
-      {
-        try
-        {
-          await File.WriteAllTextAsync(metaPath, newMeta);
-          break;
-        }
-        catch (IOException ex) when (attempt < 2)
-        {
-          Console.WriteLine($"File write attempt {attempt + 1} failed: {ex.Message}. Retrying...");
-          await Task.Delay(100); // Wait 100ms before retry
-        }
-      }
-
-      if (!string.IsNullOrWhiteSpace(updatedData.Body))
-      {
-        // Use retry logic for content file writing as well
-        for (int attempt = 0; attempt < 3; attempt++)
-        {
+          if (image == null || image.Length <= 0) continue;
           try
           {
-            await File.WriteAllTextAsync(bodyPath, updatedData.Body);
-            break;
+            var savedFileName = await ImageService.SaveAndCompressAsync(image, assetsDirectory);
+            var imageUrl = $"/api/posts/{slug}/assets/{savedFileName}";
+            finalImages.Add(imageUrl);
           }
-          catch (IOException ex) when (attempt < 2)
+          catch (Exception ex)
           {
-            Console.WriteLine($"Content file write attempt {attempt + 1} failed: {ex.Message}. Retrying...");
-            await Task.Delay(100); // Wait 100ms before retry
+            _logger.LogError(ex, "Error saving modified image: {FileName}", image.FileName);
           }
         }
       }
 
-      return (true, "Post updated successfully.");
+      // Ensure consistent secure URLs and de-duplication
+      post.Images = finalImages
+        .Where(s => !string.IsNullOrWhiteSpace(s))
+        .Select(s => s.Trim())
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToList();
+
+      bool success = await _postRepository.UpdatePostAsync(post);
+      return success ? (true, "Post updated successfully") : (false, "Failed to update post");
     }
     catch (Exception ex)
     {
-      Console.WriteLine($"Error modifying post {slug}: {ex.Message}");
-      Console.WriteLine($"Stack trace: {ex.StackTrace}");
-      return (false, $"An error occurred while modifying the post: {ex.Message}");
+      _logger.LogError(ex, "Error modifying post: {Slug}", slug);
+      return (false, "An error occurred while updating the post");
     }
   }
 
@@ -641,116 +279,62 @@ public class BlogPostService : IBlogPostService
   {
     try
     {
-      var folder = Directory.GetDirectories(_rootPath)
-          .FirstOrDefault(dir => dir.EndsWith(slug, StringComparison.OrdinalIgnoreCase));
-      // If slug is empty or meta blank, derive slug from folder name
-      string folderName = folder != null ? Path.GetFileName(folder) : string.Empty;
-      var derivedSlug = slug;
-      if (string.IsNullOrWhiteSpace(derivedSlug) && folderName.Length > 11 && folderName[10] == '-')
+      var post = await _postRepository.GetPostBySlugAsync(slug);
+      if (post == null)
       {
-        // folderName format: yyyy-MM-dd-slugPart
-        derivedSlug = folderName.Substring(11);
+        return (false, "Post not found");
       }
-      // Rename folder to current date prefix when publishing
-      if (folder != null)
+
+      if (post.Author != currentUsername)
       {
-        var newDatePrefix = DateTime.UtcNow.ToString("yyyy-MM-dd");
-        // Use derivedSlug to prevent empty directory names
-        var newFolderName = $"{newDatePrefix}-{derivedSlug}";
-        var newFolderPath = Path.Combine(_rootPath, newFolderName);
-        if (!folder.Equals(newFolderPath, StringComparison.OrdinalIgnoreCase))
+        return (false, "Unauthorized");
+      }
+
+      // Only increment user's published count when transitioning from unpublished -> published
+      bool wasPublished = post.IsPublished;
+      post.IsPublished = true;
+      post.PublishedDate = DateTime.UtcNow;
+      post.LastModified = DateTime.UtcNow;
+
+      bool success = await _postRepository.UpdatePostAsync(post);
+
+      if (success && !wasPublished)
+      {
+        try
         {
-          Directory.Move(folder, newFolderPath);
-          folder = newFolderPath;
+          var user = await _userRepository.GetUserByUsernameAsync(currentUsername);
+          if (user != null)
+          {
+            user.PublishedPostsCount = (user.PublishedPostsCount < 0) ? 1 : user.PublishedPostsCount + 1;
+            await _userRepository.UpdateUserAsync(user);
+          }
+        }
+        catch (Exception ex)
+        {
+          // Log and continue; publish already succeeded.
+          _logger.LogWarning(ex, "Failed to increment PublishedPostsCount for user: {User}", currentUsername);
         }
       }
 
-      if (folder == null)
-        return (false, "Post not found.");
-
-      var metaPath = Path.Combine(folder, "meta.json");
-
-      if (!File.Exists(metaPath))
-        return (false, "Post metadata is missing.");
-
-      var metaJson = await File.ReadAllTextAsync(metaPath);
-      using var doc = JsonDocument.Parse(metaJson);
-      var root = doc.RootElement.Clone(); // Clone to allow use after 'using' block
-
-      // Add safe property accessors to handle casing inconsistencies (camelCase vs PascalCase)
-      string GetSafeString(string propertyName)
-      {
-        if (root.TryGetProperty(propertyName, out var prop))
-          return prop.GetString() ?? "";
-        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
-          return upperProp.GetString() ?? "";
-        return "";
-      }
-
-      List<string> GetSafeStringArray(string propertyName)
-      {
-        if (root.TryGetProperty(propertyName, out var prop))
-          return prop.EnumerateArray().Select(t => t.GetString() ?? "").ToList();
-        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
-          return upperProp.EnumerateArray().Select(t => t.GetString() ?? "").ToList();
-        return new List<string>();
-      }
-
-      int GetSafeInt(string propertyName, int defaultValue = 0)
-      {
-        if (root.TryGetProperty(propertyName, out var prop))
-          return prop.GetInt32();
-        if (root.TryGetProperty(char.ToUpper(propertyName[0]) + propertyName.Substring(1), out var upperProp))
-          return upperProp.GetInt32();
-        return defaultValue;
-      }
-
-      var authorUsername = GetSafeString("author");
-      if (!string.Equals(authorUsername, currentUsername, StringComparison.OrdinalIgnoreCase))
-        return (false, "Unauthorized: only the author can publish this post.");
-
-      // Preserve existing metadata
-      var title = GetSafeString("title");
-      var description = GetSafeString("description");
-      var customUrl = GetSafeString("customUrl");
-      var tags = GetSafeStringArray("tags");
-      var categories = GetSafeStringArray("categories");
-      var existingImages = GetSafeStringArray("images");
-      var existingLikes = GetSafeStringArray("likes");
-      var commentCount = GetSafeInt("commentCount");
-
-      // Create the updated metadata object, ensuring all fields are preserved
-      // and casing is consistent (camelCase) with ModifyPostAsync and SavePost.
-      var updatedMeta = new
-      {
-        title = title,
-        description = description,
-        // Preserve customUrl
-        customUrl = customUrl,
-        author = authorUsername,
-        tags = tags,
-        categories = categories,
-        publishedDate = DateTime.UtcNow,
-        lastModified = DateTime.UtcNow,
-        // Use derivedSlug for final slug
-        slug = derivedSlug,
-        isPublished = true,
-        scheduledDate = (DateTime?)null,
-        images = existingImages,
-        likes = existingLikes,
-        commentCount = commentCount
-      };
-
-      var newMeta = JsonSerializer.Serialize(updatedMeta, new JsonSerializerOptions { WriteIndented = true });
-      await File.WriteAllTextAsync(metaPath, newMeta);
-
-      return (true, "Post published successfully.");
+      return success ? (true, "Post published successfully") : (false, "Failed to publish post");
     }
     catch (Exception ex)
     {
-      Console.WriteLine($"Error publishing post {slug}: {ex.Message}");
-      Console.WriteLine($"Stack trace: {ex.StackTrace}");
-      return (false, "An error occurred while publishing the post.");
+      _logger.LogError(ex, "Error publishing post: {Slug}", slug);
+      return (false, "An error occurred while publishing the post");
+    }
+  }
+
+  public async Task<Post?> GetPostByIdAsync(string postId)
+  {
+    try
+    {
+      return await _postRepository.GetPostBySlugAsync(postId);
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error getting post by ID: {PostId}", postId);
+      return null;
     }
   }
 
@@ -758,323 +342,248 @@ public class BlogPostService : IBlogPostService
   {
     try
     {
-      var folder = Directory.GetDirectories(_rootPath)
-          .FirstOrDefault(dir => dir.EndsWith(slug, StringComparison.OrdinalIgnoreCase));
+      var post = await _postRepository.GetPostBySlugAsync(slug);
+      if (post == null) return false;
 
-      if (folder == null)
-        return false;
+      bool wasPublished = post.IsPublished;
 
-      await Task.Run(() => Directory.Delete(folder, true));
-      return true;
+      var deleted = await _postRepository.DeletePostAsync(slug);
+
+      // If post was published, decrement the author's published count
+      if (deleted && wasPublished)
+      {
+        try
+        {
+          var user = await _userRepository.GetUserByUsernameAsync(post.Author);
+          if (user != null)
+          {
+            user.PublishedPostsCount = Math.Max(0, user.PublishedPostsCount - 1);
+            await _userRepository.UpdateUserAsync(user);
+          }
+        }
+        catch (Exception ex)
+        {
+          _logger.LogWarning(ex, "Failed to decrement PublishedPostsCount for user after delete: {User}", post.Author);
+        }
+      }
+
+      return deleted;
     }
     catch (Exception ex)
     {
-      Console.WriteLine($"Error deleting post {slug}: {ex.Message}");
+      _logger.LogError(ex, "Error deleting post: {Slug}", slug);
       return false;
+    }
+  }
+
+  public async Task<(bool Success, string Message)> UnpublishPostAsync(string slug, string currentUsername)
+  {
+    try
+    {
+      var post = await _postRepository.GetPostBySlugAsync(slug);
+      if (post == null)
+      {
+        return (false, "Post not found");
+      }
+
+      if (post.Author != currentUsername)
+      {
+        return (false, "Unauthorized");
+      }
+
+      if (!post.IsPublished)
+      {
+        return (true, "Post already unpublished");
+      }
+
+      post.IsPublished = false;
+      post.LastModified = DateTime.UtcNow;
+
+      bool success = await _postRepository.UpdatePostAsync(post);
+
+      if (success)
+      {
+        try
+        {
+          var user = await _userRepository.GetUserByUsernameAsync(currentUsername);
+          if (user != null)
+          {
+            user.PublishedPostsCount = Math.Max(0, user.PublishedPostsCount - 1);
+            await _userRepository.UpdateUserAsync(user);
+          }
+        }
+        catch (Exception ex)
+        {
+          _logger.LogWarning(ex, "Failed to decrement PublishedPostsCount for user: {User}", currentUsername);
+        }
+      }
+
+      return success ? (true, "Post unpublished successfully") : (false, "Failed to unpublish post");
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error unpublishing post: {Slug}", slug);
+      return (false, "An error occurred while unpublishing the post");
     }
   }
 
   public IEnumerable<Post> GetAllPostsIncludingDrafts()
   {
-    if (!Directory.Exists(_rootPath)) yield break;
-
-    foreach (var dir in Directory.GetDirectories(_rootPath, "*", SearchOption.AllDirectories))
+    try
     {
-      Post? post = null;
-      try
-      {
-        post = LoadPost(dir);
-      }
-      catch (Exception ex)
-      {
-        Console.WriteLine($"Error loading post from {dir}: {ex.Message}");
-      }
-
-      if (post != null)
-      {
-        if (!IsUserActive(post.Author))
-          continue;
-        yield return post;
-      }
+      return _postRepository.GetAllPostsAsync().Result;
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error getting all posts including drafts");
+      return Enumerable.Empty<Post>();
     }
   }
-  private bool SlugExists(string slug)
+
+  public IEnumerable<Post> GetPostsByUser(string username, string? currentUsername = null)
   {
-    foreach (var dir in Directory.GetDirectories(_rootPath))
+    try
     {
-      try
+      var posts = _postRepository.GetPostsByUserAsync(username).Result;
+
+      // Filter out unpublished posts unless it's the author viewing
+      if (currentUsername != username)
       {
-        var post = LoadPost(dir);
-        if (post != null && post.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase))
-          return true;
+        posts = posts.Where(p => p.IsPublished);
       }
-      catch (Exception ex)
+
+      var list = posts.ToList();
+      if (!string.IsNullOrEmpty(currentUsername))
       {
-        Console.WriteLine($"Error checking slug in {dir}: {ex.Message}");
+        foreach (var p in list)
+        {
+          p.LikedByCurrentUser = p.Likes.Any(l => l.Equals(currentUsername, StringComparison.OrdinalIgnoreCase));
+        }
       }
+      return list;
     }
-    return false;
-  }
-
-  private string GenerateUniqueSlug(string baseSlug)
-  {
-    if (!SlugExists(baseSlug))
-      return baseSlug;
-
-    int counter = 1;
-    string uniqueSlug;
-    do
+    catch (Exception ex)
     {
-      uniqueSlug = $"{baseSlug}-{counter}";
-      counter++;
-    } while (SlugExists(uniqueSlug));
-
-    return uniqueSlug;
-  }
-  private string GenerateSlugFromTitle(string title)
-  {
-    if (string.IsNullOrWhiteSpace(title))
-      return "untitled";
-
-    var slug = title.ToLowerInvariant();
-
-    // Remove all non-alphanumeric characters except spaces and hyphens
-    slug = System.Text.RegularExpressions.Regex.Replace(slug, @"[^a-z0-9\s-]", "");
-
-    // Replace multiple spaces or hyphens with single hyphen
-    slug = System.Text.RegularExpressions.Regex.Replace(slug, @"[\s-]+", "-");
-
-    // Trim hyphens from start and end
-    slug = slug.Trim('-');
-
-    // Ensure we have something
-    if (string.IsNullOrEmpty(slug))
-      return "untitled";
-
-    return slug;
-  }
-
-  public IResult LikePost(string slug, string likerUsername, NotificationService notificationService)
-  {
-    var postDir = GetPostDirectoryBySlug(slug);
-    if (postDir == null)
-      return Results.NotFound(new { message = "Post not found" });
-
-    var post = LoadPost(postDir);
-    if (post == null)
-      return Results.NotFound(new { message = "Post not found" });
-
-    if (post.Likes.Contains(likerUsername, StringComparer.OrdinalIgnoreCase))
-      return Results.BadRequest(new { message = "Post already liked" });
-
-    post.Likes.Add(likerUsername);
-    SavePost(postDir, post);
-
-    // Send notification to the post's author (but not to self)
-    if (!string.Equals(post.Author, likerUsername, StringComparison.OrdinalIgnoreCase))
-    {
-      var message = $"{likerUsername} liked your post: \"{post.Title}\"";
-      var link = $"/posts/{slug}";
-      notificationService.SendNotificationAsync(post.Author, message, link).Wait();
+      _logger.LogError(ex, "Error getting posts by user: {Username}", username);
+      return Enumerable.Empty<Post>();
     }
-
-    return Results.Ok(new { message = "Post liked successfully", likeCount = post.Likes.Count });
   }
 
-
-  public IResult UnlikePost(string slug, string username)
+  // Like methods
+  public IResult LikePost(string slug, string currentUsername, NotificationService notificationService)
   {
-    var postDir = GetPostDirectoryBySlug(slug);
-    if (postDir == null)
-      return Results.NotFound(new { message = "Post not found" });
+    try
+    {
+      var post = _postRepository.GetPostBySlugAsync(slug).Result;
+      if (post == null)
+      {
+        return Results.NotFound(new { message = "Post not found." });
+      }
 
-    var post = LoadPost(postDir);
-    if (post == null)
-      return Results.NotFound(new { message = "Post not found" });
+      var success = _postRepository.LikePostAsync(slug, currentUsername).Result;
+      if (!success)
+      {
+        return Results.BadRequest(new { message = "Failed to like post." });
+      }
 
-    if (!post.Likes.Contains(username, StringComparer.OrdinalIgnoreCase))
-      return Results.BadRequest(new { message = "Post not liked yet" });
+      // Send notification to author (best-effort)
+      if (!post.Author.Equals(currentUsername, StringComparison.OrdinalIgnoreCase))
+      {
+        _ = notificationService.SendNotificationAsync(
+          post.Author,
+          $"Your post '{post.Title}' was liked by {currentUsername}.",
+          $"/post/{slug}");
+      }
 
-    post.Likes.RemoveAll(u => u.Equals(username, StringComparison.OrdinalIgnoreCase));
-    SavePost(postDir, post);
+      var likeCount = _postRepository.GetPostLikesAsync(slug).Result.Count();
+      return Results.Ok(new { likeCount });
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error liking post: {Slug}", slug);
+      return Results.Problem("Unexpected error while liking post.");
+    }
+  }
 
-    return Results.Ok(new { message = "Post unliked successfully", likeCount = post.Likes.Count });
+  public IResult UnlikePost(string slug, string currentUsername)
+  {
+    try
+    {
+      var post = _postRepository.GetPostBySlugAsync(slug).Result;
+      if (post == null)
+      {
+        return Results.NotFound(new { message = "Post not found." });
+      }
+
+      var success = _postRepository.UnlikePostAsync(slug, currentUsername).Result;
+      if (!success)
+      {
+        return Results.BadRequest(new { message = "Failed to unlike post." });
+      }
+
+      var likeCount = _postRepository.GetPostLikesAsync(slug).Result.Count();
+      return Results.Ok(new { likeCount });
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error unliking post: {Slug}", slug);
+      return Results.Problem("Unexpected error while unliking post.");
+    }
   }
 
   public IResult GetPostLikes(string slug)
   {
     try
     {
-      var post = GetPostBySlug(slug, "");
+      var post = _postRepository.GetPostBySlugAsync(slug).Result;
       if (post == null)
       {
-        return Results.NotFound($"Post with slug '{slug}' not found");
+        return Results.NotFound(new { message = "Post not found." });
       }
 
-      // Get full user objects instead of just usernames
-      var userObjects = new List<object>();
-
-      foreach (var username in post.Likes)
+      var likerUsernames = _postRepository.GetPostLikesAsync(slug).Result.ToList();
+      // Enrich with basic profile info (best-effort)
+      var enriched = likerUsernames.Select(name =>
       {
-        // Get user profile information
-        var userProfilePath = Path.Combine(_usersDirectory, username, "profile.json");
-
-        if (File.Exists(userProfilePath))
+        try
         {
-          try
+          var u = _userRepository.GetUserByUsernameAsync(name).Result;
+          return new
           {
-            var userProfileJson = File.ReadAllText(userProfilePath);
-            var userProfile = JsonSerializer.Deserialize<User>(userProfileJson, new JsonSerializerOptions
-            {
-              PropertyNameCaseInsensitive = true
-            });
-
-            userObjects.Add(new
-            {
-              username = username,
-              displayName = userProfile?.Username ?? username,
-              profilePictureUrl = userProfile?.ProfilePictureUrl ?? "",
-              bio = userProfile?.Bio ?? ""
-            });
-          }
-          catch (Exception ex)
-          {
-            Console.WriteLine($"Error reading profile for {username}: {ex.Message}");
-            // Fallback to username only if profile reading fails
-            userObjects.Add(new
-            {
-              username = username,
-              displayName = username,
-              profilePictureUrl = "",
-              bio = ""
-            });
-          }
+            username = name,
+            displayName = u?.Username ?? name,
+            profilePictureUrl = u?.ProfilePictureUrl ?? string.Empty
+          };
         }
-        else
+        catch
         {
-          // Fallback if no profile exists
-          userObjects.Add(new
-          {
-            username = username,
-            displayName = username,
-            profilePictureUrl = "",
-            bio = ""
-          });
+          return new { username = name, displayName = name, profilePictureUrl = string.Empty };
         }
-      }
+      });
 
-      return Results.Ok(userObjects);
+      return Results.Ok(enriched);
     }
     catch (Exception ex)
     {
-      Console.WriteLine($"Error getting post likes: {ex.Message}");
-      return Results.Problem("Failed to get post likes", statusCode: StatusCodes.Status500InternalServerError);
+      _logger.LogError(ex, "Error getting likes for post: {Slug}", slug);
+      return Results.Problem("Unexpected error while retrieving likes.");
     }
   }
 
-  public IEnumerable<Post> GetAllPosts(string? currentUsername = null)
+  private static string GenerateSlug(string title)
   {
-    if (!Directory.Exists(_rootPath)) yield break;
+    // Convert to lowercase and replace spaces with hyphens
+    var slug = title.ToLowerInvariant();
 
-    foreach (var dir in Directory.GetDirectories(_rootPath, "*", SearchOption.AllDirectories))
-    {
-      Post? post = null;
-      try
-      {
-        post = LoadPost(dir);
-      }
-      catch (Exception ex)
-      {
-        Console.WriteLine($"Error loading post from {dir}: {ex.Message}");
-      }
+    // Remove special characters except spaces and hyphens
+    slug = Regex.Replace(slug, @"[^a-z0-9\s\-]", "");
 
-      if (post != null && post.IsPublished)
-      {
-        if (!IsUserActive(post.Author))
-          continue;
-        if (!string.IsNullOrEmpty(currentUsername))
-        {
-          post.LikedByCurrentUser = post.Likes.Contains(currentUsername, StringComparer.OrdinalIgnoreCase);
-        }
-        yield return post;
-      }
-    }
+    // Replace multiple spaces or hyphens with single hyphen
+    slug = Regex.Replace(slug, @"[\s\-]+", "-");
+
+    // Trim hyphens from start and end
+    slug = slug.Trim('-');
+
+    return slug;
   }
-  // Helper method to check if a user is active
-  private bool IsUserActive(string username)
-  {
-    if (string.IsNullOrWhiteSpace(username))
-      return false;
-    var profilePath = Path.Combine(_usersDirectory, username, "profile.json");
-    if (!File.Exists(profilePath))
-      return false;
-    try
-    {
-      var json = File.ReadAllText(profilePath);
-      var user = JsonSerializer.Deserialize<User>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-      return user != null && user.IsActive;
-    }
-    catch
-    {
-      return false;
-    }
-  }
-
-  private string? GetPostDirectoryBySlug(string slug)
-  {
-    foreach (var dir in Directory.GetDirectories(_rootPath))
-    {
-      try
-      {
-        var post = LoadPost(dir);
-        if (post != null && post.Slug.Equals(slug, StringComparison.OrdinalIgnoreCase))
-          return dir;
-      }
-      catch (Exception ex)
-      {
-        Console.WriteLine($"Error checking slug in {dir}: {ex.Message}");
-      }
-    }
-    return null;
-  }
-
-  private void SavePost(string postDir, Post post)
-  {
-    try
-    {
-      var metaFilePath = Path.Combine(postDir, "meta.json");
-      var bodyFilePath = Path.Combine(postDir, "content.md");
-
-      var metaData = new
-      {
-        title = post.Title,
-        description = post.Description,
-        author = post.Author,
-        publishedDate = post.PublishedDate,
-        lastModified = post.LastModified,
-        tags = post.Tags,
-        categories = post.Categories,
-        slug = post.Slug,
-        isPublished = post.IsPublished,
-        scheduledDate = post.ScheduledDate,
-        images = post.Images,
-        likes = post.Likes,
-        commentCount = post.CommentCount
-      };
-
-      var jsonString = JsonSerializer.Serialize(metaData, new JsonSerializerOptions { WriteIndented = true });
-      File.WriteAllText(metaFilePath, jsonString);
-
-      // Save the body content to content.md
-      if (!string.IsNullOrEmpty(post.Body))
-      {
-        File.WriteAllText(bodyFilePath, post.Body);
-      }
-    }
-    catch (Exception ex)
-    {
-      Console.WriteLine($"Error saving post: {ex.Message}");
-    }
-  }
-
 }

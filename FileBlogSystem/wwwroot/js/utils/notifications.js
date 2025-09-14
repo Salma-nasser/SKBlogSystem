@@ -319,6 +319,8 @@ export function showAuthPrompt(options = {}) {
  * Each unread notification shows a left accent bar and is clickable to mark as read.
  * Includes a "Mark all as read" action.
  */
+import { formatDateIntlWithTime } from "./date.js";
+
 export function openNotificationsModal() {
   ensureNotificationsModal();
   const modal = document.getElementById("notificationsModal");
@@ -337,6 +339,7 @@ export function openNotificationsModal() {
     .then((notifications) => {
       renderNotificationsList(notifications);
       updateUnreadBadgeFromList(notifications);
+      updateMarkAllButtonVisibility(notifications);
       broadcastUnreadFromList(notifications);
     })
     .catch(() => {
@@ -392,6 +395,7 @@ function buildNotificationsModalContents(notifModal) {
         const list = await loadNotifications();
         renderNotificationsList(list);
         updateUnreadBadgeFromList(list);
+        updateMarkAllButtonVisibility(list);
         broadcastUnreadFromList(list);
       } catch (e) {
         console.error("Failed to mark all as read", e);
@@ -405,6 +409,11 @@ async function loadNotifications() {
   return res.json();
 }
 
+// Backwards-compatible alias used by older client code
+export async function getAllNotifications() {
+  return await loadNotifications();
+}
+
 function updateUnreadBadgeFromList(list) {
   const badge = document.getElementById("bellUnreadCount");
   if (!badge) return;
@@ -414,6 +423,18 @@ function updateUnreadBadgeFromList(list) {
     badge.style.display = "inline-block";
   } else {
     badge.style.display = "none";
+  }
+}
+
+// Also show/hide the 'Mark all as read' button based on unread count
+function updateMarkAllButtonVisibility(list) {
+  const btn = document.getElementById("markAllReadBtn");
+  if (!btn) return;
+  const unread = (list || []).filter((n) => !n.IsRead).length;
+  if (unread > 0) {
+    btn.style.display = "inline-block";
+  } else {
+    btn.style.display = "none";
   }
 }
 
@@ -445,9 +466,9 @@ function renderNotificationsList(notifications) {
     if (!n.IsRead) item.style.borderLeft = "4px solid #8b4513";
     item.innerHTML = `<div>${
       n.Message
-    }</div><div style='font-size:0.8em;color:#8a7a6e;'>${new Date(
+    }</div><div style='font-size:0.8em;color:#8a7a6e;'>${formatDateIntlWithTime(
       n.CreatedAt
-    ).toLocaleString()}</div>`;
+    )}</div>`;
     item.addEventListener("click", async (e) => {
       e.preventDefault();
       try {
@@ -469,6 +490,15 @@ function renderNotificationsList(notifications) {
           }
           // Broadcast for sidebar label
           broadcastUnreadFromList(notifications);
+          // Update the mark-all button visibility
+          updateMarkAllButtonVisibility(notifications);
+        }
+        // Close modal then navigate to the linked post (if any). Do this after marking read.
+        const modal = document.getElementById("notificationsModal");
+        if (modal) modal.style.display = "none";
+        if (n.Link) {
+          // Navigate to provided link (relative or absolute)
+          window.location.href = n.Link;
         }
       } catch (err) {
         console.error("Failed to mark notification as read", err);

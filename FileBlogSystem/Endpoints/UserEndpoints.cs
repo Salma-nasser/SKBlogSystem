@@ -4,8 +4,11 @@ using FileBlogSystem.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Identity.Data;
+using Microsoft.AspNetCore.RateLimiting;
 namespace FileBlogSystem.Endpoints;
 
+
+[EnableRateLimiting("Fixed")]
 public static class UserEndpoints
 {
   public static void MapUserEndpoints(this IEndpointRouteBuilder app)
@@ -19,8 +22,8 @@ public static class UserEndpoints
     // OTP code 4-6 alphanumeric
     const string OTPPattern = "^[0-9A-Za-z]{4,6}$";
     static bool IsValidOtp(string o) => Regex.IsMatch(o ?? string.Empty, OTPPattern);
-    // Password at least 6 chars
-    const string PasswordPattern = ".{6,}";
+    // Password at least 8 chars
+    const string PasswordPattern = ".{8,}";
     static bool IsValidPassword(string p) => Regex.IsMatch(p ?? string.Empty, PasswordPattern);
 
     app.MapGet("/api/users/{username}", async (string username, IUserService userService, HttpContext ctx) =>
@@ -61,7 +64,10 @@ public static class UserEndpoints
     })
     .RequireAuthorization()
     .WithName("DeleteUser");
-    app.MapGet("/notifications", async (HttpContext ctx, INotificationService notificationService) =>
+
+    app.MapGet("/notifications", GetNotificationsAsync);
+
+    async Task<IResult> GetNotificationsAsync(HttpContext ctx, INotificationService notificationService)
     {
       var username = ctx.User.Identity?.Name;
       if (username == null)
@@ -73,7 +79,8 @@ public static class UserEndpoints
         ? await notificationService.GetAllAsync(username)
         : await notificationService.GetUnreadAsync(username);
       return Results.Ok(notifications);
-    });
+    }
+    ;
 
     app.MapPost("/notifications/read/{id}", async (string id, HttpContext ctx, INotificationService service) =>
     {
@@ -86,6 +93,7 @@ public static class UserEndpoints
       await service.MarkAsReadAsync(username, id);
       return Results.Ok();
     });
+
     app.MapPost("/notifications/mark-all-read", async (HttpContext ctx, INotificationService service) =>
     {
       var username = ctx.User.Identity?.Name;
@@ -123,6 +131,35 @@ public static class UserEndpoints
       if (!IsValidUsername(request.Username) || !IsValidPassword(request.NewPassword))
         return Results.BadRequest(new { message = "Valid username and password (min 6 chars) are required." });
       return await userService.ResetPassword(request.Username, request.NewPassword);
+    });
+
+    // Serve user profile images securely
+    app.MapGet("/api/users/{username}/assets/{filename}", async (string username, string filename, IWebHostEnvironment env) =>
+    {
+      if (!IsValidUsername(username))
+        return Results.BadRequest(new { message = "Invalid username parameter." });
+      var safeFile = Path.GetFileName(filename);
+      if (string.IsNullOrEmpty(safeFile) || safeFile != filename)
+        return Results.BadRequest(new { message = "Invalid filename." });
+
+      var allowed = new[] { ".jpg", ".jpeg", ".png", ".webp" };
+      var ext = Path.GetExtension(safeFile).ToLowerInvariant();
+      if (!allowed.Contains(ext))
+        return Results.BadRequest(new { message = "File type not allowed." });
+
+      var contentPath = Path.Combine(env.ContentRootPath, "Content", "users", username, "assets", safeFile);
+      if (!System.IO.File.Exists(contentPath))
+        return Results.NotFound();
+
+      var mime = ext switch
+      {
+        ".jpg" or ".jpeg" => "image/jpeg",
+        ".png" => "image/png",
+        ".webp" => "image/webp",
+        _ => "application/octet-stream"
+      };
+      var bytes = await System.IO.File.ReadAllBytesAsync(contentPath);
+      return Results.File(bytes, mime);
     });
   }
 }

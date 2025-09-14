@@ -1,4 +1,5 @@
 import { showMessage } from "./notifications.js";
+import { formatDateIntlWithTime, formatDateIntlOnly } from "./date.js";
 
 // Helper function to safely encode UTF-8 strings to base64
 function safeBase64Encode(str) {
@@ -131,18 +132,27 @@ function renderMarkdownWithImageHandling(
         // Handle relative paths for post images
         let imageSrc = hrefStr;
 
-        // If it's a relative path starting with /assets/, convert to full post path
-        if (hrefStr.startsWith("/assets/") && postSlug && publishedDate) {
-          const dateOnly = new Date(publishedDate).toISOString().split("T")[0];
-          imageSrc = `/Content/posts/${dateOnly}-${postSlug}${hrefStr}`;
+        // If it's a relative path starting with /assets/ or assets/, convert to secure asset endpoint
+        if (
+          (hrefStr.startsWith("/assets/") || hrefStr.startsWith("assets/")) &&
+          postSlug
+        ) {
+          const parts = hrefStr.split("/");
+          const fileName = parts[parts.length - 1];
+          imageSrc = `/api/posts/${postSlug}/assets/${fileName}`;
         }
         // If it's already a full URL or absolute path, use as-is
         else if (
           hrefStr.startsWith("http://") ||
           hrefStr.startsWith("https://") ||
-          hrefStr.startsWith("/Content/")
+          hrefStr.startsWith("/api/posts/")
         ) {
           imageSrc = hrefStr;
+        } else if (hrefStr.startsWith("/Content/") && postSlug) {
+          // Legacy absolute path that won't be served; map by filename to secure endpoint
+          const parts = hrefStr.split("/");
+          const fileName = parts[parts.length - 1];
+          imageSrc = `/api/posts/${postSlug}/assets/${fileName}`;
         }
 
         return `<img src="${imageSrc}" alt="${
@@ -264,16 +274,34 @@ export function renderPosts(posts, containerId, options = {}) {
 
     let imgHtml = "";
     if (post.Images?.length) {
-      const dateOnly = new Date(post.PublishedDate).toISOString().split("T")[0];
       imgHtml = `
         <div class="post-images post-images-${post.Images.length}">
-          ${post.Images.map(
-            (image, index) => `
-            <img src="/Content/posts/${dateOnly}-${post.Slug}${image}"
-                alt="Image ${index + 1} for blog post: ${post.Title}"
-                class="post-image" />
-          `
-          ).join("")}
+          ${post.Images.map((image, index) => {
+            // If backend provided absolute/secure URL, use as-is
+            if (
+              typeof image === "string" &&
+              (image.startsWith("http://") ||
+                image.startsWith("https://") ||
+                image.startsWith("/api/posts/"))
+            ) {
+              return `
+                  <img src="${image}"
+                      alt="Image ${index + 1} for blog post: ${post.Title}"
+                      class="post-image" />
+                `;
+            }
+
+            // Fallback for legacy relative paths: derive filename and use secure endpoint
+            const str = String(image || "");
+            const parts = str.split("/");
+            const fileName = parts[parts.length - 1];
+            const secureUrl = `/api/posts/${post.Slug}/assets/${fileName}`;
+            return `
+                <img src="${secureUrl}"
+                    alt="Image ${index + 1} for blog post: ${post.Title}"
+                    class="post-image" />
+              `;
+          }).join("")}
         </div>
       `;
     }
@@ -290,11 +318,11 @@ export function renderPosts(posts, containerId, options = {}) {
       console.log("Author URL:", authorUrl);
       authorHtml = `<small>By <a href="${authorUrl}" class="author-link">${
         post.Author
-      }</a> • ${new Date(post.PublishedDate).toLocaleString()}</small>`;
+      }</a> • ${formatDateIntlWithTime(post.PublishedDate)}</small>`;
     } else {
-      authorHtml = `<small>${new Date(
+      authorHtml = `<small>${formatDateIntlWithTime(
         post.PublishedDate
-      ).toLocaleString()}</small>`;
+      )}</small>`;
     }
 
     // Build action buttons conditionally
@@ -391,22 +419,22 @@ export function renderPosts(posts, containerId, options = {}) {
 
     card.innerHTML = `
       <div class="post-content-wrapper">
-        <h3><a href="/post/${post.Slug}">${post.Title}</a></h3>
-        <div class="post-description">${renderMarkdown(
-          post.Description || ""
-        )}</div>
-        ${imgHtml}
-        ${bodyHtml}
+      <h2><a href="/post/${post.Slug}">${post.Title}</a></h2>
+      <div class="post-description">${renderMarkdown(
+        post.Description || ""
+      )}</div>
+      ${imgHtml}
+      ${bodyHtml}
       </div>
       
       <div class="post-footer">
-        ${authorHtml}
-        <div class="meta-info">
-          <div><strong>Tags:</strong> ${tagsHtml || "—"}</div>
-          <div><strong>Categories:</strong> ${catsHtml || "—"}</div>
-        </div>
-        ${interactionBarHtml}
-        <div class="post-actions">${actionsHtml}</div>
+      ${authorHtml}
+      <div class="meta-info">
+        <div><strong>Tags:</strong> ${tagsHtml || "—"}</div>
+        <div><strong>Categories:</strong> ${catsHtml || "—"}</div>
+      </div>
+      ${interactionBarHtml}
+      <div class="post-actions">${actionsHtml}</div>
       </div>
     `;
 
@@ -521,7 +549,7 @@ export function renderPosts(posts, containerId, options = {}) {
     overflow-y: auto;
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
   ">
-    <h3 style="
+    <h2 style="
       margin: 0 0 20px 0;
       font-size: 1.5rem;
       color: var(--text-color, #333);
@@ -529,7 +557,7 @@ export function renderPosts(posts, containerId, options = {}) {
       padding-bottom: 10px;
     ">Liked by ${likers.length} ${
           likers.length === 1 ? "person" : "people"
-        }</h3>
+        }</h2>
     <ul style="
       list-style: none;
       padding: 0;
@@ -674,7 +702,7 @@ export function renderPosts(posts, containerId, options = {}) {
       e.preventDefault();
       const postCard = link.closest(".post-card");
       const postBody = postCard.querySelector(".post-body");
-      const postTitle = postCard.querySelector("h3 a").textContent;
+      const postTitle = postCard.querySelector("h2 a").textContent;
       const action = link.dataset.action;
 
       if (action === "expand") {

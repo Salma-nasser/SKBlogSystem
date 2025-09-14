@@ -6,6 +6,7 @@ import { showMessage, showConfirmation } from "./utils/notifications.js";
 import { authenticatedFetch, HttpError } from "./utils/api.js";
 
 // Helper to display validation errors for form fields
+import { formatDateIntlOnly, formatDateIntlWithTime, WrittenDateIntl } from "./utils/date.js";
 function showError(fieldId, message) {
   const errorEl = document.getElementById(fieldId + "Error");
   if (errorEl) {
@@ -503,13 +504,9 @@ window.addEventListener("DOMContentLoaded", () => {
       userUsername.textContent = user.Username || username;
       userRole.textContent = user.Role || "Author";
       userMemberSince.textContent = user.CreatedAt
-        ? new Date(user.CreatedAt).toLocaleDateString("en-GB", {
-            year: "numeric",
-            month: "long",
-            day: "2-digit",
-          })
+        ? WrittenDateIntl(user.CreatedAt)
         : "";
-      userPostsCount.textContent = user.PostsCount || 0;
+      userPostsCount.textContent = user.PublishedPostsCount || 0;
 
       // Show email only for own profile
       const emailParent = userEmail.closest("p");
@@ -523,17 +520,12 @@ window.addEventListener("DOMContentLoaded", () => {
       }
 
       // Handle profile picture with error handling
-      if (user.ProfilePictureUrl && user.ProfilePictureUrl.trim()) {
-        userProfilePic.src = `${user.ProfilePictureUrl}`;
-        userProfilePic.onerror = function () {
-          this.src = "/placeholders/profile.png";
-          this.onerror = null;
-        };
-        userProfilePic.classList.remove("hidden");
-      } else {
+      const pic = (user.ProfilePictureUrl || "").trim();
+      userProfilePic.src = pic ? pic : "/placeholders/profile.png";
+      userProfilePic.onerror = function () {
         userProfilePic.src = "/placeholders/profile.png";
-        userProfilePic.classList.remove("hidden");
-      }
+      };
+      userProfilePic.classList.remove("hidden");
     } catch (err) {
       if (err.message !== "Session expired") {
         console.error("Error loading user info:", err);
@@ -1026,7 +1018,20 @@ function displayCurrentImages(post) {
       imageWrapper.className = "current-image-wrapper";
 
       const img = document.createElement("img");
-      img.src = `/Content/posts/${dateOnly}-${post.Slug}${imagePath}`;
+      // Use absolute URL as-is, else map to secure endpoint by filename
+      if (
+        typeof imagePath === "string" &&
+        (imagePath.startsWith("http://") ||
+          imagePath.startsWith("https://") ||
+          imagePath.startsWith("/api/posts/"))
+      ) {
+        img.src = imagePath;
+      } else {
+        const str = String(imagePath || "");
+        const parts = str.split("/");
+        const fileName = parts[parts.length - 1];
+        img.src = `/api/posts/${post.Slug}/assets/${fileName}`;
+      }
       img.alt = `Post Image ${index + 1}`;
       img.className = "current-image";
 

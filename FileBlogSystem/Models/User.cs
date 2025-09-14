@@ -14,6 +14,9 @@ public class User
     public DateTime LastLoginDate { get; set; }
     public bool IsActive { get; set; } = true;
 
+    // Number of posts this user has published. Kept in the user's profile.json.
+    public int PublishedPostsCount { get; set; } = 0;
+
     public string? ResetToken { get; set; }
     public DateTime? ResetTokenExpiration { get; set; }
     public bool? ResetTokenVerified { get; set; }

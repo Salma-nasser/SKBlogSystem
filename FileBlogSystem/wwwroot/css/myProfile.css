@@ -35,8 +35,8 @@
 
 .posts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 2rem; /* Increased gap for better spacing */
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem; /* Slightly tighter to reduce white gaps */
   padding: 1rem;
   width: 100%;
   box-sizing: border-box; /* Ensures padding is included in width */
@@ -68,7 +68,7 @@
 }
 
 /* Text content styling */
-.post-card h3 {
+.post-card h2 {
   font-size: 1.25rem;
   margin: 0.5rem 0;
   color: var(--text-color);
@@ -125,6 +125,7 @@
   overflow: hidden; /* Prevents content from overflowing */
   min-height: 0; /* Fixes flexbox overflow issues */
   min-width: 0;
+  height: auto; /* Size to fit content */
 }
 
 .post-body p {
@@ -140,6 +141,22 @@
   font-style: italic;
   color: var(--text-muted);
   margin-bottom: 1rem;
+}
+
+/* Ensure content area grows and footer sits at bottom */
+.post-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.post-footer {
+  margin-top: auto; /* Push footer to the bottom of the card */
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
 /* Read More Controls */
@@ -434,6 +451,7 @@ body.dark-mode .profile-nav button.active {
 .user-details p strong {
   flex-shrink: 0; /* don’t shrink too much */
   width: auto;
+  margin-right: 0.4rem; /* ensure a single visible space after colon */
 }
 
 .user-details p span {
@@ -803,48 +821,48 @@ body.dark-mode .profile-nav button:hover:not(.active) {
 }
 
 /* Post card title styling */
-.post-card h3 {
+.post-card h2 {
   font-size: 1.4rem; /* slightly larger titles */
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
-.post-card h3 a:hover {
+.post-card h2 a:hover {
   color: var(--accent-color);
   text-decoration: underline;
 }
 
 /* Dark mode overrides for post card titles */
-[data-theme="dark"] .post-card h3 a {
+[data-theme="dark"] .post-card h2 a {
   color: #f0f0f0;
 }
 
-[data-theme="dark"] .post-card h3 a:hover {
+[data-theme="dark"] .post-card h2 a:hover {
   color: var(--accent-color);
 }
 
 /* Light mode for post card titles */
-[data-theme="light"] .post-card h3 a {
+[data-theme="light"] .post-card h2 a {
   color: #2c3e50;
 }
 
-[data-theme="light"] .post-card h3 a:hover {
+[data-theme="light"] .post-card h2 a:hover {
   color: #c89b7b;
 }
 
 /* Remove default visited purple for post titles on profile */
-.post-card h3 a:link,
-.post-card h3 a:visited {
+.post-card h2 a:link,
+.post-card h2 a:visited {
   text-decoration: none;
 }
 
-[data-theme="dark"] .post-card h3 a:link,
-[data-theme="dark"] .post-card h3 a:visited {
+[data-theme="dark"] .post-card h2 a:link,
+[data-theme="dark"] .post-card h2 a:visited {
   color: #f0f0f0;
 }
 
-[data-theme="light"] .post-card h3 a:link,
-[data-theme="light"] .post-card h3 a:visited {
+[data-theme="light"] .post-card h2 a:link,
+[data-theme="light"] .post-card h2 a:visited {
   color: #2c3e50;
 }
 
@@ -893,19 +911,19 @@ header h1 a:hover {
 }
 
 /* Ensure post title links use the heading color, not browser blue/purple */
-.post-card h3 a,
-.post-card h3 a:visited {
+.post-card h2 a,
+.post-card h2 a:visited {
   color: inherit !important;
   text-decoration: none;
 }
 
-body.dark-mode .post-card h3 a,
-body.dark-mode .post-card h3 a:visited {
+body.dark-mode .post-card h2 a,
+body.dark-mode .post-card h2 a:visited {
   color: var(--text-color) !important;
 }
 
 /* Keep hover state distinct */
-.post-card h3 a:hover {
+.post-card h2 a:hover {
   color: var(--accent-color) !important;
   text-decoration: underline;
 }
