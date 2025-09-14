@@ -4,6 +4,7 @@ import { initializeThemeToggle } from "./utils/themeToggle.js";
 import { initMobileSidebar } from "./utils/mobileSidebar.js";
 import { showMessage } from "./utils/notifications.js";
 import { authenticatedFetch } from "./utils/api.js";
+import { formatDateIntlOnly, formatDateIntlWithTime } from "./utils/date.js";
 
 // Helper to split camelCase and concatenated labels and capitalize each word
 function formatLabel(str) {
@@ -115,16 +116,10 @@ function renderSinglePost(post) {
 
   const publishedDate = post.PublishedDate || post.CreatedDate;
   const formattedDate = publishedDate
-    ? new Date(publishedDate).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "long",
-        year: "numeric",
-      })
+    ? formatDateIntlWithTime(publishedDate)
     : "";
 
-  const dateOnly = publishedDate
-    ? new Date(publishedDate).toISOString().split("T")[0]
-    : "";
+  const dateOnly = publishedDate ? formatDateIntlOnly(publishedDate) : "";
 
   // Generate images HTML with proper layout classes
   let imagesHtml = "";

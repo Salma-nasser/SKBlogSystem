@@ -108,3 +108,6 @@ Desktop.ini
 
 # Search Index
 /Content/search-index/*
+
+# Node modules
+node_modules/

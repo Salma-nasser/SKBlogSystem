@@ -144,7 +144,8 @@ public class UserService : IUserService
                 user.CreatedAt,
                 user.Bio,
                 user.ProfilePictureUrl,
-                user.IsActive
+                user.IsActive,
+                user.PublishedPostsCount
             };
 
             return Results.Ok(profile);

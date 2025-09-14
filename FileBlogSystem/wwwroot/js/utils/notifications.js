@@ -227,6 +227,8 @@ if (!document.querySelector("#notification-styles")) {
  * Each unread notification shows a left accent bar and is clickable to mark as read.
  * Includes a "Mark all as read" action.
  */
+import { formatDateIntlWithTime } from "./date.js";
+
 export function openNotificationsModal() {
   ensureNotificationsModal();
   const modal = document.getElementById("notificationsModal");
@@ -372,9 +374,9 @@ function renderNotificationsList(notifications) {
     if (!n.IsRead) item.style.borderLeft = "4px solid #8b4513";
     item.innerHTML = `<div>${
       n.Message
-    }</div><div style='font-size:0.8em;color:#8a7a6e;'>${new Date(
+    }</div><div style='font-size:0.8em;color:#8a7a6e;'>${formatDateIntlWithTime(
       n.CreatedAt
-    ).toLocaleString()}</div>`;
+    )}</div>`;
     item.addEventListener("click", async (e) => {
       e.preventDefault();
       try {

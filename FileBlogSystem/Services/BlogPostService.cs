@@ -290,11 +290,32 @@ public class BlogPostService : IBlogPostService
         return (false, "Unauthorized");
       }
 
+      // Only increment user's published count when transitioning from unpublished -> published
+      bool wasPublished = post.IsPublished;
       post.IsPublished = true;
       post.PublishedDate = DateTime.UtcNow;
       post.LastModified = DateTime.UtcNow;
 
       bool success = await _postRepository.UpdatePostAsync(post);
+
+      if (success && !wasPublished)
+      {
+        try
+        {
+          var user = await _userRepository.GetUserByUsernameAsync(currentUsername);
+          if (user != null)
+          {
+            user.PublishedPostsCount = (user.PublishedPostsCount < 0) ? 1 : user.PublishedPostsCount + 1;
+            await _userRepository.UpdateUserAsync(user);
+          }
+        }
+        catch (Exception ex)
+        {
+          // Log and continue; publish already succeeded.
+          _logger.LogWarning(ex, "Failed to increment PublishedPostsCount for user: {User}", currentUsername);
+        }
+      }
+
       return success ? (true, "Post published successfully") : (false, "Failed to publish post");
     }
     catch (Exception ex)
@@ -321,12 +342,88 @@ public class BlogPostService : IBlogPostService
   {
     try
     {
-      return await _postRepository.DeletePostAsync(slug);
+      var post = await _postRepository.GetPostBySlugAsync(slug);
+      if (post == null) return false;
+
+      bool wasPublished = post.IsPublished;
+
+      var deleted = await _postRepository.DeletePostAsync(slug);
+
+      // If post was published, decrement the author's published count
+      if (deleted && wasPublished)
+      {
+        try
+        {
+          var user = await _userRepository.GetUserByUsernameAsync(post.Author);
+          if (user != null)
+          {
+            user.PublishedPostsCount = Math.Max(0, user.PublishedPostsCount - 1);
+            await _userRepository.UpdateUserAsync(user);
+          }
+        }
+        catch (Exception ex)
+        {
+          _logger.LogWarning(ex, "Failed to decrement PublishedPostsCount for user after delete: {User}", post.Author);
+        }
+      }
+
+      return deleted;
     }
     catch (Exception ex)
     {
       _logger.LogError(ex, "Error deleting post: {Slug}", slug);
       return false;
+    }
+  }
+
+  public async Task<(bool Success, string Message)> UnpublishPostAsync(string slug, string currentUsername)
+  {
+    try
+    {
+      var post = await _postRepository.GetPostBySlugAsync(slug);
+      if (post == null)
+      {
+        return (false, "Post not found");
+      }
+
+      if (post.Author != currentUsername)
+      {
+        return (false, "Unauthorized");
+      }
+
+      if (!post.IsPublished)
+      {
+        return (true, "Post already unpublished");
+      }
+
+      post.IsPublished = false;
+      post.LastModified = DateTime.UtcNow;
+
+      bool success = await _postRepository.UpdatePostAsync(post);
+
+      if (success)
+      {
+        try
+        {
+          var user = await _userRepository.GetUserByUsernameAsync(currentUsername);
+          if (user != null)
+          {
+            user.PublishedPostsCount = Math.Max(0, user.PublishedPostsCount - 1);
+            await _userRepository.UpdateUserAsync(user);
+          }
+        }
+        catch (Exception ex)
+        {
+          _logger.LogWarning(ex, "Failed to decrement PublishedPostsCount for user: {User}", currentUsername);
+        }
+      }
+
+      return success ? (true, "Post unpublished successfully") : (false, "Failed to unpublish post");
+    }
+    catch (Exception ex)
+    {
+      _logger.LogError(ex, "Error unpublishing post: {Slug}", slug);
+      return (false, "An error occurred while unpublishing the post");
     }
   }
 

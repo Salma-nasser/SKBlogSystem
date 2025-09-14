@@ -45,7 +45,8 @@ namespace FileBlogSystem.Repositories
           CreatedAt = userInfo.TryGetProperty("CreatedAt", out var createdProp) ? createdProp.GetDateTime() : DateTime.UtcNow,
           IsActive = userInfo.TryGetProperty("IsActive", out var activeProp) ? activeProp.GetBoolean() : true,
           Bio = userInfo.TryGetProperty("Bio", out var bioProp) ? bioProp.GetString() ?? string.Empty : string.Empty,
-          ProfilePictureUrl = normalizedPic
+          ProfilePictureUrl = normalizedPic,
+          PublishedPostsCount = userInfo.TryGetProperty("PublishedPostsCount", out var pubProp) && pubProp.ValueKind == System.Text.Json.JsonValueKind.Number ? pubProp.GetInt32() : 0
         };
       }
       catch (Exception ex)
@@ -85,7 +86,8 @@ namespace FileBlogSystem.Repositories
               CreatedAt = userInfo.TryGetProperty("CreatedAt", out var createdProp) ? createdProp.GetDateTime() : DateTime.UtcNow,
               IsActive = userInfo.TryGetProperty("IsActive", out var activeProp) ? activeProp.GetBoolean() : true,
               Bio = userInfo.TryGetProperty("Bio", out var bioProp) ? bioProp.GetString() ?? string.Empty : string.Empty,
-              ProfilePictureUrl = normalizedPic
+              ProfilePictureUrl = normalizedPic,
+              PublishedPostsCount = userInfo.TryGetProperty("PublishedPostsCount", out var pubProp2) && pubProp2.ValueKind == System.Text.Json.JsonValueKind.Number ? pubProp2.GetInt32() : 0
             };
           }
         }
@@ -127,7 +129,8 @@ namespace FileBlogSystem.Repositories
             CreatedAt = userInfo.TryGetProperty("CreatedAt", out var createdProp) ? createdProp.GetDateTime() : DateTime.UtcNow,
             IsActive = userInfo.TryGetProperty("IsActive", out var activeProp) ? activeProp.GetBoolean() : true,
             Bio = userInfo.TryGetProperty("Bio", out var bioProp) ? bioProp.GetString() ?? string.Empty : string.Empty,
-            ProfilePictureUrl = normalizedPic
+            ProfilePictureUrl = normalizedPic,
+            PublishedPostsCount = userInfo.TryGetProperty("PublishedPostsCount", out var pubProp3) && pubProp3.ValueKind == System.Text.Json.JsonValueKind.Number ? pubProp3.GetInt32() : 0
           };
 
           users.Add(user);
@@ -179,7 +182,8 @@ namespace FileBlogSystem.Repositories
           user.CreatedAt,
           user.IsActive,
           user.Bio,
-          user.ProfilePictureUrl
+          user.ProfilePictureUrl,
+          user.PublishedPostsCount
         };
 
         string profilePath = Path.Combine(userDirectory, "profile.json");
@@ -214,7 +218,8 @@ namespace FileBlogSystem.Repositories
           user.CreatedAt,
           user.IsActive,
           user.Bio,
-          user.ProfilePictureUrl
+          user.ProfilePictureUrl,
+          user.PublishedPostsCount
         };
 
         string profileJson = JsonSerializer.Serialize(userProfile, new JsonSerializerOptions { WriteIndented = true });

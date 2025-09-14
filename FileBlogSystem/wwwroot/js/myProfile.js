@@ -6,6 +6,7 @@ import { showMessage, showConfirmation } from "./utils/notifications.js";
 import { authenticatedFetch, HttpError } from "./utils/api.js";
 
 // Helper to display validation errors for form fields
+import { formatDateIntlOnly, formatDateIntlWithTime, WrittenDateIntl } from "./utils/date.js";
 function showError(fieldId, message) {
   const errorEl = document.getElementById(fieldId + "Error");
   if (errorEl) {
@@ -484,13 +485,9 @@ window.addEventListener("DOMContentLoaded", () => {
       userUsername.textContent = user.Username || username;
       userRole.textContent = user.Role || "Author";
       userMemberSince.textContent = user.CreatedAt
-        ? new Date(user.CreatedAt).toLocaleDateString("en-GB", {
-            year: "numeric",
-            month: "long",
-            day: "2-digit",
-          })
+        ? WrittenDateIntl(user.CreatedAt)
         : "";
-      userPostsCount.textContent = user.PostsCount || 0;
+      userPostsCount.textContent = user.PublishedPostsCount || 0;
 
       // Show email only for own profile
       const emailParent = userEmail.closest("p");

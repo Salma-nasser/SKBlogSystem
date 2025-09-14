@@ -27,6 +27,10 @@ public static class AdminEndpoints
     app.MapGet("/api/admin/check", CheckAdminStatus)
           .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
       .WithName("CheckAdmin");
+    // One-time backfill to compute PublishedPostsCount from existing posts
+    app.MapPost("/api/admin/backfill-published-counts", BackfillPublishedCounts)
+        .RequireAuthorization(new AuthorizeAttribute { Roles = "Admin" })
+        .WithName("BackfillPublishedCounts");
   }
   private static async Task<IResult> GetAllUsersAsync(IAdminService adminService, HttpContext ctx)
   {
@@ -57,5 +61,16 @@ public static class AdminEndpoints
       return Results.Unauthorized();
 
     return Results.Ok(new { isAdmin = true, username = currentUser });
+  }
+
+  private static async Task<IResult> BackfillPublishedCounts(IAdminService adminService, IBlogPostService blogService, HttpContext ctx)
+  {
+    var currentUser = ctx.User.Identity?.Name;
+    if (string.IsNullOrEmpty(currentUser))
+      return Results.Unauthorized();
+
+    // Delegate to adminService for the actual backfill work
+    var result = await ((dynamic)adminService).BackfillPublishedCounts(blogService);
+    return result as IResult ?? Results.Problem("Backfill failed");
   }
 }

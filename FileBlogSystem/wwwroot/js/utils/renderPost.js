@@ -1,4 +1,5 @@
 import { showMessage } from "./notifications.js";
+import { formatDateIntlWithTime, formatDateIntlOnly } from "./date.js";
 
 // Helper function to safely encode UTF-8 strings to base64
 function safeBase64Encode(str) {
@@ -317,11 +318,11 @@ export function renderPosts(posts, containerId, options = {}) {
       console.log("Author URL:", authorUrl);
       authorHtml = `<small>By <a href="${authorUrl}" class="author-link">${
         post.Author
-      }</a> • ${new Date(post.PublishedDate).toLocaleString()}</small>`;
+      }</a> • ${formatDateIntlWithTime(post.PublishedDate)}</small>`;
     } else {
-      authorHtml = `<small>${new Date(
+      authorHtml = `<small>${formatDateIntlWithTime(
         post.PublishedDate
-      ).toLocaleString()}</small>`;
+      )}</small>`;
     }
 
     // Build action buttons conditionally

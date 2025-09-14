@@ -173,8 +173,8 @@ app.Use(async (context, next) =>
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
   // Be explicit for script elements as well
   "script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
-  // API/Ajax and SignalR websockets
-  "connect-src 'self' ws: wss:";
+  // API/Ajax and SignalR websockets, plus CDN for source maps
+  "connect-src 'self' ws: wss: https://cdnjs.cloudflare.com;";
 
   await next();
 });
