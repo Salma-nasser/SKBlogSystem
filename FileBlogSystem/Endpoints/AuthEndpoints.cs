@@ -2,70 +2,84 @@ using FileBlogSystem.Models;
 using FileBlogSystem.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using System.Text.RegularExpressions;
-
+using Microsoft.AspNetCore.RateLimiting;
 namespace FileBlogSystem.Endpoints;
 
+[EnableRateLimiting("AuthFixed")]
 public static class AuthEndpoints
 {
   public static void MapAuthEndpoints(this IEndpointRouteBuilder app)
   {
-    app.MapPost("/api/auth/login", async (LoginRequest request, IUserService userService) =>
-    {
-      if (request == null)
-        return Results.BadRequest(new { message = "Invalid login data." });
-      var validationResult = ValidateLoginRequest(request);
-      if (validationResult != null)
-        return Results.BadRequest(new { message = validationResult });
+    // Endpoint Definitions
+    app.MapPost("/api/auth/login", LoginUserAsync)
+      .AllowAnonymous()
+      .WithName("Login")
+      .WithTags("Authentication");
 
-      Console.WriteLine($"Logging in user: {request.Username}");
-      return await userService.LoginUser(request.Username, request.Password);
-    })
-    .AllowAnonymous()
-    .WithName("Login")
-    .WithTags("Authentication");
+    app.MapPost("/api/auth/register", RegisterUserAsync)
+      .AllowAnonymous()
+      .WithName("Register")
+      .WithTags("Authentication");
 
-    app.MapPost("/api/auth/register", async (RegisterRequest request, IUserService userService) =>
-    {
-      if (request == null)
-        return Results.BadRequest(new { message = "Invalid registration data." });
-      var validationResult = ValidateRegisterRequest(request);
-      if (validationResult != null)
-        return Results.BadRequest(new { message = validationResult });
-
-      Console.WriteLine($"Registering user: {request.Username}");
-      return await userService.RegisterUser(
-              request.Username,
-              request.Password,
-              request.Email);
-    })
-    .AllowAnonymous()
-    .WithName("Register")
-    .WithTags("Authentication");
-
-    app.MapPut("/api/users/{username}/password", [Authorize] async (
-        string username,
-        HttpContext context,
-        IUserService userService,
-        ChangePasswordRequest request) =>
-    {
-      // Validate path parameter
-      if (string.IsNullOrWhiteSpace(username) || username.Length < 3 || username.Length > 20)
-        return Results.BadRequest(new { message = "Invalid username." });
-      var currentUser = context.User.Identity?.Name;
-      if (currentUser == null || !string.Equals(currentUser, username, StringComparison.OrdinalIgnoreCase))
-        return Results.Forbid();
-
-      var validationResult = ValidateChangePasswordRequest(request);
-      if (validationResult != null)
-        return Results.BadRequest(new { message = validationResult });
-
-      return await userService.UpdatePassword(username, request.CurrentPassword, request.NewPassword);
-    })
-    .RequireAuthorization()
-    .WithName("ChangePassword")
-    .WithTags("Users");
+    app.MapPut("/api/users/{username}/password", ChangeUserPasswordAsync)
+      .RequireAuthorization()
+      .WithName("ChangePassword")
+      .WithTags("Users");
   }
 
+  // Endpoint Implementation Functions
+  private static async Task<IResult> LoginUserAsync(LoginRequest request, IUserService userService)
+  {
+    if (request == null)
+      return Results.BadRequest(new { message = "Invalid login data." });
+
+    var validationResult = ValidateLoginRequest(request);
+    if (validationResult != null)
+      return Results.BadRequest(new { message = validationResult });
+
+    Console.WriteLine($"Logging in user: {request.Username}");
+    return await userService.LoginUser(request.Username, request.Password);
+  }
+
+  private static async Task<IResult> RegisterUserAsync(RegisterRequest request, IUserService userService)
+  {
+    if (request == null)
+      return Results.BadRequest(new { message = "Invalid registration data." });
+
+    var validationResult = ValidateRegisterRequest(request);
+    if (validationResult != null)
+      return Results.BadRequest(new { message = validationResult });
+
+    Console.WriteLine($"Registering user: {request.Username}");
+    return await userService.RegisterUser(
+        request.Username,
+        request.Password,
+        request.Email);
+  }
+
+  [Authorize]
+  private static async Task<IResult> ChangeUserPasswordAsync(
+      string username,
+      HttpContext context,
+      IUserService userService,
+      ChangePasswordRequest request)
+  {
+    // Validate path parameter
+    if (string.IsNullOrWhiteSpace(username) || username.Length < 3 || username.Length > 20)
+      return Results.BadRequest(new { message = "Invalid username." });
+
+    var currentUser = context.User.Identity?.Name;
+    if (currentUser == null || !string.Equals(currentUser, username, StringComparison.OrdinalIgnoreCase))
+      return Results.Forbid();
+
+    var validationResult = ValidateChangePasswordRequest(request);
+    if (validationResult != null)
+      return Results.BadRequest(new { message = validationResult });
+
+    return await userService.UpdatePassword(username, request.CurrentPassword, request.NewPassword);
+  }
+
+  // Validation Helper Functions
   private static string? ValidateLoginRequest(LoginRequest request)
   {
     if (string.IsNullOrWhiteSpace(request.Username))

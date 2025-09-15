@@ -98,7 +98,8 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   max-width: 1000px;
   width: 100%;
-  min-height: 400px;
+  /* Allow the card to shrink to fit its content to reduce large whitespace */
+  min-height: 0;
   height: auto;
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-color);
@@ -111,7 +112,7 @@
 }
 
 /* Post Card Header */
-.post-card h3 {
+.post-card h2 {
   font-size: 1.5rem;
   margin-bottom: 10px;
   color: var(--text-color);
@@ -119,13 +120,13 @@
   font-family: var(--font-heading);
 }
 
-.post-card h3 a {
+.post-card h2 a {
   color: var(--text-color);
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
-.post-card h3 a:hover {
+.post-card h2 a:hover {
   color: var(--primary-color);
   text-decoration: underline;
 }

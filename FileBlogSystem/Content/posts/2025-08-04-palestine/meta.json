@@ -1,23 +1,24 @@
 {
-  "title": "Palestine",
-  "description": "discussing thre current issue",
-  "customUrl": "palestine",
-  "author": "Salma",
-  "tags": [
+  "Title": "Palestine",
+  "Description": "discussing thre current issue",
+  "CustomUrl": "palestine",
+  "AuthorUsername": "Salma",
+  "Tags": [
     "palestine",
     "LetYourVoiceBeHeard"
   ],
-  "categories": [
+  "Categories": [
     "Politics"
   ],
-  "publishedDate": "2025-08-04T07:52:34.7051316Z",
-  "lastModified": "2025-08-04T07:56:49.0950911Z",
-  "slug": "palestine",
-  "isPublished": true,
-  "scheduledDate": null,
-  "images": [
-    "/assets/flag.jpg"
+  "PublishedDate": "2025-08-04T07:52:34.7051316Z",
+  "ModifiedDate": "2025-09-02T09:43:09.0223304Z",
+  "Slug": "palestine",
+  "IsPublished": true,
+  "ScheduledDate": null,
+  "Images": [
+    "/api/posts/palestine/assets/flag.jpg"
   ],
-  "likes": [],
-  "commentCount": 0
+  "Likes": [
+    "Mohammed"
+  ]
 }

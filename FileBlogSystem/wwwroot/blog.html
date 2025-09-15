@@ -50,10 +50,22 @@
           aria-label="Search blog posts"
         />
       </div>
-      <div class="button-wrapper">
-        <button id="clearFilterBtn" style="visibility: hidden">
-          Show All Posts
-        </button>
+      <div
+        class="controls-wrapper"
+        style="display: flex; gap: 8px; align-items: center"
+      >
+        <label for="sortSelect" class="sr-only">Sort posts</label>
+        <select id="sortSelect" aria-label="Sort posts">
+          <option value="latest">Latest</option>
+          <option value="oldest">Oldest</option>
+          <option value="last_week">Last week</option>
+          <option value="last_month">Last month</option>
+        </select>
+        <div class="button-wrapper">
+          <button id="clearFilterBtn" style="visibility: hidden">
+            Show All Posts
+          </button>
+        </div>
       </div>
     </div>
 

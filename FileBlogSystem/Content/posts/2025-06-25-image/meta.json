@@ -16,7 +16,7 @@
   "isPublished": true,
   "scheduledDate": null,
   "images": [
-    "/assets/OIP.jpg"
+    "/api/posts/image/assets/OIP.jpg"
   ],
   "likes": [
     "Henry",

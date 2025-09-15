@@ -1,4 +1,4 @@
-import { renderPosts, safeBase64Decode } from "./utils/renderPost.js";
+﻿import { renderPosts, safeBase64Decode } from "./utils/renderPost.js";
 import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
 import { initMobileSidebar } from "./utils/mobileSidebar.js";
@@ -6,6 +6,7 @@ import { showMessage, showConfirmation } from "./utils/notifications.js";
 import { authenticatedFetch, HttpError } from "./utils/api.js";
 
 // Helper to display validation errors for form fields
+import { formatDateIntlOnly, formatDateIntlWithTime, WrittenDateIntl } from "./utils/date.js";
 function showError(fieldId, message) {
   const errorEl = document.getElementById(fieldId + "Error");
   if (errorEl) {
@@ -244,13 +245,29 @@ window.addEventListener("DOMContentLoaded", () => {
     fetchDraftPosts();
   }
   loadUserInfo(targetUsername);
-  function deleteAccount() {
+  async function deleteAccount() {
     try {
-      authenticatedFetch(`/api/users/delete/${currentUsername}`, {
-        method: "PUT",
-      });
+      const response = await authenticatedFetch(
+        `/api/users/delete/${currentUsername}`,
+        {
+          method: "PATCH",
+        }
+      );
+      if (!response.ok) {
+        const msg = await response.text().catch(() => "");
+        throw new Error(msg || `Delete failed (${response.status})`);
+      }
+      showMessage("Your account has been deleted.", "success");
+      // Clear auth and redirect after a short delay
+      localStorage.removeItem("jwtToken");
+      localStorage.removeItem("username");
+      setTimeout(() => {
+        window.location.href = "/welcome";
+      }, 1000);
     } catch (error) {
-      if (error.message !== "Session expired") {
+      if (error instanceof HttpError) {
+        showMessage(error.message || "Failed to delete account.", "error");
+      } else {
         console.error("Error deleting account:", error);
         showMessage("Failed to delete account.", "error");
       }
@@ -265,7 +282,10 @@ window.addEventListener("DOMContentLoaded", () => {
     changePictureBtn?.addEventListener("click", () =>
       toggleEditSection("picture")
     );
+
+    // Delete account with confirmation
     deleteAccountBtn?.addEventListener("click", () => {
+      console.log("Delete account button clicked");
       showConfirmation(
         "Delete Account",
         "Are you sure you want to delete your account?",
@@ -484,13 +504,9 @@ window.addEventListener("DOMContentLoaded", () => {
       userUsername.textContent = user.Username || username;
       userRole.textContent = user.Role || "Author";
       userMemberSince.textContent = user.CreatedAt
-        ? new Date(user.CreatedAt).toLocaleDateString("en-GB", {
-            year: "numeric",
-            month: "long",
-            day: "2-digit",
-          })
+        ? WrittenDateIntl(user.CreatedAt)
         : "";
-      userPostsCount.textContent = user.PostsCount || 0;
+      userPostsCount.textContent = user.PublishedPostsCount || 0;
 
       // Show email only for own profile
       const emailParent = userEmail.closest("p");
@@ -504,17 +520,12 @@ window.addEventListener("DOMContentLoaded", () => {
       }
 
       // Handle profile picture with error handling
-      if (user.ProfilePictureUrl && user.ProfilePictureUrl.trim()) {
-        userProfilePic.src = `${user.ProfilePictureUrl}`;
-        userProfilePic.onerror = function () {
-          this.src = "/placeholders/profile.png";
-          this.onerror = null;
-        };
-        userProfilePic.classList.remove("hidden");
-      } else {
+      const pic = (user.ProfilePictureUrl || "").trim();
+      userProfilePic.src = pic ? pic : "/placeholders/profile.png";
+      userProfilePic.onerror = function () {
         userProfilePic.src = "/placeholders/profile.png";
-        userProfilePic.classList.remove("hidden");
-      }
+      };
+      userProfilePic.classList.remove("hidden");
     } catch (err) {
       if (err.message !== "Session expired") {
         console.error("Error loading user info:", err);
@@ -628,11 +639,6 @@ window.addEventListener("DOMContentLoaded", () => {
     }, 1000);
   });
 
-  // Only add edit functionality if it's the user's own profile
-  if (isOwnProfile) {
-    setupEditFunctionality();
-  }
-
   // Initial data loading
   console.log(
     `Loading profile for: ${targetUsername}, isOwnProfile: ${isOwnProfile}`
@@ -642,62 +648,6 @@ window.addEventListener("DOMContentLoaded", () => {
     fetchDraftPosts();
   }
   loadUserInfo(targetUsername);
-
-  function setupEditFunctionality() {
-    // Edit section toggle buttons
-    changeEmailBtn?.addEventListener("click", () => toggleEditSection("email"));
-    changePasswordBtn?.addEventListener("click", () =>
-      toggleEditSection("password")
-    );
-    changePictureBtn?.addEventListener("click", () =>
-      toggleEditSection("picture")
-    );
-
-    // Cancel buttons
-    document
-      .getElementById("cancelEmailChange")
-      ?.addEventListener("click", () => toggleEditSection("email", false));
-    document
-      .getElementById("cancelPasswordChange")
-      ?.addEventListener("click", () => toggleEditSection("password", false));
-    document
-      .getElementById("cancelPictureChange")
-      ?.addEventListener("click", () => toggleEditSection("picture", false));
-
-    // Form submissions
-    changeEmailForm?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      await updateEmail();
-    });
-
-    changePasswordForm?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      await updatePassword();
-    });
-
-    changePictureForm?.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      await updateProfilePicture();
-    });
-
-    // Profile picture preview
-    newProfilePictureInput?.addEventListener("change", (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          picturePreview.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-      }
-    });
-
-    // Add preview functionality for modify modal images
-    const modifyImagesInput = document.getElementById("modifyImages");
-    modifyImagesInput?.addEventListener("change", (e) => {
-      previewNewImages(e.target.files);
-    });
-  }
 
   function previewNewImages(files) {
     const container = document.getElementById("currentImagesContainer");
@@ -1068,7 +1018,20 @@ function displayCurrentImages(post) {
       imageWrapper.className = "current-image-wrapper";
 
       const img = document.createElement("img");
-      img.src = `/Content/posts/${dateOnly}-${post.Slug}${imagePath}`;
+      // Use absolute URL as-is, else map to secure endpoint by filename
+      if (
+        typeof imagePath === "string" &&
+        (imagePath.startsWith("http://") ||
+          imagePath.startsWith("https://") ||
+          imagePath.startsWith("/api/posts/"))
+      ) {
+        img.src = imagePath;
+      } else {
+        const str = String(imagePath || "");
+        const parts = str.split("/");
+        const fileName = parts[parts.length - 1];
+        img.src = `/api/posts/${post.Slug}/assets/${fileName}`;
+      }
       img.alt = `Post Image ${index + 1}`;
       img.className = "current-image";
 

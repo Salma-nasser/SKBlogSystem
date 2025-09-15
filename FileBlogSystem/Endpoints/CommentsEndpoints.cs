@@ -12,15 +12,15 @@ public static class CommentsEndpoints
   public static void MapCommentsEndpoints(this IEndpointRouteBuilder app)
   {
     var commentsGroup = app.MapGroup("/api/posts/{postId}/comments")
-                           .WithTags("Comments")
-                           .RequireAuthorization();
+                          .WithTags("Comments")
+                          .RequireAuthorization();
 
     // GET: retrieve all comments for a post
     commentsGroup.MapGet("/", async (string postId, ICommentService commentService) =>
     {
       if (string.IsNullOrWhiteSpace(postId) || postId.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
         return Results.BadRequest(new { message = "Invalid post ID." });
-      var comments = await commentService.GetCommentsAsync(postId);
+      var comments = await commentService.GetCommentsForPostAsync(postId);
       return Results.Ok(comments);
     })
     .WithName("GetComments")

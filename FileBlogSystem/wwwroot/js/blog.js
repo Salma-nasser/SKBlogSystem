@@ -1,10 +1,13 @@
 import { renderPosts } from "./utils/renderPost.js";
 import { initializeImageModal, openImageModal } from "./utils/imageModal.js";
 import { initializeThemeToggle } from "./utils/themeToggle.js";
-import { showMessage } from "./utils/notifications.js";
+import {
+  showMessage,
+  openNotificationsModal,
+  getAllNotifications,
+} from "./utils/notifications.js";
 import { initMobileSidebar } from "./utils/mobileSidebar.js";
 import { authenticatedFetch } from "./utils/api.js";
-import { openNotificationsModal } from "./utils/notifications.js";
 let currentPage = 1;
 const pageSize = 5;
 let allPosts = [];
@@ -124,12 +127,22 @@ function getPageFromURL() {
   return Math.max(1, page);
 }
 
-function updateURL(page) {
+function getSortFromURL() {
+  const urlParams = new URLSearchParams(window.location.search);
+  return urlParams.get("sort") || "latest";
+}
+
+function updateURL(page, sort) {
   const url = new URL(window.location);
   if (page === 1) {
     url.searchParams.delete("page");
   } else {
     url.searchParams.set("page", page);
+  }
+  // Only change sort when explicitly provided; otherwise keep existing
+  if (typeof sort !== "undefined") {
+    if (sort === null) url.searchParams.delete("sort");
+    else url.searchParams.set("sort", sort);
   }
   window.history.pushState({}, "", url);
 }
@@ -158,6 +171,17 @@ window.addEventListener("DOMContentLoaded", () => {
   }
   // Initialize page from URL
   initializePageFromURL();
+  // Initialize sort select from URL
+  const initialSort = getSortFromURL();
+  const sortSelectEl = document.getElementById("sortSelect");
+  if (sortSelectEl) {
+    sortSelectEl.value = initialSort;
+    sortSelectEl.addEventListener("change", () => {
+      currentPage = 1;
+      updateURL(currentPage, sortSelectEl.value);
+      reloadPosts();
+    });
+  }
 
   // Handle browser back/forward navigation
   window.addEventListener("popstate", () => {
@@ -333,7 +357,9 @@ async function reloadPosts() {
   try {
     let posts;
     if (searchQuery || activeFilter) {
-      const res = await authenticatedFetch(`/api/search?${params.toString()}`);
+      const res = await authenticatedFetch(
+        `/api/posts/search?${params.toString()}`
+      );
       posts = await res.json();
     } else {
       const res = await authenticatedFetch("/api/posts");
@@ -348,11 +374,48 @@ async function reloadPosts() {
       return post.IsPublished && (!sched || sched <= now);
     });
 
-    renderPosts(paginate(visible, currentPage, pageSize), "postsContainer", {
+    // Apply sorting and date-range filters from UI or URL
+    const sort =
+      document.getElementById("sortSelect")?.value || getSortFromURL();
+    let filtered = visible.slice();
+    if (sort === "last_week") {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 7);
+      filtered = filtered.filter((p) => {
+        const pd = p.PublishedDate
+          ? new Date(p.PublishedDate)
+          : new Date(p.CreatedDate || 0);
+        return pd >= cutoff;
+      });
+    } else if (sort === "last_month") {
+      const cutoff = new Date();
+      cutoff.setMonth(cutoff.getMonth() - 1);
+      filtered = filtered.filter((p) => {
+        const pd = p.PublishedDate
+          ? new Date(p.PublishedDate)
+          : new Date(p.CreatedDate || 0);
+        return pd >= cutoff;
+      });
+    }
+
+    // Sort by published date (or created date fallback)
+    filtered.sort((a, b) => {
+      const da = a.PublishedDate
+        ? new Date(a.PublishedDate)
+        : new Date(a.CreatedDate || 0);
+      const db = b.PublishedDate
+        ? new Date(b.PublishedDate)
+        : new Date(b.CreatedDate || 0);
+      if (sort === "oldest") return da - db;
+      // default to latest
+      return db - da;
+    });
+
+    renderPosts(paginate(filtered, currentPage, pageSize), "postsContainer", {
       showDelete: false,
       showModify: false,
     });
-    updatePagination(visible.length);
+    updatePagination(filtered.length);
     // Update status line and apply highlights
     updateSearchStatus(searchQuery, activeFilter);
     applyHighlights(searchQuery);

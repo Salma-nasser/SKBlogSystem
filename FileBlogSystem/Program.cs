@@ -11,6 +11,7 @@ using SixLabors.ImageSharp.Web.Middleware;
 using SixLabors.ImageSharp.Web.DependencyInjection;
 using System.IO;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.RateLimiting;
 
 // Create builder
 var builder = WebApplication.CreateBuilder(args);
@@ -46,11 +47,17 @@ builder.Services.Configure<JsonOptions>(options =>
   options.SerializerOptions.WriteIndented = true;
 });
 
+// Repositories
+builder.Services.AddScoped<FileBlogSystem.Repositories.Interfaces.IPostRepository, FileBlogSystem.Repositories.FilePostRepository>();
+builder.Services.AddScoped<FileBlogSystem.Repositories.Interfaces.IUserRepository, FileBlogSystem.Repositories.FileUserRepository>();
+builder.Services.AddScoped<FileBlogSystem.Repositories.Interfaces.ICommentRepository, FileBlogSystem.Repositories.FileCommentRepository>();
+
 // Services
 builder.Services.AddScoped<PasswordService>();
 builder.Services.AddScoped<JwtService>();
-builder.Services.AddScoped<IBlogPostService, BlogPostService>();
+builder.Services.AddScoped<IBlogPostService, FileBlogSystem.Services.BlogPostService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ICommentService, CommentService>();
 builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddHostedService<ScheduledPostPublisher>();
 builder.Services.AddSingleton<NotificationService>();
@@ -92,6 +99,29 @@ builder.Services.AddCors(options =>
   });
 });
 
+// RateLimiting fixed
+builder.Services.AddRateLimiter(RateLimiterOptions =>
+{
+  RateLimiterOptions.AddFixedWindowLimiter("Fixed", options =>
+  {
+    options.PermitLimit = 60;
+    options.Window = TimeSpan.FromMinutes(1);
+    options.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+    options.QueueLimit = 0;
+  });
+});
+//RateLimiting for Login and Register endpoints
+builder.Services.AddRateLimiter(RateLimiterOptions =>
+{
+  RateLimiterOptions.AddFixedWindowLimiter("AuthFixed", options =>
+  {
+    options.PermitLimit = 10;
+    options.Window = TimeSpan.FromMinutes(1);
+    options.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
+    options.QueueLimit = 0;
+  });
+});
+
 // Email
 builder.Services.AddSingleton(new EmailService(
     smtpHost: "smtp.gmail.com",
@@ -109,6 +139,8 @@ builder.Services.Configure<FormOptions>(options =>
 
 var app = builder.Build();
 
+app.UseRateLimiter();
+
 // Security headers (applies to all responses)
 app.Use(async (context, next) =>
 {
@@ -118,7 +150,6 @@ app.Use(async (context, next) =>
   context.Response.Headers["Permissions-Policy"] =
       "geolocation=(), microphone=(), camera=(), payment=(), usb=(), fullscreen=(self)";
 
-  // Content Security Policy — adjust to your needs
   // Allows your Google Fonts import, images, and WebSocket connections.
   context.Response.Headers["Content-Security-Policy"] =
   "default-src 'self'; " +
@@ -133,8 +164,8 @@ app.Use(async (context, next) =>
   "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
   // Be explicit for script elements as well
   "script-src-elem 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
-  // API/Ajax and SignalR websockets
-  "connect-src 'self' ws: wss:";
+  // API/Ajax and SignalR websockets, plus CDN for source maps
+  "connect-src 'self' ws: wss: https://cdnjs.cloudflare.com;";
 
   await next();
 });
@@ -175,18 +206,12 @@ app.MapGet("/post/{slug}", async (string slug, IBlogPostService service, HttpCon
   return Results.Content(html, "text/html");
 });
 // Static Files for wwwroot
-
 app.UseDefaultFiles(new DefaultFilesOptions
 {
   DefaultFileNames = { "welcome.html" }
 });
 app.UseStaticFiles();
-app.UseStaticFiles(new StaticFileOptions
-{
-  FileProvider = new PhysicalFileProvider(
-        Path.Combine(builder.Environment.ContentRootPath, "Content")),
-  RequestPath = "/Content"
-});
+
 app.UseImageSharp();
 
 app.UseRouting();

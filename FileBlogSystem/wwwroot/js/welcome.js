@@ -2,6 +2,7 @@
 import { renderPosts } from "/js/utils/renderPost.js";
 import { initializeThemeToggle } from "/js/utils/themeToggle.js";
 import { initMobileSidebar } from "/js/utils/mobileSidebar.js";
+import { showAuthPrompt } from "/js/utils/notifications.js";
 
 async function fetchLatest() {
   try {
@@ -33,3 +34,17 @@ async function fetchLatest() {
 fetchLatest();
 initializeThemeToggle();
 initMobileSidebar();
+
+// If guest clicks any profile link, prompt to register/sign in
+document.addEventListener("click", (e) => {
+  const target = e.target.closest('a[href^="/profile/"]');
+  if (!target) return;
+  const hasToken = !!localStorage.getItem("jwtToken");
+  if (!hasToken) {
+    e.preventDefault();
+    showAuthPrompt({
+      message:
+        "Sign in or create an account to view user profiles and follow authors.",
+    });
+  }
+});

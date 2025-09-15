@@ -12,6 +12,7 @@ namespace FileBlogSystem.Interfaces
         Task<dynamic> CreatePostAsync(CreatePostRequest request, string authorUsername);
         Task<(bool Success, string Message)> ModifyPostAsync(string slug, CreatePostRequest updatedData, string currentUsername);
         Task<(bool Success, string Message)> PublishPostAsync(string slug, string currentUsername);
+        Task<(bool Success, string Message)> UnpublishPostAsync(string slug, string currentUsername);
         Task<Post?> GetPostByIdAsync(string postId);
         Task<bool> DeletePostAsync(string slug);
         IEnumerable<Post> GetAllPostsIncludingDrafts();

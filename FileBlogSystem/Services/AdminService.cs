@@ -122,4 +122,51 @@ public class AdminService : IAdminService
       return Results.Problem($"An error occurred: {ex.Message}", statusCode: StatusCodes.Status500InternalServerError);
     }
   }
+
+  // Backfill published post counts from Content/posts by scanning meta.json files
+  public async Task<IResult> BackfillPublishedCounts(IBlogPostService blogService)
+  {
+    try
+    {
+      var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+      // Use blogService to get all posts including drafts and count published ones by author
+      var allPosts = blogService.GetAllPostsIncludingDrafts();
+      foreach (var p in allPosts)
+      {
+        if (p.IsPublished && !string.IsNullOrWhiteSpace(p.Author))
+        {
+          if (!counts.ContainsKey(p.Author)) counts[p.Author] = 0;
+          counts[p.Author]++;
+        }
+      }
+
+      int updated = 0;
+      foreach (var kv in counts)
+      {
+        string username = kv.Key;
+        int value = kv.Value;
+
+        if (!UserDirectoryExists(username)) continue;
+
+        string sanitizedUsername = SanitizeDirectoryName(username);
+        string profilePath = Path.Combine(_usersDirectory.FullName, sanitizedUsername, "profile.json");
+        if (!File.Exists(profilePath)) continue;
+
+        var profileJson = await File.ReadAllTextAsync(profilePath);
+        var user = JsonSerializer.Deserialize<User>(profileJson);
+        if (user == null) continue;
+
+        user.PublishedPostsCount = value;
+        await File.WriteAllTextAsync(profilePath, JsonSerializer.Serialize(user, new JsonSerializerOptions { WriteIndented = true }));
+        updated++;
+      }
+
+      return Results.Ok(new { message = "Backfill completed", authorsFound = counts.Count, profilesUpdated = updated });
+    }
+    catch (Exception ex)
+    {
+      return Results.Problem($"An error occurred during backfill: {ex.Message}", statusCode: StatusCodes.Status500InternalServerError);
+    }
+  }
 }

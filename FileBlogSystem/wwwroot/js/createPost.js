@@ -86,6 +86,7 @@ function initializeMarkdownEditor() {
     autofocus: false,
     minHeight: "300px",
     maxHeight: "600px",
+    autoDownloadFontAwesome: false,
     toolbar: [
       "bold",
       "italic",
@@ -117,7 +118,9 @@ function setupEventListeners() {
   document.getElementById("backToBlogBtn")?.addEventListener("click", () => {
     window.location.href = "/blog";
   });
-
+  document.getElementById("backToProfileBtn")?.addEventListener("click", () => {
+    window.location.href = "/profile/my-profile";
+  });
   document.getElementById("logoutBtn")?.addEventListener("click", () => {
     logout();
   });
@@ -219,7 +222,7 @@ function copyImageMarkdown(fileName, altText) {
   const slug = generateSlugForImages();
   const today = new Date().toISOString().split("T")[0];
 
-  const imageUrl = `/Content/posts/${today}-${slug}/assets/${fileName}`;
+  const imageUrl = `/api/posts/${slug}/assets/${fileName}`;
   const markdown = `![${altText}](${imageUrl})`;
 
   navigator.clipboard
@@ -242,7 +245,7 @@ function insertImageIntoPost(fileName, altText) {
   const slug = generateSlugForImages();
   const today = new Date().toISOString().split("T")[0];
 
-  const imageUrl = `/Content/posts/${today}-${slug}/assets/${fileName}`;
+  const imageUrl = `/api/posts/${slug}/assets/${fileName}`;
   const markdown = `![${altText}](${imageUrl})`;
 
   // Insert at cursor position
@@ -260,9 +263,14 @@ function updateImagePreviewsWithActualUrls(postResult) {
 
   copyButtons.forEach((button, index) => {
     if (postResult.Images[index]) {
-      const actualUrl = `/Content/posts/${postResult.Date.split("T")[0]}-${
-        postResult.Slug
-      }${postResult.Images[index]}`;
+      const str = String(postResult.Images[index] || "");
+      const url =
+        str.startsWith("http://") ||
+        str.startsWith("https://") ||
+        str.startsWith("/api/posts/")
+          ? str
+          : `/api/posts/${postResult.Slug}/assets/${str.split("/").pop()}`;
+      const actualUrl = url;
       const altText = button.dataset.alt;
 
       button.onclick = () => {
@@ -286,9 +294,14 @@ function updateImagePreviewsWithActualUrls(postResult) {
 
   insertButtons.forEach((button, index) => {
     if (postResult.Images[index]) {
-      const actualUrl = `/Content/posts/${postResult.Date.split("T")[0]}-${
-        postResult.Slug
-      }${postResult.Images[index]}`;
+      const str2 = String(postResult.Images[index] || "");
+      const url2 =
+        str2.startsWith("http://") ||
+        str2.startsWith("https://") ||
+        str2.startsWith("/api/posts/")
+          ? str2
+          : `/api/posts/${postResult.Slug}/assets/${str2.split("/").pop()}`;
+      const actualUrl = url2;
       const altText = button.dataset.alt;
 
       button.onclick = () => {
@@ -394,9 +407,15 @@ async function submitPost(isPublished) {
       message += "\n\nYour images are available at:";
       result.Images.forEach((imageUrl, index) => {
         const fileName = selectedFiles[index]?.name || `Image ${index + 1}`;
-        message += `\n• ${fileName}: /Content/posts/${
-          result.Date.split("T")[0]
-        }-${result.Slug}${imageUrl}`;
+        // result.Images entries should already be secure URLs; use as-is or map to endpoint by filename
+        const str3 = String(imageUrl || "");
+        const finalUrl =
+          str3.startsWith("http://") ||
+          str3.startsWith("https://") ||
+          str3.startsWith("/api/posts/")
+            ? str3
+            : `/api/posts/${result.Slug}/assets/${str3.split("/").pop()}`;
+        message += `\n• ${fileName}: ${finalUrl}`;
       });
     }
 
