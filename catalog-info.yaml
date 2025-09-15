@@ -2,7 +2,7 @@ apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
   name: skblogsystem
-  description: Dot Net app. Named skblogsystem
+  description: Python app that displays time. Named skblogsystem
   annotations:
     github.com/project-slug: silverkeytech/skblogsystem
     backstage.io/techdocs-ref: dir:.
